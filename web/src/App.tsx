@@ -76,21 +76,19 @@ function Dashboard() {
             {/* Row 1: KPI Metrics */}
             <MetricGrid />
 
-            {/* Row 2: 3 Columns - Map + Top Areas + Agent */}
+            {/* Row 2: 2 Columns - Expanded Map (span 3) + Agent (span 1) */}
             <div className="main-row">
               <div className="map-area">
                 <MapContainer />
-              </div>
-              <div className="sites-area">
-                <TopAffectedAreas />
               </div>
               <div className="agent-area">
                 <AgentWidget />
               </div>
             </div>
 
-            {/* Row 3: Analytics */}
+            {/* Row 3: Receptors & Analytics - Top Affected Areas placed below */}
             <div className="analytics-row">
+              <TopAffectedAreas />
               <SourceBreakdown />
               <AqiForecast12h />
               <RecommendedActions />

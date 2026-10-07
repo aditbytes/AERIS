@@ -13,15 +13,22 @@ function etaToTime(eta: number): string {
 }
 
 export default function TopAffectedAreas() {
-  const { rankedSites, setSelectedSiteId } = useAeris()
-  const sites = rankedSites?.sites.slice(0, 5) ?? []
-
+  const { rankedSites, setSelectedSiteId, setActiveTab } = useAeris()
+  const sites = rankedSites?.sites.slice(0, 4) ?? []
 
   return (
     <div className="top-areas card">
       <div className="section-header">
         <h2 className="section-title">Top Affected Areas</h2>
-        <span className="section-link">View All →</span>
+        <span
+          className="section-link"
+          onClick={() => setActiveTab('population')}
+          role="button"
+          tabIndex={0}
+          title="Open Population Risk Registry"
+        >
+          View All →
+        </span>
       </div>
 
       {sites.length === 0 ? (

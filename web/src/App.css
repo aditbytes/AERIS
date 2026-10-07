@@ -1,25 +1,17 @@
 /* App.css — Dashboard Layout Grid */
 
-/* Main 3-panel row: 4-column layout grid matching mockup */
+/* Main 2-panel row: Expanded Map (span 3) + Agent (span 1) */
 .main-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
-  height: 315px;
-  min-height: 290px;
+  height: 365px;
+  min-height: 330px;
   width: 100%;
 }
 
 .map-area {
-  grid-column: span 2;
-  min-width: 0;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.sites-area {
-  grid-column: span 1;
+  grid-column: span 3;
   min-width: 0;
   height: 100%;
   display: flex;
@@ -34,13 +26,13 @@
   flex-direction: column;
 }
 
-/* Bottom analytics row: 4 equal cards */
+/* Bottom analytics & receptors row: 5 equal cards */
 .analytics-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 10px;
-  height: 165px;
-  min-height: 155px;
+  height: 175px;
+  min-height: 165px;
   flex-shrink: 0;
 }
 

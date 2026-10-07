@@ -175,6 +175,16 @@ export default function MapContainer() {
     }
   }, [webGlSupported])
 
+  // Automatically trigger map.resize() whenever the container dimensions change
+  useEffect(() => {
+    if (!mapContainerRef.current) return
+    const ro = new ResizeObserver(() => {
+      mapRef.current?.resize()
+    })
+    ro.observe(mapContainerRef.current)
+    return () => ro.disconnect()
+  }, [])
+
   // ── 2. Update corridor GeoJSON when data or timeHorizon changes ──────────
   useEffect(() => {
     const map = mapRef.current
