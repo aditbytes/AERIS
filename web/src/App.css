@@ -26,13 +26,23 @@
   flex-direction: column;
 }
 
-/* Bottom analytics & receptors row: 5 equal cards */
-.analytics-row {
+/* Row 3: 3 analytical modeling tabs in a row */
+.analytics-row-3col {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
-  height: 175px;
-  min-height: 165px;
+  height: 190px;
+  min-height: 180px;
+  flex-shrink: 0;
+}
+
+/* Row 4: Top Affected Areas and Ground Action Directives in the row below */
+.receptors-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  height: 240px;
+  min-height: 225px;
   flex-shrink: 0;
 }
 

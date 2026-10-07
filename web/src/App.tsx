@@ -86,13 +86,17 @@ function Dashboard() {
               </div>
             </div>
 
-            {/* Row 3: Receptors & Analytics - Top Affected Areas placed below */}
-            <div className="analytics-row">
-              <TopAffectedAreas />
+            {/* Row 3: 3 tabs in a row - Environmental & Forecasting Analytics */}
+            <div className="analytics-row-3col">
               <SourceBreakdown />
               <AqiForecast12h />
-              <RecommendedActions />
               <WhatIfWeAct />
+            </div>
+
+            {/* Row 4: Top Affected Areas and Recommended Actions in the row below */}
+            <div className="receptors-row-2col">
+              <TopAffectedAreas />
+              <RecommendedActions />
             </div>
           </div>
         )}

@@ -53,7 +53,7 @@ export default function TopAffectedAreas() {
                 <div className="area-body">
                   <div className="area-name">{site.name}</div>
                   <div className="area-loc text-xs text-tertiary">
-                    {site.lat.toFixed(2)}°N, {site.lon.toFixed(2)}°E
+                    {site.lat.toFixed(2)}°N, {site.lon.toFixed(2)}°E &bull; <span style={{ textTransform: 'capitalize' }}>{site.type}</span> &bull; +{site.pm25_delta_ugm3} µg/m³ PM2.5
                   </div>
                 </div>
                 <div className="area-right">
