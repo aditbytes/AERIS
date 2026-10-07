@@ -13,6 +13,9 @@ Nothing is implemented yet: only the README, architecture diagram and these docs
 | **Pritam Singh** | Source detection + plume corridor models |
 | **Saba Saeed** | Strands action agent + map UI + demo |
 
+Detailed per-person task files:
+[Aditya](members/aditya-aws.md) · [Meenal](members/meenal-data-exposure.md) · [Pritam](members/pritam-models.md) · [Saba](members/saba-agent-ui.md) · [Data contracts](data-contracts.md)
+
 ---
 
 ## Aditya — all AWS work
