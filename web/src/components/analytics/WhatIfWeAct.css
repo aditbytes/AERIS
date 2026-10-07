@@ -1,0 +1,101 @@
+/* WhatIfWeAct.css */
+.whatif {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.whatif-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.whatif-reduction {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #E8F5E9;
+  border: 1px solid #BBF7D0;
+  border-radius: 10px;
+  padding: 6px 10px;
+  flex-shrink: 0;
+}
+
+.reduction-arrow {
+  font-size: 16px;
+  font-weight: 800;
+  color: #22734F;
+}
+
+.reduction-pct {
+  font-size: 18px;
+  font-weight: 800;
+  color: #22734F;
+}
+
+.reduction-label {
+  font-size: 9.5px;
+  color: #4A8C6A;
+  line-height: 1.3;
+}
+
+.whatif-pop {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.whatif-pop strong {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.whatif-bars {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  gap: 10px;
+  height: 90px;
+  margin-top: 4px;
+}
+
+.bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  height: 100%;
+}
+
+.bar-track {
+  flex: 1;
+  width: 100%;
+  background: var(--surface-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  border: 1px solid var(--border-subtle);
+}
+
+.bar-fill {
+  width: 100%;
+  border-radius: 7px 7px 0 0;
+  transition: height 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.bar-value {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.bar-label {
+  font-size: 10px;
+  text-align: center;
+  color: var(--text-tertiary);
+  line-height: 1.3;
+}

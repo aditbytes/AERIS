@@ -1,0 +1,78 @@
+/* TopAffectedAreas.css */
+.top-areas {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.areas-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.areas-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+
+.area-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.area-item:hover { background: var(--brand-light); }
+.area-item:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 2px; }
+
+.area-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  background: var(--surface-subtle);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.area-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.area-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.area-loc {
+  margin-top: 1px;
+}
+
+.area-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.area-eta {
+  white-space: nowrap;
+}

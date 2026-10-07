@@ -116,19 +116,34 @@ def rank_sites(
     -------
     dict in the ranked_sites.json contract format
     """
+    from models.common.geo import point_in_polygon
+
     try:
         from shapely.geometry import Point, shape
         from shapely.strtree import STRtree
-    except ImportError as exc:
-        raise ImportError("shapely is required for exposure ranking") from exc
+        has_shapely = True
+    except ImportError:
+        has_shapely = False
 
     features = corridor.get("features", [])
     band_features = [f for f in features if f.get("properties", {}).get("kind") == "band"]
-    centreline_features = [f for f in features if f.get("properties", {}).get("kind") == "centerline"]
 
-    # Build STRtree from corridor band polygons
-    band_shapes = [shape(f["geometry"]) for f in band_features]
-    band_tree = STRtree(band_shapes)
+    # Pre-extract coordinate rings for fast ray-casting fallback
+    band_rings = []
+    for f in band_features:
+        geom = f.get("geometry", {})
+        coords = geom.get("coordinates", [])
+        if coords and isinstance(coords[0], list):
+            band_rings.append(coords[0])
+        else:
+            band_rings.append([])
+
+    if has_shapely:
+        band_shapes = [shape(f["geometry"]) for f in band_features]
+        band_tree = STRtree(band_shapes)
+    else:
+        band_shapes = []
+        band_tree = None
 
     site_features = sites.get("features", [])
     ranked: list[dict[str, Any]] = []
@@ -140,10 +155,16 @@ def rank_sites(
         if lon is None or lat is None:
             continue
 
-        pt = Point(lon, lat)
-        # Find all bands containing this point
-        hits = band_tree.query(pt)
-        containing_bands = [band_features[i] for i in hits if band_shapes[i].contains(pt)]
+        if has_shapely and band_tree is not None:
+            pt = Point(lon, lat)
+            hits = band_tree.query(pt)
+            containing_bands = [band_features[i] for i in hits if band_shapes[i].contains(pt)]
+        else:
+            containing_bands = [
+                band_features[i]
+                for i, ring in enumerate(band_rings)
+                if ring and point_in_polygon(lon, lat, ring)
+            ]
 
         if not containing_bands:
             continue  # site not in any corridor band
@@ -183,21 +204,34 @@ def rank_sites(
     for i, s in enumerate(ranked, start=1):
         s["rank"] = i
 
-    # Exposed population: sum cells inside bands with risk ≥ threshold
+    # Exposed population: sum cells inside bands with risk >= threshold
     pop_cells = population.get("cells", [])
-    band_shapes_threshold = [
-        band_shapes[i]
-        for i, f in enumerate(band_features)
-        if f["properties"].get("risk", 0.0) >= risk_threshold
-    ]
-
     exposed_pop = 0
-    for cell in pop_cells:
-        pt = Point(cell["lon"], cell["lat"])
-        for bs in band_shapes_threshold:
-            if bs.contains(pt):
-                exposed_pop += cell["pop"]
-                break
+
+    if has_shapely:
+        band_shapes_threshold = [
+            band_shapes[i]
+            for i, f in enumerate(band_features)
+            if f["properties"].get("risk", 0.0) >= risk_threshold
+        ]
+        for cell in pop_cells:
+            pt = Point(cell["lon"], cell["lat"])
+            for bs in band_shapes_threshold:
+                if bs.contains(pt):
+                    exposed_pop += cell["pop"]
+                    break
+    else:
+        threshold_rings = [
+            band_rings[i]
+            for i, f in enumerate(band_features)
+            if band_rings[i] and f["properties"].get("risk", 0.0) >= risk_threshold
+        ]
+        for cell in pop_cells:
+            c_lon, c_lat = cell["lon"], cell["lat"]
+            for ring in threshold_rings:
+                if point_in_polygon(c_lon, c_lat, ring):
+                    exposed_pop += cell["pop"]
+                    break
 
     # ±25% allowance for population-data error
     low = int(exposed_pop * 0.75)

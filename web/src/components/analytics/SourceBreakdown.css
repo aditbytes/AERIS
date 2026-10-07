@@ -1,0 +1,46 @@
+/* SourceBreakdown.css */
+.source-breakdown {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.breakdown-body {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.breakdown-legend {
+  list-style: none;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.legend-label {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.legend-pct {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
