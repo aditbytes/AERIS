@@ -1,11 +1,12 @@
-/* Header.css */
+/* Header.css — Enhanced Top Navigation Bar */
 .header {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 0 18px;
-  height: 54px;
-  min-height: 54px;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 0 16px;
+  height: 56px;
+  min-height: 56px;
   background: var(--surface-card);
   border-bottom: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-sm);
@@ -13,66 +14,160 @@
   flex-shrink: 0;
 }
 
-/* Brand */
-.header-brand {
+/* ─── Left Section: Sidebar Toggle & Breadcrumbs ──────────────────────────── */
+.header-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  min-width: 0;
   flex-shrink: 0;
 }
 
-.brand-icon {
-  width: 34px;
-  height: 34px;
-  background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand-primary) 100%);
-  border-radius: 9px;
+.header-sidebar-toggle-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 3px 10px var(--brand-glow);
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
-.brand-text {
+.header-sidebar-toggle-btn:hover {
+  background: var(--brand-light);
+  color: var(--brand-primary);
+  border-color: var(--brand-medium);
+}
+
+.header-breadcrumbs {
   display: flex;
-  flex-direction: column;
-  line-height: 1.15;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  white-space: nowrap;
 }
 
-.brand-name {
-  font-size: 17px;
+.breadcrumb-root-btn {
+  background: none;
+  border: none;
   font-weight: 800;
   color: var(--brand-dark);
-  letter-spacing: -0.5px;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  font-size: 13.5px;
+  letter-spacing: -0.3px;
+  transition: color 0.15s;
 }
 
-.brand-tagline {
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--text-secondary);
+.breadcrumb-root-btn:hover {
+  color: var(--brand-primary);
 }
 
-.brand-sub {
-  font-size: 8.5px;
+.breadcrumb-separator {
   color: var(--text-tertiary);
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.breadcrumb-section {
+  color: var(--text-tertiary);
+  font-weight: 500;
+  font-size: 12.5px;
+}
+
+.breadcrumb-active {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* ─── Center Section: Live Environmental Status Ticker ─────────────────────── */
+.header-center-ticker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  max-width: 480px;
+  min-width: 0;
+}
+
+.live-status-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 4px 14px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.status-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 6px #10B981;
+  animation: pulseLiveGreen 2s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+@keyframes pulseLiveGreen {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+}
+
+.ticker-item strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.ticker-divider {
+  color: var(--text-tertiary);
+  opacity: 0.45;
+}
+
+.aqi-highlight {
+  color: #B91C1C;
+  background: #FEE2E2;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 600;
 }
 
 
 /* Search */
 .header-search {
-  flex: 1;
-  max-width: 400px;
+  width: 210px;
+  max-width: 320px;
   position: relative;
   display: flex;
   align-items: center;
   background: var(--bg-app);
   border: 1.5px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  padding: 0 8px 0 14px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  padding: 0 10px 0 12px;
+  height: 36px;
+  transition: width 0.22s ease, border-color 0.2s, box-shadow 0.2s;
 }
 
 .header-search:focus-within {
+  width: 280px;
   border-color: var(--brand-medium);
   box-shadow: 0 0 0 3px var(--brand-glow);
 }
@@ -88,29 +183,28 @@
   border: none;
   background: transparent;
   font-family: var(--font);
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--text-primary);
   outline: none;
-  padding: 9px 0;
+  padding: 6px 0;
+  min-width: 0;
 }
 
 .search-input::placeholder { color: var(--text-tertiary); }
 
-.search-btn {
-  width: 30px;
-  height: 30px;
-  background: var(--brand-primary);
-  color: white;
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.search-kbd {
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: var(--text-tertiary);
+  margin-left: 6px;
   flex-shrink: 0;
-  transition: background 0.2s;
+  letter-spacing: -0.02em;
 }
-.search-btn:hover { background: var(--brand-dark); }
 
 /* Right */
 .header-right {
@@ -157,11 +251,15 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 .spinning { animation: spin 0.8s linear infinite; }
 
+.user-profile-wrapper {
+  position: relative;
+}
+
 .user-profile {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 12px 6px 6px;
+  padding: 5px 12px 5px 6px;
   background: var(--bg-app);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
@@ -171,8 +269,8 @@
 .user-profile:hover { background: var(--brand-light); }
 
 .user-avatar {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   background: linear-gradient(135deg, var(--brand-primary), var(--brand-dark));
   border-radius: 50%;
   display: flex;
@@ -185,9 +283,95 @@
   flex-direction: column;
   line-height: 1.2;
 }
-.user-name { font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
-.user-role { font-size: 10px; color: var(--text-tertiary); }
+.user-name { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+.user-role { font-size: 9.5px; color: var(--text-tertiary); }
 .user-chevron { color: var(--text-tertiary); }
+
+.profile-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 220px;
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+  z-index: 1000;
+  overflow: hidden;
+  animation: dropdownFade 0.15s ease;
+}
+
+@keyframes dropdownFade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.profile-menu-header {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--surface-subtle);
+}
+
+.menu-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.menu-email {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.menu-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #059669;
+  margin-top: 4px;
+}
+
+.profile-menu-items {
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.profile-menu-item:hover {
+  background: var(--surface-subtle);
+  color: var(--brand-primary);
+}
+
+.profile-menu-item.danger {
+  color: #DC2626;
+}
+
+.profile-menu-item.danger:hover {
+  background: #FEE2E2;
+}
 
 /* Notifications Dropdown */
 .notif-wrapper {

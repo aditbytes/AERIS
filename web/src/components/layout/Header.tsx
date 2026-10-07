@@ -1,27 +1,61 @@
 import {
-  BarChart2,
   Bell,
   ChevronDown,
-  LayoutDashboard,
+  ChevronRight,
   LogOut,
-  Map,
+  PanelLeft,
   RefreshCw,
   Search,
   Settings,
-  Shield,
-  Users,
+  ShieldCheck,
+  User,
   Wind,
-  Zap,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './Header.css'
 import { useAeris } from '@/services/dataContext'
 
+const TAB_META: Record<string, { section: string; label: string }> = {
+  dashboard:  { section: 'Overview',     label: 'Dashboard' },
+  map:        { section: 'Overview',     label: 'Map Explorer' },
+  analytics:  { section: 'Intelligence', label: 'Analytics & Trends' },
+  wind:       { section: 'Intelligence', label: 'Wind & Meteorology' },
+  sources:    { section: 'Intelligence', label: 'Fire Sources (VIIRS)' },
+  population: { section: 'Operations',   label: 'Population Risk Registry' },
+  shield:     { section: 'Operations',   label: 'Protective Actions' },
+  settings:   { section: 'System',       label: 'System Settings' },
+}
+
 export default function Header() {
-  const { loading, refreshData, setFlyToLocation, setActiveTab } = useAeris()
+  const {
+    loading,
+    refreshData,
+    setFlyToLocation,
+    activeTab,
+    setActiveTab,
+    toggleSidebar,
+    wind,
+    avgAqi,
+  } = useAeris()
+
   const [searchInput, setSearchInput] = useState('')
   const [showNotifs, setShowNotifs] = useState(false)
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [unreadCount, setUnreadCount] = useState(3)
+
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
+  // Listen for Cmd+K / Ctrl+K to auto-focus search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        searchInputRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,51 +91,95 @@ export default function Header() {
     }
   }
 
+  const currentMeta = TAB_META[activeTab] ?? { section: 'Overview', label: 'Dashboard' }
+  const firstSpeedMs = wind?.points?.[0]?.hours?.[0]?.speed_ms
+  const windText = firstSpeedMs != null ? `${Math.round(firstSpeedMs * 3.6)} km/h` : '18 km/h'
+  const aqiVal = avgAqi ?? 382
+
   return (
     <header className="header">
-      {/* Brand */}
-      <div className="header-brand">
-        <div className="brand-icon">
-          <Wind size={22} color="white" strokeWidth={2.2} />
-        </div>
-        <div className="brand-text">
-          <span className="brand-name">AERIS</span>
-          <span className="brand-tagline">AI Environmental Risk &amp; Intervention System</span>
-          <span className="brand-sub">From pollution source to protective action.</span>
+      {/* Left: Sidebar Toggle + Breadcrumb */}
+      <div className="header-left">
+        <button
+          className="header-sidebar-toggle-btn"
+          onClick={toggleSidebar}
+          title="Toggle Sidebar (⌘B)"
+          aria-label="Toggle Navigation Sidebar"
+          type="button"
+        >
+          <PanelLeft size={18} />
+        </button>
+
+        <div className="header-breadcrumbs">
+          <button
+            className="breadcrumb-root-btn"
+            onClick={() => setActiveTab('dashboard')}
+            title="AERIS Main"
+            type="button"
+          >
+            AERIS
+          </button>
+          <ChevronRight size={13} className="breadcrumb-separator" />
+          <span className="breadcrumb-section">{currentMeta.section}</span>
+          <ChevronRight size={13} className="breadcrumb-separator" />
+          <span className="breadcrumb-active">{currentMeta.label}</span>
         </div>
       </div>
 
-      {/* Search */}
-      <form className="header-search" onSubmit={handleSearch}>
-        <Search size={15} className="search-icon" />
-        <input
-          className="search-input"
-          placeholder="Search for a city, location or source (e.g. Delhi, Srinagar, Leh)..."
-          type="text"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-        />
-        <button className="search-btn" type="submit" aria-label="Search">
-          <Search size={14} />
-        </button>
-      </form>
+      {/* Center: Live Environmental Status Ticker */}
+      <div className="header-center-ticker">
+        <div className="live-status-pill" title="Live meteorological and CAQM statutory alert status">
+          <span className="status-live-dot" />
+          <span className="ticker-item">
+            <strong>GFS Wind:</strong> {windText} NW → SE
+          </span>
+          <span className="ticker-divider">•</span>
+          <span className="ticker-item">
+            <strong>CAQM:</strong> GRAP IV Active
+          </span>
+          <span className="ticker-divider">•</span>
+          <span className="ticker-item aqi-highlight">
+            <strong>Avg AQI:</strong> {aqiVal}
+          </span>
+        </div>
+      </div>
 
-      {/* Right Controls */}
+      {/* Right Controls: Search + Refresh + Alerts + Profile */}
       <div className="header-right">
+        {/* Search */}
+        <form className="header-search" onSubmit={handleSearch}>
+          <Search size={14} className="search-icon" />
+          <input
+            ref={searchInputRef}
+            className="search-input"
+            placeholder="Search location (e.g. Delhi, Leh)..."
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+          <kbd className="search-kbd" title="Press ⌘K to search">⌘K</kbd>
+        </form>
+
         <button
           className="icon-btn refresh-btn"
           onClick={refreshData}
-          title="Refresh data"
+          title="Refresh live environmental data"
           aria-label="Refresh data"
+          type="button"
         >
           <RefreshCw size={16} className={loading ? 'spinning' : ''} />
         </button>
 
+        {/* Notifications Hub */}
         <div className="notif-wrapper">
           <button
             className="icon-btn notif-btn"
             aria-label="Notifications"
-            onClick={() => setShowNotifs(!showNotifs)}
+            onClick={() => {
+              setShowNotifs(!showNotifs)
+              setShowProfileMenu(false)
+            }}
+            type="button"
           >
             <Bell size={17} />
             {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
@@ -114,6 +192,7 @@ export default function Header() {
                 <button
                   className="notif-mark-read"
                   onClick={() => setUnreadCount(0)}
+                  type="button"
                 >
                   Mark all as read
                 </button>
@@ -125,6 +204,8 @@ export default function Header() {
                     setActiveTab('sources')
                     setShowNotifs(false)
                   }}
+                  role="button"
+                  tabIndex={0}
                 >
                   <div className="notif-dot alert" />
                   <div className="notif-content">
@@ -140,6 +221,8 @@ export default function Header() {
                     setActiveTab('wind')
                     setShowNotifs(false)
                   }}
+                  role="button"
+                  tabIndex={0}
                 >
                   <div className="notif-dot warning" />
                   <div className="notif-content">
@@ -155,6 +238,8 @@ export default function Header() {
                     setActiveTab('shield')
                     setShowNotifs(false)
                   }}
+                  role="button"
+                  tabIndex={0}
                 >
                   <div className="notif-dot notice" />
                   <div className="notif-content">
@@ -168,30 +253,62 @@ export default function Header() {
           )}
         </div>
 
-        <div className="user-profile">
-          <div className="user-avatar">
-            <Users size={15} color="white" />
+        {/* User Profile */}
+        <div className="user-profile-wrapper">
+          <div
+            className="user-profile"
+            onClick={() => {
+              setShowProfileMenu(!showProfileMenu)
+              setShowNotifs(false)
+            }}
+            role="button"
+            tabIndex={0}
+          >
+            <div className="user-avatar">
+              <User size={15} color="white" />
+            </div>
+            <div className="user-info">
+              <span className="user-name">Saba Saeed</span>
+              <span className="user-role">Environmental Officer</span>
+            </div>
+            <ChevronDown size={14} className="user-chevron" />
           </div>
-          <div className="user-info">
-            <span className="user-name">Saba Saeed</span>
-            <span className="user-role">Environmental Officer</span>
-          </div>
-          <ChevronDown size={14} className="user-chevron" />
+
+          {showProfileMenu && (
+            <div className="profile-dropdown-menu">
+              <div className="profile-menu-header">
+                <span className="menu-name">Saba Saeed</span>
+                <span className="menu-email">sabasaid826@gmail.com</span>
+                <span className="menu-badge">
+                  <ShieldCheck size={12} /> Officer Clearance
+                </span>
+              </div>
+              <div className="profile-menu-items">
+                <button
+                  className="profile-menu-item"
+                  onClick={() => {
+                    setActiveTab('settings')
+                    setShowProfileMenu(false)
+                  }}
+                  type="button"
+                >
+                  <Settings size={15} />
+                  <span>System Settings</span>
+                </button>
+                <button
+                  className="profile-menu-item danger"
+                  onClick={() => setShowProfileMenu(false)}
+                  type="button"
+                >
+                  <LogOut size={15} />
+                  <span>End Session</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>
   )
 }
 
-// ─── Quick nav icons for sidebar use ─────────────────────────────────────────
-export const NAV_ITEMS = [
-  { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { id: 'map',       icon: Map,             label: 'Map Explorer' },
-  { id: 'analytics', icon: BarChart2,       label: 'Analytics' },
-  { id: 'wind',      icon: Wind,            label: 'Wind & Weather' },
-  { id: 'sources',   icon: Zap,             label: 'Fire Sources' },
-  { id: 'population',icon: Users,           label: 'Population Risk' },
-  { id: 'shield',    icon: Shield,          label: 'Protective Actions' },
-  { id: 'settings',  icon: Settings,        label: 'Settings' },
-  { id: 'logout',    icon: LogOut,          label: 'Logout' },
-]

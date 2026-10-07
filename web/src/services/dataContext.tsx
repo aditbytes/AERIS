@@ -43,6 +43,11 @@ interface AerisState {
   etaHours:                number | null           // min ETA of highest-ranked source
   avgAqi:                  number | null           // mean AQI across live ground stations
 
+  // Sidebar navigation state
+  isSidebarCollapsed:   boolean
+  toggleSidebar:        () => void
+  setSidebarCollapsed:  (collapsed: boolean) => void
+
   // Actions
   setTimeHorizon:          (h: TimeHorizon) => void
   setSelectedSiteId:       (id: string | null) => void
@@ -73,6 +78,49 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
   const [searchTerm,           setSearchTerm]           = useState('')
   const [flyToLocation,        setFlyToLocation]        = useState<{ lon: number; lat: number; zoom?: number; name?: string } | null>(null)
   const [interventionScenario, setInterventionScenario] = useState<InterventionScenario>('partial')
+
+  // Sidebar collapse state with localStorage persistence
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('aeris_sidebar_collapsed')
+      if (saved !== null) return saved === 'true'
+    } catch {
+      // Ignore
+    }
+    return typeof window !== 'undefined' ? window.innerWidth < 1280 : false
+  })
+
+  const setSidebarCollapsed = useCallback((val: boolean) => {
+    setIsSidebarCollapsed(val)
+    try {
+      localStorage.setItem('aeris_sidebar_collapsed', String(val))
+    } catch {
+      // Ignore
+    }
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'))
+    }, 260)
+  }, [])
+
+  const toggleSidebar = useCallback(() => {
+    setSidebarCollapsed(!isSidebarCollapsed)
+  }, [isSidebarCollapsed, setSidebarCollapsed])
+
+  // Global keyboard shortcut: Cmd+B / Ctrl+B to toggle sidebar
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) {
+        return
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault()
+        toggleSidebar()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [toggleSidebar])
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -134,6 +182,7 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
     activeTab, searchTerm, flyToLocation, interventionScenario,
     loading, error,
     exposedPopulation, activeExposedPopulation, avertedExposures, etaHours, avgAqi,
+    isSidebarCollapsed, toggleSidebar, setSidebarCollapsed,
     setTimeHorizon, setSelectedSiteId, setShowActionsModal,
     setActiveTab, setSearchTerm, setFlyToLocation, setInterventionScenario,
     refreshData: loadData,
