@@ -1,5 +1,7 @@
 # Aditya — All AWS Work
 
+> ⚠️ **No demo data.** AERIS uses **only real data** from live sources. Do not create, hand-write, mock or hard-code sample, demo, placeholder or fabricated data — not in code, not in the UI, not in tests, and not as a "fallback". If a live source is unavailable, return an error and show an error state. The only offline files allowed are **real snapshots** that the fetchers captured from live sources into `data/live/` (each stamped with its source and fetch time). Tests may use small captured real API responses, labelled as such.
+
 You own **every AWS task** in AERIS. The other three build plain local code; you make it run on AWS and tie it together. Prize rules require using at least one AWS open-source tool **or** deploying on AWS. You do both: the Strands Agents SDK, plus a deployment on Lambda, S3, SageMaker, EventBridge and the rest.
 
 Region: `ap-south-1` (Mumbai). Shared file formats: [`../data-contracts.md`](../data-contracts.md).
@@ -76,7 +78,7 @@ A judge opens a CloudFront URL and sees the full chain on a map: a detected fire
 
 - [ ] CloudWatch log groups with a retention of 7 days; an alarm on Lambda errors
 - [ ] End-to-end smoke test script: trigger the pipeline, fetch the four API routes, check each response against the contract
-- [ ] Load `data/sample/` into S3 as a **demo fallback** so the demo works even if a live API (FIRMS) is down
+- [ ] If a live API (FIRMS, OpenAQ) is down, the API returns the last **real** successful result from `gold/` with its fetch time, and the UI shows it as stale. Never substitute invented data
 
 ## 10. Integration and review
 
@@ -96,9 +98,9 @@ A judge opens a CloudFront URL and sees the full chain on a map: a detected fire
 | Day | Tasks |
 |-----|-------|
 | 1 | Sections 1–3: account, credits, budgets, IAM, buckets, storage interface, IaC skeleton |
-| 2 | Section 4: deploy ingestors and schedules with Meenal's first fetcher; load sample data |
+| 2 | Section 4: deploy ingestors and schedules with Meenal's first fetcher; first real data lands in `bronze/` |
 | 3 | Sections 5–7: models, agent, API, CloudFront; point UI at live API |
-| 4 | Sections 9–11: smoke test, fallback data, blog, video, submission, teardown plan |
+| 4 | Sections 9–11: smoke test, stale-data handling, blog, video, submission, teardown plan |
 
 ## Definition of done
 
