@@ -28,17 +28,13 @@ function priorityBadge(p: Priority) {
 export default function RecommendedActions() {
   const { actions } = useAeris()
 
-  // Map agent actions to display items, or show structural defaults
+  // Map real agent actions to display items (no fallback mock items)
   const items: ActionItem[] = actions?.actions.slice(0, 4).map(a => ({
     id: `${a.site_id}-${a.priority}`,
     text: a.action,
     priority: a.priority <= 2 ? 'high' : a.priority <= 4 ? 'medium' : 'low',
-  })) ?? [
-    { id: 'a1', text: 'Move morning assemblies indoors for 37 schools', priority: 'high' },
-    { id: 'a2', text: 'Alert 8 hospitals to activate filtration and minimize outdoor air intake', priority: 'high' },
-    { id: 'a3', text: 'Issue public advisory for outdoor activities in affected zones', priority: 'medium' },
-    { id: 'a4', text: 'Increase monitoring of air quality at transport hubs', priority: 'low' },
-  ]
+  })) ?? []
+
 
   const [checked, setChecked] = useState<Record<string, boolean>>({ a1: true, a2: true })
 

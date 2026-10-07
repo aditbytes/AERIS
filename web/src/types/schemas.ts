@@ -116,6 +116,28 @@ export type SiteAction      = z.infer<typeof SiteActionSchema>
 export type AuthorityAction = z.infer<typeof AuthorityActionSchema>
 export type ActionsFile     = z.infer<typeof ActionsFileSchema>
 
+// ─── aqi.json (Meenal / CPCB / OpenAQ) ───────────────────────────────────────
+export const AqiStationSchema = z.object({
+  id:           z.string(),
+  name:         z.string(),
+  lat:          z.number(),
+  lon:          z.number(),
+  pm25:         z.number().nullable().optional(),
+  pm10:         z.number().nullable().optional(),
+  aqi:          z.number().nullable().optional(),
+  aqi_category: z.string().nullable().optional(),
+  observed_at:  z.string().nullable().optional(),
+  source:       z.string(),
+})
+
+export const AqiFileSchema = z.object({
+  generated_at: z.string(),
+  stations:     z.array(AqiStationSchema),
+})
+
+export type AqiStation = z.infer<typeof AqiStationSchema>
+export type AqiFile    = z.infer<typeof AqiFileSchema>
+
 // ─── Risk level helper ───────────────────────────────────────────────────────
 export type RiskLevel = 'very-high' | 'high' | 'medium' | 'low'
 
@@ -145,3 +167,4 @@ export function riskLabel(level: RiskLevel): string {
   }
   return map[level]
 }
+

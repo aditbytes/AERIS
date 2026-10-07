@@ -30,21 +30,12 @@ export default function AgentWidget() {
         {actions?.summary ? (
           <p className="agent-text">{actions.summary}</p>
         ) : (
-          <>
-            <p className="agent-text">
-              Stubble-burning cluster detected in Sangrur, Punjab.
-            </p>
-            <p className="agent-text">
-              Pollution plume likely to reach Delhi in ~ 2 hours, affecting{' '}
-              <strong>1.2M people</strong>.
-            </p>
-            <p className="agent-text">
-              <strong>Priority:</strong> Protect schools and hospitals in Rohini and
-              Shalimar Bagh first.
-            </p>
-          </>
+          <p className="agent-text text-tertiary">
+            Awaiting action plan generation from Strands Action Agent...
+          </p>
         )}
       </div>
+
 
       {/* CTA */}
       <button

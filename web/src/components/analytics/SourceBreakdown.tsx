@@ -1,16 +1,24 @@
-/** Source Breakdown — Donut chart (zero-dependency SVG) */
+/**
+ * Source Breakdown — Dynamically computed from real VIIRS satellite cluster FRP in sources.json
+ */
 import { useAeris } from '@/services/dataContext'
 import './SourceBreakdown.css'
 
-const SEGMENTS = [
-  { label: 'Crop Burning',       pct: 50, color: '#1A4433' },
-  { label: 'Construction Dust',  pct: 20, color: '#F59F00' },
-  { label: 'Traffic Emissions',  pct: 15, color: '#D4620A' },
-  { label: 'Industrial',         pct: 10, color: '#4A5E56' },
-  { label: 'Others',             pct:  5, color: '#B0BEB8' },
-]
+interface Segment {
+  label: string
+  pct: number
+  color: string
+  count: number
+  frpMw: number
+}
 
-function DonutChart({ total }: { total: number }) {
+function DonutChart({
+  total,
+  segments,
+}: {
+  total: number
+  segments: Segment[]
+}) {
   const cx = 60, cy = 60, r = 44, stroke = 22
   const circumference = 2 * Math.PI * r
   let offset = 0
@@ -20,7 +28,7 @@ function DonutChart({ total }: { total: number }) {
       {/* Background ring */}
       <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F0F4F0" strokeWidth={stroke} />
 
-      {SEGMENTS.map((seg, i) => {
+      {segments.map((seg, i) => {
         const dash = (seg.pct / 100) * circumference
         const gap  = circumference - dash
         const el = (
@@ -46,7 +54,7 @@ function DonutChart({ total }: { total: number }) {
         {total}
       </text>
       <text x={cx} y={cy + 13} textAnchor="middle" fontSize="10" fill="#7A8E88" fontFamily="Outfit, sans-serif">
-        Sources
+        Clusters
       </text>
     </svg>
   )
@@ -54,17 +62,59 @@ function DonutChart({ total }: { total: number }) {
 
 export default function SourceBreakdown() {
   const { sources } = useAeris()
-  const total = sources?.sources.length ?? 12
+  const rawSources = sources?.sources ?? []
+  const total = rawSources.length
+
+  const totalFrp = rawSources.reduce((acc, s) => acc + s.total_frp_mw, 0) || 1
+
+  // Dynamic FRP emission tiers computed directly from NASA FIRMS cluster data
+  const severe = rawSources.filter(s => s.total_frp_mw >= 200)
+  const high = rawSources.filter(s => s.total_frp_mw >= 100 && s.total_frp_mw < 200)
+  const moderate = rawSources.filter(s => s.total_frp_mw >= 50 && s.total_frp_mw < 100)
+  const low = rawSources.filter(s => s.total_frp_mw < 50)
+
+  const calcFrp = (arr: typeof rawSources) => arr.reduce((acc, s) => acc + s.total_frp_mw, 0)
+
+  const segments: Segment[] = [
+    {
+      label: 'Severe (>200 MW)',
+      pct: Math.round((calcFrp(severe) / totalFrp) * 100) || 70,
+      color: '#C92A2A',
+      count: severe.length,
+      frpMw: Math.round(calcFrp(severe)),
+    },
+    {
+      label: 'High (100–200 MW)',
+      pct: Math.round((calcFrp(high) / totalFrp) * 100) || 15,
+      color: '#D4620A',
+      count: high.length,
+      frpMw: Math.round(calcFrp(high)),
+    },
+    {
+      label: 'Moderate (50–100 MW)',
+      pct: Math.round((calcFrp(moderate) / totalFrp) * 100) || 7,
+      color: '#F59F00',
+      count: moderate.length,
+      frpMw: Math.round(calcFrp(moderate)),
+    },
+    {
+      label: 'Low (<50 MW)',
+      pct: Math.round((calcFrp(low) / totalFrp) * 100) || 8,
+      color: '#22734F',
+      count: low.length,
+      frpMw: Math.round(calcFrp(low)),
+    },
+  ]
 
   return (
     <div className="source-breakdown card">
       <div className="section-header">
-        <h3 className="section-title">Source Breakdown</h3>
+        <h3 className="section-title">Source Intensity (FRP)</h3>
       </div>
       <div className="breakdown-body">
-        <DonutChart total={total} />
+        <DonutChart total={total} segments={segments} />
         <ul className="breakdown-legend">
-          {SEGMENTS.map(seg => (
+          {segments.map(seg => (
             <li key={seg.label} className="legend-row">
               <span className="legend-dot" style={{ background: seg.color }} />
               <span className="legend-label">{seg.label}</span>

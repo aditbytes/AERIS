@@ -7,8 +7,8 @@
  */
 
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { getActions, getCorridor, getRankedSites, getSources } from './api'
-import type { ActionsFile, CorridorGeoJSON, RankedSite, RankedSitesFile, SourcesFile } from '@/types/schemas'
+import { getActions, getAqi, getCorridor, getRankedSites, getSources } from './api'
+import type { ActionsFile, AqiFile, CorridorGeoJSON, RankedSite, RankedSitesFile, SourcesFile } from '@/types/schemas'
 
 export type TimeHorizon = 0 | 1 | 2 | 3
 
@@ -18,6 +18,7 @@ interface AerisState {
   corridor:     CorridorGeoJSON | null
   rankedSites:  RankedSitesFile | null
   actions:      ActionsFile | null
+  aqi:          AqiFile | null
 
   // UI State
   timeHorizon:    TimeHorizon        // selected time filter in hours
@@ -31,6 +32,7 @@ interface AerisState {
   // Derived convenience
   exposedPopulation: number | null
   etaHours: number | null           // min ETA of highest-ranked source
+  avgAqi: number | null             // mean AQI across live ground stations
 
   // Actions
   setTimeHorizon:     (h: TimeHorizon) => void
@@ -46,6 +48,7 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
   const [corridor,    setCorridor]    = useState<CorridorGeoJSON | null>(null)
   const [rankedSites, setRankedSites] = useState<RankedSitesFile | null>(null)
   const [actions,     setActions]     = useState<ActionsFile | null>(null)
+  const [aqi,         setAqi]         = useState<AqiFile | null>(null)
   const [loading,     setLoading]     = useState(true)
   const [error,       setError]       = useState<string | null>(null)
 
@@ -57,16 +60,18 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
     setLoading(true)
     setError(null)
     try {
-      const [s, c, r, a] = await Promise.all([
+      const [s, c, r, a, q] = await Promise.all([
         getSources(),
         getCorridor(),
         getRankedSites(),
         getActions(),
+        getAqi(),
       ])
       setSources(s)
       setCorridor(c)
       setRankedSites(r)
       setActions(a)
+      setAqi(q)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error loading AERIS data.')
     } finally {
@@ -84,14 +89,25 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
     ? Math.min(...(rankedSites.sites.slice(0, 3).map((s: RankedSite) => s.eta_hours)))
     : null
 
+  // Derived: mean observed AQI across reporting ground stations
+  const avgAqi = aqi
+    ? Math.round(
+        aqi.stations
+          .map(s => s.aqi)
+          .filter((v): v is number => typeof v === 'number' && v > 0)
+          .reduce((acc, v, _, arr) => acc + v / arr.length, 0)
+      )
+    : null
+
   const value: AerisState = {
-    sources, corridor, rankedSites, actions,
+    sources, corridor, rankedSites, actions, aqi,
     timeHorizon, selectedSiteId, showActionsModal,
     loading, error,
-    exposedPopulation, etaHours,
+    exposedPopulation, etaHours, avgAqi,
     setTimeHorizon, setSelectedSiteId, setShowActionsModal,
     refreshData: loadData,
   }
+
 
   return (
     <AerisContext.Provider value={value}>

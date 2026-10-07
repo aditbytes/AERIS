@@ -1,18 +1,9 @@
-/** AQI 12h Forecast — pure SVG area chart */
+/**
+ * AQI 12h Forecast — dynamically computed from Lagrangian corridor advection & live AQI
+ */
+import { useAeris } from '@/services/dataContext'
+import type { CorridorBandProperties } from '@/types/schemas'
 import './AqiForecast12h.css'
-
-// Representative AQI forecast curve (0 = now, 12 = 12h ahead)
-// Values represent PM2.5-based AQI, not fabricated — these are
-// placeholder shape values that will be replaced by real aqi.json data
-const CURVE = [
-  { h: 0,  aqi: 220, label: 'Now' },
-  { h: 2,  aqi: 265, label: '2h'  },
-  { h: 4,  aqi: 310, label: '4h'  },
-  { h: 6,  aqi: 360, label: '6h'  },
-  { h: 8,  aqi: 382, label: '8h', peak: true },
-  { h: 10, aqi: 340, label: '10h' },
-  { h: 12, aqi: 295, label: '12h' },
-]
 
 const W = 300, H = 120, PADB = 24, PADL = 0, PADR = 10
 const AQI_MAX = 500, AQI_MIN = 100
@@ -25,10 +16,55 @@ function aqiX(h: number): number {
   return PADL + (h / 12) * (W - PADL - PADR)
 }
 
+function aqiCategory(val: number): string {
+  if (val <= 50) return 'Good'
+  if (val <= 100) return 'Satisfactory'
+  if (val <= 200) return 'Moderate'
+  if (val <= 300) return 'Poor'
+  if (val <= 400) return 'Very Poor'
+  return 'Severe'
+}
+
 export default function AqiForecast12h() {
-  const pts = CURVE.map(d => ({ x: aqiX(d.h), y: aqiY(d.aqi), ...d }))
+  const { corridor, avgAqi } = useAeris()
+
+  const baseline = avgAqi ?? 180
+
+  // Extract real bands from corridor.geojson
+  const bands = (corridor?.features ?? [])
+    .map(f => f.properties)
+    .filter((p): p is CorridorBandProperties => p.kind === 'band')
+
+  const timeSteps = [0, 2, 4, 6, 8, 10, 12]
+
+  const points = timeSteps.map(h => {
+    // Find highest plume contribution active at hour h
+    const matchingBands = bands.filter(b => b.hour_from <= h && b.hour_to >= h)
+    const maxDelta = matchingBands.length > 0
+      ? Math.max(...matchingBands.map(b => b.pm25_delta_ugm3))
+      : 0
+
+    // Indian AQI conversion approx for PM2.5 delta
+    const modeledAqi = Math.min(500, Math.round(baseline + maxDelta * 1.35))
+
+    return {
+      h,
+      aqi: modeledAqi,
+      label: h === 0 ? 'Now' : `${h}h`,
+    }
+  })
+
+  // Find peak hour
+  const peakVal = Math.max(...points.map(p => p.aqi))
+  const pts = points.map(d => ({
+    x: aqiX(d.h),
+    y: aqiY(d.aqi),
+    peak: d.aqi === peakVal,
+    ...d,
+  }))
+
   const linePath = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
-  const areaPath = `${linePath} L${pts[pts.length-1].x},${H-PADB} L${pts[0].x},${H-PADB} Z`
+  const areaPath = `${linePath} L${pts[pts.length - 1].x},${H - PADB} L${pts[0].x},${H - PADB} Z`
 
   const peak = pts.find(p => p.peak)
 
@@ -41,7 +77,7 @@ export default function AqiForecast12h() {
         width="100%"
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
-        aria-label="12-hour AQI forecast chart"
+        aria-label="12-hour AQI forecast chart modeled from plume corridor"
       >
         <defs>
           <linearGradient id="aqiGrad" x1="0" y1="0" x2="0" y2="1">
@@ -81,7 +117,7 @@ export default function AqiForecast12h() {
             {/* Peak tooltip */}
             <rect x={peak.x - 52} y={peak.y - 36} width="104" height="28" rx="6" fill="white" stroke="#E8EDE8" />
             <text x={peak.x} y={peak.y - 22} textAnchor="middle" fontSize="9.5" fontWeight="600" fill="#C92A2A" fontFamily="Outfit, sans-serif">
-              {`${peak.label} • AQI ${peak.aqi} — Very Poor`}
+              {`${peak.label} • AQI ${peak.aqi} — ${aqiCategory(peak.aqi)}`}
             </text>
           </>
         )}

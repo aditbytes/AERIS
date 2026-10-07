@@ -10,10 +10,12 @@
 
 import {
   ActionsFileSchema,
+  AqiFileSchema,
   CorridorGeoJSONSchema,
   RankedSitesFileSchema,
   SourcesFileSchema,
   type ActionsFile,
+  type AqiFile,
   type CorridorGeoJSON,
   type RankedSitesFile,
   type SourcesFile,
@@ -75,3 +77,12 @@ export async function getActions(): Promise<ActionsFile> {
     'actions'
   )
 }
+
+export async function getAqi(): Promise<AqiFile> {
+  return fetchAndValidate(
+    endpoint('/aqi', 'aqi.json'),
+    AqiFileSchema,
+    'aqi'
+  )
+}
+

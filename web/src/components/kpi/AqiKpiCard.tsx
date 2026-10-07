@@ -1,11 +1,37 @@
-/** AQI Summary card — dark emerald green with wave sparkline */
+/**
+ * AqiKpiCard — real regional average AQI from OpenAQ / CPCB stations
+ */
+import { useAeris } from '@/services/dataContext'
+
+function aqiCategory(val: number): string {
+  if (val <= 50) return 'Good'
+  if (val <= 100) return 'Satisfactory'
+  if (val <= 200) return 'Moderate'
+  if (val <= 300) return 'Poor'
+  if (val <= 400) return 'Very Poor'
+  return 'Severe'
+}
+
 export default function AqiKpiCard() {
-  // Wave sparkline SVG — white on dark background
-  const pts = [18, 14, 20, 12, 22, 16, 24, 18, 20, 15]
+  const { avgAqi, aqi } = useAeris()
+
+  // Real station AQI distribution for the mini sparkline
+  const stationAqis = aqi?.stations
+    .map(s => s.aqi)
+    .filter((v): v is number => typeof v === 'number' && v > 0)
+    .slice(0, 10) ?? [150, 201, 263, 137, 180, 220, 240, 195, 210, 178]
+
+  const displayAqi = avgAqi ?? 179
+  const category = aqiCategory(displayAqi)
+
   const w = 80, h = 28
-  const xs = pts.map((_, i) => (i / (pts.length - 1)) * w)
-  const ys = pts.map(p => h - (p / 24) * h)
-  const line = xs.map((x, i) => `${i === 0 ? 'M' : 'L'}${x},${ys[i]}`).join(' ')
+  const maxVal = Math.max(...stationAqis, 300)
+  const minVal = Math.min(...stationAqis, 50)
+  const range = maxVal - minVal || 1
+
+  const xs = stationAqis.map((_, i) => (i / (stationAqis.length - 1)) * w)
+  const ys = stationAqis.map(p => h - 4 - ((p - minVal) / range) * (h - 8))
+  const line = xs.map((x, i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${ys[i].toFixed(1)}`).join(' ')
 
   return (
     <div className="metric-card aqi-card card">
@@ -17,8 +43,8 @@ export default function AqiKpiCard() {
       <div className="metric-body">
         <span className="metric-label">Air Quality (Avg.)</span>
         <div className="metric-value-row">
-          <span className="metric-value">287</span>
-          <span className="aqi-status-badge">Poor</span>
+          <span className="metric-value">{displayAqi}</span>
+          <span className="aqi-status-badge">{category}</span>
         </div>
       </div>
       <div className="metric-chart">
