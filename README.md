@@ -1,36 +1,54 @@
-# AERIS 🌍
+<div align="center">
 
-**AI that finds where pollution is coming from, predicts where it will move, and tells authorities what to do.**
+<img src="docs/assets/logo.svg" alt="AERIS" width="520"/>
 
-> Hackathon: **Environmental Hacks — Bharat Builds Tour (WeMakeDevs × AWS)** · Track 01: **Air**
+**Source → Plume → Exposure → Action**<br>
+*An AI engine that finds where pollution comes from, predicts where it will move, and tells authorities what to do.*
 
-Most AQI projects stop at *"it's bad today"*. AERIS answers the harder questions:
+![Track](https://img.shields.io/badge/Track-Air-1e88e5?style=flat-square)
+![Hackathon](https://img.shields.io/badge/Environmental%20Hacks-Bharat%20Builds%20Tour-ed7100?style=flat-square)
+![AWS](https://img.shields.io/badge/AWS-SageMaker%20%C2%B7%20Lambda%20%C2%B7%20S3-232f3e?style=flat-square&logo=amazonaws)
+![Strands](https://img.shields.io/badge/Strands-Agents-00838f?style=flat-square)
+![Status](https://img.shields.io/badge/status-hackathon%20build-orange?style=flat-square)
+
+[English](README.md) · [Architecture](docs/aeris_architecture.drawio)
+
+</div>
+
+## ⚡ Overview
+
+**AERIS** (*Air Exposure & Risk Intelligence System*) is an AI engine for air pollution that goes beyond "the AQI is bad today". By fusing real-world signals — satellite fire detections, ground air-quality sensors, wind and weather, and the locations of schools and hospitals — it works out **who is polluting, where the smoke is heading, who will be hit, and what authorities should do about it**. Instead of another AQI prediction dashboard, AERIS gives decision-makers a single map and a ranked action plan, **hours before the plume arrives**.
 
 ```
-Source Detection  →  Pollution Plume Prediction  →  Human Exposure  →  Intervention
-   (who/where)            (where will it go)          (who gets hit)     (what to do)
+Source Detection  →  Plume Prediction  →  Human Exposure  →  Intervention
+   (who/where)        (where it moves)      (who gets hit)     (what to do)
 ```
 
-## Demo scenario
+> You only need to: let AERIS ingest fire, air-quality and weather data for a region.<br>
+> AERIS will return: the pollution source, the forecast risk corridor, the most vulnerable schools and hospitals in its path, and an agent-written action plan — all on one map.
 
-1. 🔥 Detects a stubble-burning cluster in Punjab/Haryana
-2. 🌫️ Predicts the plume will reach Delhi in ~2 hours
-3. 👥 Estimates ~1.2M exposed people
-4. 🚨 Recommends which schools and hospitals to protect first, with concrete actions
+## 🎬 Demo scenario
 
-## MVP scope
+| | |
+|---|---|
+| 🔥 | Detects a **stubble-burning cluster** upwind of Delhi |
+| 🌫️ | Predicts the **plume will reach Delhi in ~2 hours** |
+| 👥 | Identifies **~1.2M exposed people** |
+| 🚨 | Recommends **which schools and hospitals to protect first**, and how |
 
-| # | Capability | How |
-|---|-----------|-----|
-| 1 | **Detect source** | NASA FIRMS (VIIRS/MODIS) active fire + satellite/CPCB/OpenAQ air-quality data |
-| 2 | **Forecast risk corridor** | Wind (IMD / GFS / ERA5) + source location + historical observations → plume corridor |
-| 3 | **Identify vulnerable locations** | Schools + hospitals (OSM, UDISE, NHA) intersected with the corridor, ranked by exposure and ETA |
-| 4 | **Generate action recommendations** | Strands Agent turns the ranked sites into a prioritised action plan |
-| 5 | **Show everything on one map** | Source → corridor → sites → actions in a single map view |
+## 🔭 Our Vision
 
-The full target design (multi-model SageMaker stack, agent swarm, MLOps, security) is in [`docs/aeris_architecture.drawio`](docs/aeris_architecture.drawio). The MVP implements a thin vertical slice of it.
+Air pollution is treated as a reporting problem: sensors tell us it's bad *after* people are already breathing it. AERIS treats it as a **decision problem** — trace the source, forecast the plume, quantify exposure, and act early on the people who are most vulnerable. Small problem, solved end to end, beats a big one solved vaguely.
 
-## Architecture (MVP slice)
+## 🧩 MVP
+
+1. **Detect source** — NASA FIRMS fire/satellite data + air-quality data
+2. **Forecast risk corridor** — wind + source location + historical observations
+3. **Identify vulnerable locations** — schools and hospitals inside the corridor, ranked by exposure and ETA
+4. **Generate action recommendations** — a Strands Agent turns the ranking into a prioritised plan
+5. **Show everything on one map** — source → corridor → sites → actions
+
+## 🏗️ Architecture
 
 ```
  FIRMS / OpenAQ / CPCB / weather            EventBridge (schedule)
@@ -52,36 +70,28 @@ The full target design (multi-model SageMaker stack, agent swarm, MLOps, securit
                          Map UI (CloudFront + S3)
 ```
 
-### AWS services
+**AWS:** SageMaker · S3 · Lambda · EventBridge · Strands Agents SDK · API Gateway · CloudFront · Bedrock — region `ap-south-1`.
 
-SageMaker · S3 · Lambda · EventBridge · Strands Agents SDK · API Gateway · CloudFront · (Bedrock for the agent's LLM)
+The full eight-layer target design (ingestion → lakehouse → AI engine → agent swarm → delivery → MLOps → security) is in [`docs/aeris_architecture.drawio`](docs/aeris_architecture.drawio). The MVP implements a thin vertical slice of it.
 
-Deployed in `ap-south-1`. The hackathon requires at least one AWS open-source tool **or** deployment on AWS; AERIS uses both.
-
-### Full reference architecture (target)
-
-Eight layers: data sources → ingestion → lakehouse/feature stores → AI engine (source detection, plume prediction, exposure, intervention optimiser) → Strands agent swarm → delivery → MLOps → security. See the diagram in `docs/`.
-
-## Repository layout
+## 📁 Repository layout
 
 ```
 AERIS/
-├── docs/                 # architecture diagram, design notes
-├── ingest/               # Lambda ingestors (FIRMS, AQI, weather, sites)
-├── models/               # source detection + plume corridor
-├── agent/                # Strands agent: action recommendations
-├── api/                  # API Gateway / Lambda handlers
-├── web/                  # map UI
-└── infra/                # IaC (SAM/CDK)
+├── docs/        # architecture diagram, assets
+├── ingest/      # Lambda ingestors (FIRMS, AQI, weather, sites)   (planned)
+├── models/      # source detection + plume corridor               (planned)
+├── agent/       # Strands agent: action recommendations           (planned)
+├── api/         # API Gateway / Lambda handlers                   (planned)
+├── web/         # map UI                                          (planned)
+└── infra/       # IaC (SAM/CDK)                                   (planned)
 ```
 
-> Only `docs/` exists so far; the other folders are created as each piece lands.
-
-## Getting started
+## 🚀 Getting Started
 
 _Coming soon — local run (SAM CLI / LocalStack) and AWS deploy instructions._
 
-## Data sources
+## 📡 Data sources
 
 - [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/) — VIIRS/MODIS active fire
 - Sentinel-5P TROPOMI — NO₂ / CO / SO₂ / AOD
@@ -90,10 +100,10 @@ _Coming soon — local run (SAM CLI / LocalStack) and AWS deploy instructions._
 - OpenStreetMap, UDISE, NHA — schools and hospitals
 - WorldPop / GHSL — population
 
-## Status
+## 🏆 Hackathon
 
-🚧 Hackathon build in progress.
+Built for **Environmental Hacks — Bharat Builds Tour** (WeMakeDevs × AWS), **Track 01: Air**.
 
-## Team
+## 👤 Author
 
-Built by [@aditbytes](https://github.com/aditbytes).
+[@aditbytes](https://github.com/aditbytes)
