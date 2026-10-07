@@ -1,0 +1,15 @@
+.DS_Store
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+.env
+.env.*
+!.env.example
+dist/
+build/
+.aws-sam/
+cdk.out/
+*.tfstate*
+.terraform/
+data/raw/
