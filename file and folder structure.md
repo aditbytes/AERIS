@@ -54,8 +54,8 @@ AERIS/
 │   ├── template.yaml                  # Lambda, EventBridge, API GW, S3, CloudFront
 │   └── sagemaker/                     # endpoints, pipelines
 │
-├── data/                              # local sample data (raw/ is gitignored)
-│   ├── sample/                        # small fixtures for the demo
+├── data/                              # real data only (raw/ is gitignored)
+│   ├── live/                          # real snapshots from live sources, no demo data
 │   └── raw/                           # downloaded data (not committed)
 │
 └── scripts/                           # dev helpers: seed data, run demo, deploy
