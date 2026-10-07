@@ -1,6 +1,8 @@
 # AERIS — Data Contracts
 
-The shared file formats every member codes against. Change one only via PR and tell the downstream owner. All times are ISO-8601 UTC. Coordinates are WGS84 (`lat`, `lon`). Frozen examples live in `data/sample/`.
+> ⚠️ **No demo data.** AERIS uses **only real data** from live sources. Do not create, hand-write, mock or hard-code sample, demo, placeholder or fabricated data — not in code, not in the UI, not in tests, and not as a "fallback". If a live source is unavailable, return an error and show an error state. The only offline files allowed are **real snapshots** that the fetchers captured from live sources into `data/live/` (each stamped with its source and fetch time). Tests may use small captured real API responses, labelled as such.
+
+The shared file formats every member codes against. Change one only via PR and tell the downstream owner. All times are ISO-8601 UTC. Coordinates are WGS84 (`lat`, `lon`). Real snapshots live in `data/live/`. The JSON blocks below only illustrate each format; their values are placeholders and are **never** to be used as data.
 
 ```
 fires.json ─┐
