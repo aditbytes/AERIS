@@ -12,6 +12,7 @@ import { Map, NavigationControl, Marker, Popup, setWorkerUrl, type GeoJSONSource
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import { useEffect, useRef, useState } from 'react'
+import { Maximize2 } from 'lucide-react'
 import { useAeris } from '@/services/dataContext'
 import { getRiskLevel, riskLabel, type CorridorBandProperties } from '@/types/schemas'
 import TimeControls from './TimeControls'
@@ -43,20 +44,10 @@ export default function MapContainer() {
     selectedSiteId,
     rankedSites,
     setSelectedSiteId,
-    etaHours,
     setActiveTab,
     flyToLocation,
     interventionScenario,
   } = useAeris()
-
-  const displayEta = etaHours != null
-    ? `~ ${etaHours.toFixed(1).replace('.0', '')}h`
-    : '~ 2h'
-
-  const expectedAqi = timeHorizon === 0 ? '280–320'
-    : timeHorizon === 1 ? '350–420'
-    : timeHorizon === 2 ? '400–480'
-    : '430–520'
 
   // ── 1. Initialize map once ────────────────────────────────────────────────
   useEffect(() => {
@@ -347,18 +338,9 @@ export default function MapContainer() {
           </div>
         </div>
 
-        {/* Clean, non-intrusive metadata pill (replaces annoying dark green patch) */}
-        <div className="map-header-center">
-          <div className="map-forecast-pill">
-            <span className="pill-item">💨 <strong>NW → SE</strong></span>
-            <span className="pill-sep">•</span>
-            <span className="pill-item">ETA: <strong>{displayEta}</strong></span>
-            <span className="pill-sep">•</span>
-            <span className="pill-item">AQI: <strong>{expectedAqi}</strong></span>
-          </div>
+        <div className="map-header-actions">
+          <TimeControls showPlayToggle={true} />
         </div>
-
-        <TimeControls />
       </div>
 
       <div className="map-canvas-area">
@@ -466,37 +448,44 @@ export default function MapContainer() {
           </div>
         )}
 
-        {/* Quick Map Navigation Controls & Zoom Dock */}
-        <div className="map-quick-actions">
+        {/* Unified Top-Right Floating Quick Action Capsule */}
+        <div className="map-quick-hud">
           <button
-            className="map-action-pill"
+            className="quick-hud-chip"
             onClick={() => mapRef.current?.flyTo({ center: [78.9, 23.5], zoom: 4.2, speed: 1.2 })}
-            title="Fit Entire India (Survey of India Boundary with PoK/Ladakh)"
+            title="Fit Entire Sovereign India (Survey of India Boundary with PoK/Ladakh)"
+            type="button"
           >
-            🇮🇳 Fit India
+            <span>🇮🇳 All India</span>
           </button>
           <button
-            className="map-action-pill"
+            className="quick-hud-chip"
             onClick={() => mapRef.current?.flyTo({ center: [76.5, 30.0], zoom: 6.8, speed: 1.2 })}
-            title="Fit Smoke Corridor (Punjab to Delhi NCR)"
+            title="Focus on Smoke Dispersion Corridor (Punjab to Delhi NCR)"
+            type="button"
           >
-            🎯 Fit Corridor
+            <span>🎯 Corridor</span>
           </button>
+          <div className="quick-hud-divider" />
           <button
-            className="map-action-pill expand-btn"
+            className="quick-hud-chip expand-chip"
             onClick={() => setActiveTab('map')}
-            title="Open Full Map Explorer"
+            title="Open Full GIS Map Explorer"
+            type="button"
           >
-            ⛶ Expand Map
+            <Maximize2 size={12} />
+            <span>Expand</span>
           </button>
         </div>
 
+        {/* Bottom-Right Zoom Dock */}
         <div className="map-zoom-dock">
           <button
             className="map-zoom-btn"
             onClick={() => mapRef.current?.zoomIn()}
             title="Zoom In"
             aria-label="Zoom in"
+            type="button"
           >
             +
           </button>
@@ -505,24 +494,25 @@ export default function MapContainer() {
             onClick={() => mapRef.current?.zoomOut()}
             title="Zoom Out (Free Subcontinent View)"
             aria-label="Zoom out"
+            type="button"
           >
             −
           </button>
         </div>
 
-        {/* Map legend (clean & unobstructed) */}
-        <div className="map-legend">
-          <div className="legend-item">
-            <span style={{ fontSize: '13px' }}>🔥</span>
-            <span>Stubble Burning (Detected)</span>
+        {/* Micro-compact translucent legend */}
+        <div className="map-micro-legend">
+          <div className="micro-legend-item">
+            <span className="micro-legend-glyph">🔥</span>
+            <span>Fires</span>
           </div>
-          <div className="legend-item">
-            <div className="legend-plume-dot" />
-            <span>Predicted Plume</span>
+          <div className="micro-legend-item">
+            <div className="micro-legend-swatch plume" />
+            <span>Plume</span>
           </div>
-          <div className="legend-item">
-            <div className="legend-soi-line" />
-            <span>Survey of India Boundary</span>
+          <div className="micro-legend-item">
+            <div className="micro-legend-swatch soi" />
+            <span>SOI Border</span>
           </div>
         </div>
       </div>
