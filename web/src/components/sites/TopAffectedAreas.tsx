@@ -14,7 +14,8 @@ function etaToTime(eta: number): string {
 
 export default function TopAffectedAreas() {
   const { rankedSites, setSelectedSiteId } = useAeris()
-  const sites = rankedSites?.sites.slice(0, 3) ?? []
+  const sites = rankedSites?.sites.slice(0, 5) ?? []
+
 
   return (
     <div className="top-areas card">

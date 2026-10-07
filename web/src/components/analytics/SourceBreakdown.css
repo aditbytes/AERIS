@@ -1,6 +1,6 @@
 /* SourceBreakdown.css */
 .source-breakdown {
-  padding: 16px 18px;
+  padding: 10px 14px;
   display: flex;
   flex-direction: column;
 }
@@ -8,8 +8,8 @@
 .breakdown-body {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-top: 4px;
+  gap: 12px;
+  margin-top: 2px;
 }
 
 .breakdown-legend {
@@ -17,8 +17,9 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 3px;
 }
+
 
 .legend-row {
   display: flex;

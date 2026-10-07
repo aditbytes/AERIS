@@ -1,39 +1,50 @@
 /* App.css — Dashboard Layout Grid */
 
-/* Main 3-panel row: Map(flex:1) + Side Panel(fixed width) */
+/* Main 3-panel row: 4-column layout grid matching mockup */
 .main-row {
-  display: flex;
-  gap: 14px;
-  min-height: 480px;
-  height: 520px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  height: 315px;
+  min-height: 290px;
   width: 100%;
 }
 
 .map-area {
-  flex: 1;
+  grid-column: span 2;
   min-width: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  height: 100%;
 }
 
-.side-panel {
-  width: 330px;
-  min-width: 330px;
+.sites-area {
+  grid-column: span 1;
+  min-width: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+}
+
+.agent-area {
+  grid-column: span 1;
+  min-width: 0;
   height: 100%;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Bottom analytics row: 4 equal cards */
 .analytics-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
+  gap: 10px;
+  height: 165px;
+  min-height: 155px;
   flex-shrink: 0;
 }
+
+
 
 /* Loading Screen */
 .loading-screen {

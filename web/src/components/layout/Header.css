@@ -3,9 +3,9 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 0 20px;
-  height: 68px;
-  min-height: 68px;
+  padding: 0 18px;
+  height: 54px;
+  min-height: 54px;
   background: var(--surface-card);
   border-bottom: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-sm);
@@ -17,45 +17,46 @@
 .header-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex-shrink: 0;
 }
 
 .brand-icon {
-  width: 42px;
-  height: 42px;
+  width: 34px;
+  height: 34px;
   background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand-primary) 100%);
-  border-radius: 12px;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px var(--brand-glow);
+  box-shadow: 0 3px 10px var(--brand-glow);
 }
 
 .brand-text {
   display: flex;
   flex-direction: column;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
 .brand-name {
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 800;
   color: var(--brand-dark);
   letter-spacing: -0.5px;
 }
 
 .brand-tagline {
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 500;
   color: var(--text-secondary);
 }
 
 .brand-sub {
-  font-size: 9.5px;
+  font-size: 8.5px;
   color: var(--text-tertiary);
 }
+
 
 /* Search */
 .header-search {

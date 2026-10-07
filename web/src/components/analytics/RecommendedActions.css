@@ -1,6 +1,6 @@
 /* RecommendedActions.css */
 .rec-actions {
-  padding: 16px 18px;
+  padding: 10px 14px;
   display: flex;
   flex-direction: column;
 }
@@ -9,20 +9,21 @@
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 4px;
+  gap: 4px;
+  margin-top: 2px;
 }
 
 .action-row {
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 9px 10px;
-  border-radius: 10px;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 8px;
   background: var(--surface-subtle);
   border: 1px solid var(--border-subtle);
   transition: opacity 0.2s;
 }
+
 
 .action-row.done {
   opacity: 0.5;

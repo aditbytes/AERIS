@@ -63,16 +63,19 @@ function Dashboard() {
           {/* Row 1: KPI Metrics */}
           <MetricGrid />
 
-          {/* Row 2: Map + Top Areas + Agent */}
+          {/* Row 2: 3 Columns - Map + Top Areas + Agent */}
           <div className="main-row">
             <div className="map-area">
               <MapContainer />
             </div>
-            <div className="side-panel">
+            <div className="sites-area">
               <TopAffectedAreas />
+            </div>
+            <div className="agent-area">
               <AgentWidget />
             </div>
           </div>
+
 
           {/* Row 3: Analytics */}
           <div className="analytics-row">
