@@ -18,22 +18,14 @@ import { Map, Marker, Popup, setWorkerUrl, type GeoJSONSource } from 'maplibre-g
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import {
-  ArrowLeft,
+  ChevronDown,
   Compass,
-  Eye,
-  EyeOff,
-  Flame,
   Layers,
-  MapPin,
   Maximize2,
   Minimize2,
-  Navigation,
   Pause,
   Play,
-  RotateCcw,
-  Search,
   Shield,
-  Wind,
   X,
   Zap,
 } from 'lucide-react'
@@ -54,21 +46,6 @@ const CAMERA_PRESETS = [
   { id: 'punjab',   name: '🔥 Punjab Hotspots',   center: [75.4, 31.0] as [number, number], zoom: 8.4 },
   { id: 'delhi',    name: '📍 Delhi NCR Receptors',center: [77.2, 28.6] as [number, number], zoom: 9.8 },
   { id: 'kashmir',  name: '🏔️ J&K & Ladakh (SOI)',center: [76.0, 34.2] as [number, number], zoom: 6.4 },
-]
-
-// Searchable locations
-const QUICK_CITIES = [
-  { name: 'Delhi NCR',    lon: 77.2090, lat: 28.6139, zoom: 10.0 },
-  { name: 'Chandigarh',   lon: 76.7794, lat: 30.7333, zoom: 10.5 },
-  { name: 'Amritsar',     lon: 74.8723, lat: 31.6340, zoom: 11.0 },
-  { name: 'Ludhiana',     lon: 75.8573, lat: 30.9010, zoom: 10.8 },
-  { name: 'Patiala',      lon: 76.3869, lat: 30.3398, zoom: 11.0 },
-  { name: 'Karnal',       lon: 76.9897, lat: 29.6857, zoom: 11.0 },
-  { name: 'Faridabad',    lon: 77.3178, lat: 28.4089, zoom: 11.2 },
-  { name: 'Srinagar (J&K)',lon: 74.7973, lat: 34.0837, zoom: 10.5 },
-  { name: 'Jammu (J&K)',   lon: 74.8570, lat: 32.7266, zoom: 10.5 },
-  { name: 'Leh (Ladakh)', lon: 77.5771, lat: 34.1526, zoom: 10.5 },
-  { name: 'Gilgit (PoK)', lon: 74.3036, lat: 35.9221, zoom: 9.5 },
 ]
 
 interface InspectorData {
@@ -104,9 +81,9 @@ export default function MapExplorerView() {
 
   const [webGlSupported, setWebGlSupported] = useState(true)
   const [isPlaying, setIsPlaying]           = useState(false)
-  const [searchQuery, setSearchQuery]       = useState('')
   const [selectedFeature, setSelectedFeature] = useState<InspectorData | null>(null)
-  const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(true)
+  const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(false)
+  const [isRegionsOpen, setIsRegionsOpen]   = useState(false)
   const [isFullscreen, setIsFullscreen]     = useState(false)
 
   // Layer Visibility
@@ -116,6 +93,8 @@ export default function MapExplorerView() {
   const [showHospitals, setShowHospitals] = useState(true)
   const [showStations, setShowStations] = useState(true)
   const [showSoiBorder, setShowSoiBorder] = useState(true)
+
+  const activeLayerCount = [showFires, showPlume, showSchools, showHospitals, showStations, showSoiBorder].filter(Boolean).length
 
   // ── Auto-play timer ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -451,88 +430,10 @@ export default function MapExplorerView() {
     })
   }
 
-  // ── Filtered search cities ────────────────────────────────────────────────
-  const filteredCities = useMemo(() => {
-    if (!searchQuery.trim()) return []
-    return QUICK_CITIES.filter(c =>
-      c.name.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  }, [searchQuery])
-
   return (
     <div className={`map-explorer-container ${isFullscreen ? 'fullscreen' : ''}`}>
-      {/* ── Top Navigation & Filter Bar ──────────────────────────────────── */}
-      <div className="explorer-topbar">
-        <div className="topbar-left">
-          <button
-            className="explorer-back-btn"
-            onClick={() => setActiveTab('dashboard')}
-            title="Return to Main Dashboard"
-          >
-            <ArrowLeft size={16} />
-            <span>Dashboard</span>
-          </button>
-          <div className="explorer-divider" />
-          <div className="explorer-title-area">
-            <h1 className="explorer-title">GIS Map Explorer</h1>
-            <span className="explorer-subtitle">Survey of India Sovereign Boundary • PM2.5 Trajectory Engine</span>
-          </div>
-        </div>
-
-        {/* Camera Preset Pills */}
-        <div className="topbar-center">
-          <div className="preset-pill-group">
-            {CAMERA_PRESETS.map(p => (
-              <button
-                key={p.id}
-                className="preset-btn"
-                onClick={() => flyToPreset(p.center, p.zoom)}
-              >
-                {p.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Time Horizon & Auto-Play */}
-        <div className="topbar-right">
-          <div className="time-playback-widget">
-            <button
-              className={`playback-toggle ${isPlaying ? 'playing' : ''}`}
-              onClick={() => setIsPlaying(!isPlaying)}
-              title={isPlaying ? 'Pause plume animation' : 'Auto-play plume spread'}
-            >
-              {isPlaying ? <Pause size={13} /> : <Play size={13} />}
-              <span>{isPlaying ? 'Pause' : 'Auto Play'}</span>
-            </button>
-            <div className="time-pills">
-              {([0, 1, 2, 3] as TimeHorizon[]).map(h => (
-                <button
-                  key={h}
-                  className={`time-pill ${timeHorizon === h ? 'active' : ''}`}
-                  onClick={() => {
-                    setIsPlaying(false)
-                    setTimeHorizon(h)
-                  }}
-                >
-                  {h === 0 ? 'Now' : `+${h}h`}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <button
-            className="icon-tool-btn"
-            onClick={() => setIsFullscreen(!isFullscreen)}
-            title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-          >
-            {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Map Canvas & Floating Controls ───────────────────────────────── */}
-      <div className="explorer-stage">
+      {/* ── Map Canvas Stage with Floating HUD Controls ───────────────────── */}
+      <div className="explorer-stage" onClick={() => isRegionsOpen && setIsRegionsOpen(false)}>
         {webGlSupported ? (
           <div ref={mapContainerRef} className="explorer-canvas" />
         ) : (
@@ -541,54 +442,169 @@ export default function MapExplorerView() {
           </div>
         )}
 
-        {/* ── Left Floating Controls: Layer Drawer ───────────────────────── */}
-        <div className={`floating-layer-panel ${isLayerPanelOpen ? 'open' : 'collapsed'}`}>
-          <div className="layer-panel-header" onClick={() => setIsLayerPanelOpen(!isLayerPanelOpen)}>
-            <div className="layer-panel-title">
-              <Layers size={15} color="#22734F" />
-              <span>Map Layers</span>
-            </div>
-            <button className="collapse-btn" aria-label="Toggle layer panel">
-              {isLayerPanelOpen ? <Eye size={14} /> : <EyeOff size={14} />}
+        {/* ── Top Floating Command HUD Capsule ────────────────────────────── */}
+        <div className="map-floating-hud" onClick={(e) => e.stopPropagation()}>
+          {/* Camera Presets: Segmented Quick Chips + Regional Dropdown */}
+          <div className="hud-presets-group">
+            <button
+              className="hud-preset-chip"
+              onClick={() => {
+                setIsRegionsOpen(false)
+                flyToPreset([78.9, 23.5], 4.2)
+              }}
+              title="Fit Entire India (Survey of India Sovereign Boundary with PoK/Ladakh)"
+            >
+              <span>🇮🇳 All India</span>
             </button>
-          </div>
+            <button
+              className="hud-preset-chip"
+              onClick={() => {
+                setIsRegionsOpen(false)
+                flyToPreset([76.8, 30.1], 6.8)
+              }}
+              title="Focus on Smoke Dispersion Corridor (Punjab to Delhi NCR)"
+            >
+              <span>🎯 Corridor</span>
+            </button>
 
-          {isLayerPanelOpen && (
-            <div className="layer-panel-body">
-              {/* City quick search */}
-              <div className="layer-search-box">
-                <Search size={13} className="search-ico" />
-                <input
-                  type="text"
-                  placeholder="Fly to city (e.g. Delhi, Srinagar, Leh)..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                {searchQuery && (
-                  <button className="search-clear" onClick={() => setSearchQuery('')}>
-                    <X size={12} />
+            {/* Regional Bookmarks Dropdown */}
+            <div className="hud-dropdown-wrap">
+              <button
+                className={`hud-preset-chip dropdown-trigger ${isRegionsOpen ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsRegionsOpen(!isRegionsOpen)
+                }}
+                title="Select Regional Focus Area"
+                type="button"
+              >
+                <span>Regions</span>
+                <ChevronDown size={13} className={`dropdown-chevron ${isRegionsOpen ? 'rotated' : ''}`} />
+              </button>
+              {isRegionsOpen && (
+                <div className="hud-dropdown-menu">
+                  <button
+                    className="hud-dropdown-item"
+                    onClick={() => {
+                      flyToPreset([75.4, 31.0], 8.4)
+                      setIsRegionsOpen(false)
+                    }}
+                  >
+                    <span className="dropdown-icon">🔥</span>
+                    <div className="dropdown-text">
+                      <strong>Punjab Hotspots</strong>
+                      <small>Stubble fire source cluster</small>
+                    </div>
                   </button>
-                )}
-              </div>
-
-              {filteredCities.length > 0 && (
-                <div className="city-search-results">
-                  {filteredCities.map(city => (
-                    <button
-                      key={city.name}
-                      className="city-result-item"
-                      onClick={() => {
-                        flyToPreset([city.lon, city.lat], city.zoom)
-                        setSearchQuery('')
-                      }}
-                    >
-                      <MapPin size={12} />
-                      <span>{city.name}</span>
-                    </button>
-                  ))}
+                  <button
+                    className="hud-dropdown-item"
+                    onClick={() => {
+                      flyToPreset([77.2, 28.6], 9.8)
+                      setIsRegionsOpen(false)
+                    }}
+                  >
+                    <span className="dropdown-icon">📍</span>
+                    <div className="dropdown-text">
+                      <strong>Delhi NCR Receptors</strong>
+                      <small>Schools, hospitals, sensors</small>
+                    </div>
+                  </button>
+                  <button
+                    className="hud-dropdown-item"
+                    onClick={() => {
+                      flyToPreset([76.0, 34.2], 6.4)
+                      setIsRegionsOpen(false)
+                    }}
+                  >
+                    <span className="dropdown-icon">🏔️</span>
+                    <div className="dropdown-text">
+                      <strong>J&K & Ladakh (SOI)</strong>
+                      <small>Official northern sovereign territories</small>
+                    </div>
+                  </button>
                 </div>
               )}
+            </div>
+          </div>
 
+          <div className="hud-divider" />
+
+          {/* Integrated Time Horizon & Playback */}
+          <div className="hud-playback-group">
+            <button
+              className={`hud-play-btn ${isPlaying ? 'playing' : ''}`}
+              onClick={() => setIsPlaying(!isPlaying)}
+              title={isPlaying ? 'Pause plume animation' : 'Auto-play plume dispersion spread'}
+              type="button"
+            >
+              {isPlaying ? <Pause size={13} /> : <Play size={13} />}
+              <span>{isPlaying ? 'Pause' : 'Auto Play'}</span>
+            </button>
+            <div className="hud-time-pills">
+              {([0, 1, 2, 3] as TimeHorizon[]).map(h => (
+                <button
+                  key={h}
+                  className={`hud-time-pill ${timeHorizon === h ? 'active' : ''}`}
+                  onClick={() => {
+                    setIsPlaying(false)
+                    setTimeHorizon(h)
+                  }}
+                  type="button"
+                >
+                  {h === 0 ? 'Now' : `+${h}h`}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="hud-divider" />
+
+          {/* Fullscreen Trigger */}
+          <button
+            className="hud-icon-btn"
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+            aria-label="Toggle Fullscreen"
+            type="button"
+          >
+            {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+          </button>
+        </div>
+
+        {/* ── Left Floating Controls: Layer FAB ────────────────────────────── */}
+        <button
+          className={`map-floating-fab ${isLayerPanelOpen ? 'active' : ''}`}
+          onClick={(e) => {
+            e.stopPropagation()
+            setIsLayerPanelOpen(!isLayerPanelOpen)
+            setIsRegionsOpen(false)
+          }}
+          title="Toggle Map Layers & Intelligence"
+          type="button"
+        >
+          <Layers size={15} />
+          <span>Layers</span>
+          <span className="fab-layer-badge">{activeLayerCount}</span>
+        </button>
+
+        {/* ── Left Floating Drawer: Layer Panel ────────────────────────────── */}
+        {isLayerPanelOpen && (
+          <div className="floating-layer-panel open" onClick={(e) => e.stopPropagation()}>
+            <div className="layer-panel-header">
+              <div className="layer-panel-title">
+                <Layers size={15} color="#22734F" />
+                <span>Map Layers & Feeds</span>
+              </div>
+              <button
+                className="collapse-btn"
+                onClick={() => setIsLayerPanelOpen(false)}
+                aria-label="Close layer panel"
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            <div className="layer-panel-body">
               {/* Layer Toggles */}
               <div className="layer-toggles-list">
                 <label className="layer-toggle-row">
@@ -686,12 +702,12 @@ export default function MapExplorerView() {
                 </div>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* ── Right Floating Drawer: Selected Feature Inspector ───────────── */}
         {selectedFeature && (
-          <div className="floating-inspector-drawer">
+          <div className="floating-inspector-drawer" onClick={(e) => e.stopPropagation()}>
             <div className="inspector-head">
               <div className="inspector-title-group">
                 <div className="inspector-tag">
@@ -740,32 +756,8 @@ export default function MapExplorerView() {
           </div>
         )}
 
-        {/* ── Bottom Floating Legend ───────────────────────────────────────── */}
-        <div className="explorer-bottom-legend">
-          <div className="legend-entry">
-            <span className="entry-glyph">🔥</span>
-            <span>Stubble Fire Hotspots</span>
-          </div>
-          <div className="legend-entry">
-            <div className="entry-swatch plume-swatch" />
-            <span>Projected PM2.5 Plume</span>
-          </div>
-          <div className="legend-entry">
-            <span className="entry-glyph">🏫</span>
-            <span>Schools</span>
-          </div>
-          <div className="legend-entry">
-            <span className="entry-glyph">🏥</span>
-            <span>Hospitals</span>
-          </div>
-          <div className="legend-entry">
-            <div className="entry-swatch soi-swatch" />
-            <span>Survey of India Boundary</span>
-          </div>
-        </div>
-
         {/* ── Right Bottom Zoom & Camera Navigation Control ────────────────── */}
-        <div className="explorer-nav-dock">
+        <div className="explorer-nav-dock" onClick={(e) => e.stopPropagation()}>
           <button
             className="dock-btn"
             onClick={() => mapRef.current?.zoomIn()}
@@ -790,22 +782,6 @@ export default function MapExplorerView() {
             aria-label="Reset North"
           >
             <Compass size={16} />
-          </button>
-          <button
-            className="dock-btn highlight"
-            onClick={() => flyToPreset([78.9, 23.5], 4.2)}
-            title="Fit Entire India (Survey of India Boundary)"
-            aria-label="Fit India"
-          >
-            🇮🇳
-          </button>
-          <button
-            className="dock-btn"
-            onClick={() => flyToPreset([76.8, 30.1], 6.8)}
-            title="Fit Smoke Corridor (Punjab to Delhi NCR)"
-            aria-label="Fit Corridor"
-          >
-            🎯
           </button>
         </div>
       </div>
