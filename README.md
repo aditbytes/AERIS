@@ -27,7 +27,9 @@ Source Detection  →  Plume Prediction  →  Human Exposure  →  Intervention
 > You only need to: let AERIS ingest fire, air-quality and weather data for a region.<br>
 > AERIS will return: the pollution source, the forecast risk corridor, the most vulnerable schools and hospitals in its path, and an agent-written action plan — all on one map.
 
-## 🎬 Demo scenario
+## 🎬 Example scenario
+
+> This is the story AERIS is built to tell, not stored data. AERIS runs **only on real, live data** and never ships demo, sample or fabricated data.
 
 | | |
 |---|---|
