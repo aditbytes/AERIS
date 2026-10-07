@@ -1,5 +1,7 @@
 # AERIS — Work Split
 
+> ⚠️ **No demo data.** AERIS uses **only real data** from live sources. Do not create, hand-write, mock or hard-code sample, demo, placeholder or fabricated data — not in code, not in the UI, not in tests, and not as a "fallback". If a live source is unavailable, return an error and show an error state. The only offline files allowed are **real snapshots** that the fetchers captured from live sources into `data/live/` (each stamped with its source and fetch time). Tests may use small captured real API responses, labelled as such.
+
 Nothing is implemented yet: only the README, architecture diagram and these docs exist. All of the work below is still open.
 
 ## Principle
@@ -41,7 +43,7 @@ Detailed per-person task files:
 - [ ] Weather fetcher (wind speed/direction; GFS/ERA5/Open-Meteo) → `wind.json`
 - [ ] Schools + hospitals loader (OSM Overpass / UDISE / NHA) → `sites.geojson`
 - [ ] Population layer (WorldPop/GHSL) for exposed-people estimate
-- [ ] `data/sample/` fixtures: a frozen Punjab-stubble → Delhi scenario everyone can use
+- [ ] `data/live/` real snapshots captured from the live sources, so everyone can work offline
 - [ ] **Exposure ranking**: intersect corridor with sites, score by exposure, ETA, vulnerability → `ranked_sites.json`
 - [ ] Exposed-population estimate (the "1.2M people" number)
 - [ ] Unit tests
@@ -64,7 +66,7 @@ Pure Python with a clear `predict_corridor(sources, wind) -> GeoJSON` function, 
 - [ ] **Strands Agent**: system prompt, tools (`query_plume`, `rank_sites`, `get_sources`) reading local JSON, output `actions.json` (prioritised actions per school/hospital, with reasons)
 - [ ] Model provider configurable by env var (Aditya sets Bedrock)
 - [ ] **Map UI** (React/Vite + MapLibre or Leaflet): layers for source → corridor → sites → actions, side panel with the plan, ETA / exposed-people counters
-- [ ] UI reads from a configurable `API_BASE_URL`; falls back to `data/sample/` so it works without the backend
+- [ ] UI reads from a configurable `API_BASE_URL`; falls back to the real snapshots in `data/live/`, never to invented data
 - [ ] 3-minute **demo video** script + recording (Aditya adds the AWS section)
 - [ ] Unit tests / basic UI check
 
@@ -72,7 +74,7 @@ Pure Python with a clear `predict_corridor(sources, wind) -> GeoJSON` function, 
 
 ## Interface contracts
 
-Everyone codes against these files. Schemas go in `api/schemas/`; the first PR (Meenal) adds `data/sample/` for all of them.
+Everyone codes against these files. Schemas go in `api/schemas/`; the first PR (Meenal) adds real snapshots in `data/live/` for all of them.
 
 ```
 Meenal ─ fires / aqi / wind / sites ─► Pritam ─ sources + corridor ─► Meenal (exposure) ─ ranked_sites ─► Saba (agent) ─ actions ─► Saba (UI)
@@ -82,8 +84,8 @@ Meenal ─ fires / aqi / wind / sites ─► Pritam ─ sources + corridor ─�
 
 ## Suggested order
 
-1. **Day 1:** agree the schemas; Meenal publishes `data/sample/`; Aditya sets up the AWS account, S3 and IaC skeleton
-2. **Day 2:** Pritam corridor baseline; Meenal exposure ranking; Saba UI on sample data and agent prototype; Aditya deploys ingestors + EventBridge
+1. **Day 1:** agree the schemas; Meenal publishes real snapshots in `data/live/`; Aditya sets up the AWS account, S3 and IaC skeleton
+2. **Day 2:** Pritam corridor baseline; Meenal exposure ranking; Saba UI on real snapshot data and agent prototype; Aditya deploys ingestors + EventBridge
 3. **Day 3:** Aditya deploys models, agent and API; Saba points the UI at the live API
 4. **Day 4:** end-to-end run, demo video, blog, submission
 
