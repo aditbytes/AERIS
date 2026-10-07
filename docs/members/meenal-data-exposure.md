@@ -1,5 +1,7 @@
 # Meenal Sinha — Data Ingestion and Exposure Ranking
 
+> ⚠️ **No demo data.** AERIS uses **only real data** from live sources. Do not create, hand-write, mock or hard-code sample, demo, placeholder or fabricated data — not in code, not in the UI, not in tests, and not as a "fallback". If a live source is unavailable, return an error and show an error state. The only offline files allowed are **real snapshots** that the fetchers captured from live sources into `data/live/` (each stamped with its source and fetch time). Tests may use small captured real API responses, labelled as such.
+
 You build the **data foundation** and the **"who gets hit" step**. Everything runs locally with plain Python, no AWS account needed. Aditya deploys it on AWS afterwards. Shared formats: [`../data-contracts.md`](../data-contracts.md).
 
 ## Your outputs
@@ -11,7 +13,7 @@ You build the **data foundation** and the **"who gets hit" step**. Everything ru
 | `wind.json` | Wind and boundary-layer forecast |
 | `sites.geojson` | Schools and hospitals |
 | `population.json` | Gridded population |
-| `data/sample/*` | A frozen demo scenario for the whole team |
+| `data/live/*` | Real snapshots captured by your fetchers, so the team can work offline |
 | `ranked_sites.json` | Vulnerable sites ranked by exposure |
 
 ## Folders you own
@@ -25,13 +27,13 @@ ingest/
   sites/         # fetch_sites.py
   population/    # build_population.py
   tests/
-data/sample/     # frozen fixtures
+data/live/       # captured real snapshots (source + fetch time stamped)
 models/exposure/ # rank_sites.py, population_overlay.py, tests/
 ```
 
 ## Rules for your code
 
-1. **Run offline.** Every function accepts parameters, with no hidden globals. Add a `--sample` flag or fallback that reads `data/sample/` if the network fails
+1. **Run offline.** Every function accepts parameters, with no hidden globals. Add a flag that reads a captured real snapshot from `data/live/`. If the network fails and no snapshot exists, raise a clear error; never invent values
 2. **Lambda-ready.** Each fetcher has `lambda_handler(event, context)` that calls a pure function and then writes via `storage.write_json(key, obj)`. Import `storage` from `ingest/common/storage.py`. Aditya provides it with a local-file default, so until it lands write a 10-line stub that dumps to `data/out/`
 3. **Contracts first.** Match the schemas exactly. If you need to change one, open a PR to `docs/data-contracts.md` and tell Pritam, Saba and Aditya
 4. **API keys via environment variables** (`FIRMS_MAP_KEY`, `OPENAQ_API_KEY`); never hard-code. Add them to `.env.example`
@@ -39,14 +41,15 @@ models/exposure/ # rank_sites.py, population_overlay.py, tests/
 
 ---
 
-## Task 1 — Sample scenario (do this FIRST, it unblocks everyone)
+## Task 1 — Real data snapshots (do this FIRST, it unblocks everyone)
 
-Create `data/sample/` with a frozen, realistic example of every contract: a stubble-burning cluster in Punjab/Haryana (about 30.9°N, 75.8°E), wind blowing toward Delhi (about 28.6°N, 77.2°E), Delhi stations with high PM2.5, 30–50 real-looking Delhi schools and hospitals, and a small population grid.
+Run your fetchers against the live sources for the Punjab/Haryana → Delhi-NCR region (bbox `[73.5, 28.0, 77.5, 32.5]`) and save the results to `data/live/` in the contract formats. These are **real snapshots, not demo data**: each file carries `source` and `generated_at`, and nothing is edited by hand.
 
-- [ ] `fires.json`, `aqi.json`, `wind.json`, `sites.geojson`, `population.json`
-- [ ] Also hand-write sample `sources.json`, `corridor.geojson`, `ranked_sites.json`, `actions.json` (approximate) so Pritam, Saba and Aditya can build before the real pipeline exists
-- [ ] Add a short `data/sample/README.md` describing the story
-- [ ] Open a PR on day 1
+- [ ] `fires.json`, `aqi.json`, `wind.json`, `sites.geojson`, `population.json` from the real sources
+- [ ] A short `data/live/README.md` listing each file's source, query and fetch time
+- [ ] Refresh the snapshots whenever the team needs newer data (re-run, never hand-edit)
+- [ ] Pritam, Saba and Aditya build on these; the downstream files (`sources.json`, `corridor.geojson`, `ranked_sites.json`, `actions.json`) are produced by the real pipeline code, not written by hand
+- [ ] Open a PR on day 1 with the first real snapshot
 
 ## Task 2 — NASA FIRMS fire fetcher
 
@@ -59,7 +62,7 @@ Create `data/sample/` with a frozen, realistic example of every contract: a stub
 
 ## Task 3 — Air quality fetcher
 
-- Primary: **OpenAQ v3** API (PM2.5, PM10 for stations within the NCR bbox). Fallback: CPCB data if you can find an accessible feed, else the sample
+- Primary: **OpenAQ v3** API (PM2.5, PM10 for stations within the NCR bbox). Fallback: CPCB data if you can find an accessible feed, else report that no ground data is available
 - Keep the latest reading per station and compute an AQI category from PM2.5 using the Indian CPCB breakpoints
 - [ ] `fetch_aqi(bbox, key) -> dict`, `handler.py`, tests
 
@@ -81,7 +84,7 @@ Create `data/sample/` with a frozen, realistic example of every contract: a stub
 ## Task 6 — Population grid
 
 - Use **WorldPop** (1 km India raster) or GHSL; clip to the NCR bbox and aggregate to a `population.json` with cells of about 1 km
-- If the raster is too heavy for the time available, download once and commit the small clipped result under `data/sample/`
+- If the raster is too heavy for the time available, download once and commit the small clipped result under `data/live/`
 - [ ] `build_population(bbox) -> dict`
 
 ## Task 7 — Exposure ranking (`models/exposure/`)
@@ -97,11 +100,11 @@ Inputs: `corridor.geojson` (Pritam), `sites.geojson`, `population.json`.
 7. **Exposed population**: sum `pop` of all population cells inside corridor bands with `risk` above a threshold. Report `estimate`, plus `low`/`high` by varying the threshold and a ±25% allowance for population-data error
 8. Keep the formula transparent and in one place so judges (and Saba's agent) can explain it
 
-- [ ] `rank_sites(corridor, sites, population) -> dict`, CLI `python -m models.exposure.rank_sites --sample`, tests (a site inside a band outranks a site outside; a hospital outranks a school at equal exposure)
+- [ ] `rank_sites(corridor, sites, population) -> dict`, CLI `python -m models.exposure.rank_sites --live`, tests (a site inside a band outranks a site outside; a hospital outranks a school at equal exposure)
 
 ## Task 8 — Tests and docs
 
-- [ ] pytest for every function; mock all HTTP with recorded fixtures
+- [ ] pytest for every function; tests may use small captured real API responses in `tests/fixtures/`, labelled with source and capture time; never invented values
 - [ ] `ingest/README.md`: how to get each key, how to run each fetcher
 - [ ] Add your Python dependencies to `requirements.txt`
 
@@ -109,14 +112,14 @@ Inputs: `corridor.geojson` (Pritam), `sites.geojson`, `population.json`.
 
 | To | What | When |
 |----|------|------|
-| Everyone | `data/sample/` | Day 1 |
+| Everyone | Real snapshots in `data/live/` | Day 1 |
 | Pritam | `fires.json`, `aqi.json`, `wind.json` (real) | Day 2 |
-| Saba | `ranked_sites.json` sample, then real | Day 1 sample, Day 3 real |
+| Saba | `ranked_sites.json` computed from real inputs | Day 2–3 |
 | Aditya | Lambda-ready handlers and an env var list | Day 2 |
 
 ## Definition of done
 
 - Each fetcher runs from the command line and returns valid contract JSON
-- Offline mode works from `data/sample/`
-- `rank_sites` runs end to end on the sample and puts hospitals and schools in the corridor at the top
+- Offline mode works from real snapshots in `data/live/`
+- `rank_sites` runs end to end on real snapshot data and puts hospitals and schools in the corridor at the top
 - Tests pass with `pytest`
