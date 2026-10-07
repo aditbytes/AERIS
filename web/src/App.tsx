@@ -1,8 +1,3 @@
-/**
- * App.tsx — AERIS Dashboard Root
- * Assembles all components into the final layout matching the reference design.
- */
-
 import { useAeris } from '@/services/dataContext'
 import AgentWidget from '@/components/agent/AgentWidget'
 import ActionsModal from '@/components/agent/ActionsModal'
@@ -14,6 +9,7 @@ import MetricGrid from '@/components/kpi/MetricGrid'
 import Header from '@/components/layout/Header'
 import Sidebar from '@/components/layout/Sidebar'
 import MapContainer from '@/components/map/MapContainer'
+import MapExplorerView from '@/components/map/MapExplorerView'
 import TopAffectedAreas from '@/components/sites/TopAffectedAreas'
 import './App.css'
 
@@ -49,7 +45,7 @@ function ErrorScreen({ message }: { message: string }) {
 }
 
 function Dashboard() {
-  const { loading, error } = useAeris()
+  const { loading, error, activeTab } = useAeris()
 
   if (loading) return <LoadingScreen />
   if (error)   return <ErrorScreen message={error} />
@@ -59,32 +55,35 @@ function Dashboard() {
       <Sidebar />
       <div className="main-content">
         <Header />
-        <div className="dashboard-body">
-          {/* Row 1: KPI Metrics */}
-          <MetricGrid />
+        {activeTab === 'map' ? (
+          <MapExplorerView />
+        ) : (
+          <div className="dashboard-body">
+            {/* Row 1: KPI Metrics */}
+            <MetricGrid />
 
-          {/* Row 2: 3 Columns - Map + Top Areas + Agent */}
-          <div className="main-row">
-            <div className="map-area">
-              <MapContainer />
+            {/* Row 2: 3 Columns - Map + Top Areas + Agent */}
+            <div className="main-row">
+              <div className="map-area">
+                <MapContainer />
+              </div>
+              <div className="sites-area">
+                <TopAffectedAreas />
+              </div>
+              <div className="agent-area">
+                <AgentWidget />
+              </div>
             </div>
-            <div className="sites-area">
-              <TopAffectedAreas />
-            </div>
-            <div className="agent-area">
-              <AgentWidget />
+
+            {/* Row 3: Analytics */}
+            <div className="analytics-row">
+              <SourceBreakdown />
+              <AqiForecast12h />
+              <RecommendedActions />
+              <WhatIfWeAct />
             </div>
           </div>
-
-
-          {/* Row 3: Analytics */}
-          <div className="analytics-row">
-            <SourceBreakdown />
-            <AqiForecast12h />
-            <RecommendedActions />
-            <WhatIfWeAct />
-          </div>
-        </div>
+        )}
       </div>
       <ActionsModal />
     </div>

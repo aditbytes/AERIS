@@ -13,7 +13,7 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import { useEffect, useRef, useState } from 'react'
 import { useAeris } from '@/services/dataContext'
-import type { CorridorBandProperties } from '@/types/schemas'
+import { getRiskLevel, riskLabel, type CorridorBandProperties } from '@/types/schemas'
 import TimeControls from './TimeControls'
 import './MapContainer.css'
 
@@ -36,7 +36,17 @@ export default function MapContainer() {
   const markersRef      = useRef<Marker[]>([])
   const [webGlSupported, setWebGlSupported] = useState(true)
 
-  const { sources, corridor, timeHorizon, selectedSiteId, rankedSites, setSelectedSiteId, etaHours } = useAeris()
+  const {
+    sources,
+    corridor,
+    timeHorizon,
+    selectedSiteId,
+    rankedSites,
+    setSelectedSiteId,
+    etaHours,
+    setActiveTab,
+    flyToLocation,
+  } = useAeris()
 
   const displayEta = etaHours != null
     ? `~ ${etaHours.toFixed(1).replace('.0', '')}h`
@@ -58,9 +68,9 @@ export default function MapContainer() {
         style: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
         center: [76.5, 30.0],
         zoom: 6.8,
-        minZoom: 5.5,
-        maxZoom: 14,
-        pitch: 15,
+        minZoom: 2.8,   // Fix: Smoothly zoom out to see full India & continent
+        maxZoom: 18,    // High resolution facility inspection
+        pitch: 0,
         bearing: 0,
         attributionControl: false,
       })
@@ -73,7 +83,6 @@ export default function MapContainer() {
         }
       })
 
-      map.addControl(new NavigationControl({ showCompass: false }), 'bottom-right')
       mapRef.current = map
 
       map.on('load', () => {
@@ -187,45 +196,80 @@ export default function MapContainer() {
     waitForSource()
   }, [corridor, timeHorizon, webGlSupported])
 
-  // ── 3. Place fire source markers ─────────────────────────────────────────
+  // ── 3. Place fire source and receptor site markers ──────────────────────
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !sources || !webGlSupported) return
+    if (!map || !webGlSupported) return
 
     markersRef.current.forEach(m => m.remove())
     markersRef.current = []
 
-    sources.sources.forEach(src => {
-      const size = Math.round(24 + src.emission_strength * 18)
-      const el = document.createElement('div')
-      el.className = 'fire-marker'
-      el.style.width  = `${size}px`
-      el.style.height = `${size}px`
-      el.innerHTML = `
-        <div class="fire-pulse-ring"></div>
-        <div class="fire-icon" style="font-size:${size * 0.7}px">🔥</div>
-      `
-      el.title = `${src.type} — FRP: ${src.total_frp_mw.toFixed(0)} MW | Confidence: ${(src.confidence * 100).toFixed(0)}%`
+    // 1. Fire Sources
+    if (sources) {
+      sources.sources.forEach(src => {
+        const size = Math.round(24 + src.emission_strength * 18)
+        const el = document.createElement('div')
+        el.className = 'fire-marker'
+        el.style.width  = `${size}px`
+        el.style.height = `${size}px`
+        el.innerHTML = `
+          <div class="fire-pulse-ring"></div>
+          <div class="fire-icon" style="font-size:${size * 0.7}px">🔥</div>
+        `
+        el.title = `${src.type} — FRP: ${src.total_frp_mw.toFixed(0)} MW | Confidence: ${(src.confidence * 100).toFixed(0)}%`
 
-      const marker = new Marker({ element: el, anchor: 'center' })
-        .setLngLat([src.lon, src.lat])
-        .setPopup(
-          new Popup({ offset: 20, closeButton: false, className: 'aeris-popup' })
-            .setHTML(`
-              <div class="popup-content">
-                <strong>${src.type.replace(/_/g, ' ')}</strong>
-                <div>🔥 ${src.fire_count} fires detected</div>
-                <div>⚡ FRP: ${src.total_frp_mw.toFixed(0)} MW</div>
-                <div>📡 Confidence: ${(src.confidence * 100).toFixed(0)}%</div>
-                <div>💨 Emission: ${(src.emission_strength * 100).toFixed(0)}%</div>
-              </div>
-            `)
-        )
-        .addTo(map)
+        const marker = new Marker({ element: el, anchor: 'center' })
+          .setLngLat([src.lon, src.lat])
+          .setPopup(
+            new Popup({ offset: 20, closeButton: false, className: 'aeris-popup' })
+              .setHTML(`
+                <div class="popup-content">
+                  <strong>${src.type.replace(/_/g, ' ')}</strong>
+                  <div>🔥 ${src.fire_count} fires detected</div>
+                  <div>⚡ FRP: ${src.total_frp_mw.toFixed(0)} MW</div>
+                  <div>📡 Confidence: ${(src.confidence * 100).toFixed(0)}%</div>
+                  <div>💨 Emission: ${(src.emission_strength * 100).toFixed(0)}%</div>
+                </div>
+              `)
+          )
+          .addTo(map)
 
-      markersRef.current.push(marker)
-    })
-  }, [sources, webGlSupported])
+        markersRef.current.push(marker)
+      })
+    }
+
+    // 2. Sensitive Receptor Sites (Schools & Hospitals)
+    if (rankedSites) {
+      rankedSites.sites.slice(0, 8).forEach(site => {
+        const isSchool = site.type === 'school'
+        const riskLvl = getRiskLevel(site.risk_score)
+        const label = riskLabel(riskLvl)
+        const el = document.createElement('div')
+        el.className = `dashboard-site-marker site-${site.type}`
+        el.innerHTML = `
+          <span class="d-site-ico">${isSchool ? '🏫' : '🏥'}</span>
+        `
+        el.title = `${site.name} (${label} Risk)`
+
+        const marker = new Marker({ element: el, anchor: 'center' })
+          .setLngLat([site.lon, site.lat])
+          .setPopup(
+            new Popup({ offset: 16, closeButton: false, className: 'aeris-popup' })
+              .setHTML(`
+                <div class="popup-content">
+                  <strong>${site.name}</strong>
+                  <div>${isSchool ? '🏫 School' : '🏥 Hospital'} • <span style="color:#C92A2A;font-weight:700">${label} Risk</span></div>
+                  <div>⏱️ Plume Arrival ETA: ~${site.eta_hours.toFixed(1)}h</div>
+                  <div>💨 PM2.5 Impact: +${site.pm25_delta_ugm3.toFixed(0)} µg/m³</div>
+                </div>
+              `)
+          )
+          .addTo(map)
+
+        markersRef.current.push(marker)
+      })
+    }
+  }, [sources, rankedSites, webGlSupported])
 
   // ── 4. Fly to selected site ───────────────────────────────────────────────
   useEffect(() => {
@@ -243,6 +287,19 @@ export default function MapContainer() {
     })
     setSelectedSiteId(null)
   }, [selectedSiteId, rankedSites, setSelectedSiteId, webGlSupported])
+
+  // ── 5. Fly to global search location ──────────────────────────────────────
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !flyToLocation || !webGlSupported) return
+
+    map.flyTo({
+      center: [flyToLocation.lon, flyToLocation.lat],
+      zoom: flyToLocation.zoom || 11,
+      speed: 1.2,
+      curve: 1.4,
+    })
+  }, [flyToLocation, webGlSupported])
 
   return (
     <div className="map-wrapper card">
@@ -377,6 +434,50 @@ export default function MapContainer() {
             </svg>
           </div>
         )}
+
+        {/* Quick Map Navigation Controls & Zoom Dock */}
+        <div className="map-quick-actions">
+          <button
+            className="map-action-pill"
+            onClick={() => mapRef.current?.flyTo({ center: [78.9, 23.5], zoom: 4.2, speed: 1.2 })}
+            title="Fit Entire India (Survey of India Boundary with PoK/Ladakh)"
+          >
+            🇮🇳 Fit India
+          </button>
+          <button
+            className="map-action-pill"
+            onClick={() => mapRef.current?.flyTo({ center: [76.5, 30.0], zoom: 6.8, speed: 1.2 })}
+            title="Fit Smoke Corridor (Punjab to Delhi NCR)"
+          >
+            🎯 Fit Corridor
+          </button>
+          <button
+            className="map-action-pill expand-btn"
+            onClick={() => setActiveTab('map')}
+            title="Open Full Map Explorer"
+          >
+            ⛶ Expand Map
+          </button>
+        </div>
+
+        <div className="map-zoom-dock">
+          <button
+            className="map-zoom-btn"
+            onClick={() => mapRef.current?.zoomIn()}
+            title="Zoom In"
+            aria-label="Zoom in"
+          >
+            +
+          </button>
+          <button
+            className="map-zoom-btn"
+            onClick={() => mapRef.current?.zoomOut()}
+            title="Zoom Out (Free Subcontinent View)"
+            aria-label="Zoom out"
+          >
+            −
+          </button>
+        </div>
 
         {/* Map legend (clean & unobstructed) */}
         <div className="map-legend">

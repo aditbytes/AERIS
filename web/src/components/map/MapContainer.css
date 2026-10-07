@@ -227,3 +227,115 @@
   white-space: nowrap;
 }
 
+/* Quick Navigation Actions Floating on Map */
+.map-quick-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 10;
+}
+
+.map-action-pill {
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  padding: 4px 10px;
+  font-family: var(--font);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.map-action-pill:hover {
+  background: white;
+  color: var(--brand-dark);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.map-action-pill.expand-btn {
+  background: var(--brand-primary);
+  color: white;
+  border-color: var(--brand-dark);
+}
+
+.map-action-pill.expand-btn:hover {
+  background: var(--brand-dark);
+}
+
+/* Bottom-Right Zoom Dock */
+.map-zoom-dock {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  z-index: 10;
+}
+
+.map-zoom-btn {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.map-zoom-btn:last-child {
+  border-bottom: none;
+}
+
+.map-zoom-btn:hover {
+  background: var(--brand-light);
+  color: var(--brand-dark);
+}
+
+/* Dashboard Site Markers (Schools & Hospitals) */
+.dashboard-site-marker {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: white;
+  border: 1.5px solid var(--border-subtle);
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s;
+}
+
+.dashboard-site-marker:hover {
+  transform: scale(1.3);
+  z-index: 40;
+}
+
+.d-site-ico {
+  font-size: 11px;
+  line-height: 1;
+}
+
+

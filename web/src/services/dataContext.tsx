@@ -24,6 +24,9 @@ interface AerisState {
   timeHorizon:    TimeHorizon        // selected time filter in hours
   selectedSiteId: string | null      // clicked site in Top Affected list
   showActionsModal: boolean
+  activeTab:        string
+  searchTerm:       string
+  flyToLocation:    { lon: number; lat: number; zoom?: number; name?: string } | null
 
   // Status
   loading: boolean
@@ -38,6 +41,9 @@ interface AerisState {
   setTimeHorizon:     (h: TimeHorizon) => void
   setSelectedSiteId:  (id: string | null) => void
   setShowActionsModal:(v: boolean) => void
+  setActiveTab:       (tab: string) => void
+  setSearchTerm:      (term: string) => void
+  setFlyToLocation:   (loc: { lon: number; lat: number; zoom?: number; name?: string } | null) => void
   refreshData:        () => void
 }
 
@@ -55,6 +61,9 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
   const [timeHorizon,      setTimeHorizon]      = useState<TimeHorizon>(1)
   const [selectedSiteId,   setSelectedSiteId]   = useState<string | null>(null)
   const [showActionsModal, setShowActionsModal] = useState(false)
+  const [activeTab,        setActiveTab]        = useState('dashboard')
+  const [searchTerm,       setSearchTerm]       = useState('')
+  const [flyToLocation,    setFlyToLocation]    = useState<{ lon: number; lat: number; zoom?: number; name?: string } | null>(null)
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -102,9 +111,11 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
   const value: AerisState = {
     sources, corridor, rankedSites, actions, aqi,
     timeHorizon, selectedSiteId, showActionsModal,
+    activeTab, searchTerm, flyToLocation,
     loading, error,
     exposedPopulation, etaHours, avgAqi,
     setTimeHorizon, setSelectedSiteId, setShowActionsModal,
+    setActiveTab, setSearchTerm, setFlyToLocation,
     refreshData: loadData,
   }
 
