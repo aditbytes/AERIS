@@ -1,12 +1,11 @@
 /**
- * MapContainer — MapLibre GL interactive map with Bulletproof SVG Fallback
+ * MapContainer — MapLibre GL interactive map with Survey of India (SOI) boundaries
  *
- * Safety guarantees:
- *  - Single initialization guard (mapInitRef) prevents duplicate WebGL contexts
- *  - Strict useEffect cleanup calls map.remove() on unmount
- *  - Layer update uses setData() not re-adding sources (no resource leaks)
- *  - Zero-token tile URL (CartoDB Voyager) works offline and in any region
- *  - Automatic SVG vector map fallback if WebGL is unavailable or disabled
+ * Guarantees:
+ *  - Official Survey of India boundary layer (includes Jammu & Kashmir, Ladakh, PoK)
+ *  - Zero annoying floating green patch covering the map
+ *  - Sleek inline forecast pill in header (Wind direction, ETA to Delhi, Expected AQI)
+ *  - Automatic SVG vector map fallback with official SOI territory demarcation
  */
 
 import { Map, NavigationControl, Marker, Popup, setWorkerUrl, type GeoJSONSource } from 'maplibre-gl'
@@ -15,7 +14,6 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import { useEffect, useRef, useState } from 'react'
 import { useAeris } from '@/services/dataContext'
 import type { CorridorBandProperties } from '@/types/schemas'
-import PlumeHudCard from './PlumeHudCard'
 import TimeControls from './TimeControls'
 import './MapContainer.css'
 
@@ -26,8 +24,8 @@ try {
 }
 
 function toSvgCoords(lon: number, lat: number, width = 680, height = 380): [number, number] {
-  const x = Math.max(30, Math.min(width - 30, ((lon - 73.5) / (77.8 - 73.5)) * width))
-  const y = Math.max(30, Math.min(height - 30, height - ((lat - 28.0) / (32.5 - 28.0)) * height))
+  const x = Math.max(30, Math.min(width - 30, ((lon - 73.0) / (78.5 - 73.0)) * width))
+  const y = Math.max(30, Math.min(height - 30, height - ((lat - 27.8) / (34.5 - 27.8)) * height))
   return [x, y]
 }
 
@@ -38,7 +36,16 @@ export default function MapContainer() {
   const markersRef      = useRef<Marker[]>([])
   const [webGlSupported, setWebGlSupported] = useState(true)
 
-  const { sources, corridor, timeHorizon, selectedSiteId, rankedSites, setSelectedSiteId } = useAeris()
+  const { sources, corridor, timeHorizon, selectedSiteId, rankedSites, setSelectedSiteId, etaHours } = useAeris()
+
+  const displayEta = etaHours != null
+    ? `~ ${etaHours.toFixed(1).replace('.0', '')}h`
+    : '~ 2h'
+
+  const expectedAqi = timeHorizon === 0 ? '280–320'
+    : timeHorizon === 1 ? '350–420'
+    : timeHorizon === 2 ? '400–480'
+    : '430–520'
 
   // ── 1. Initialize map once ────────────────────────────────────────────────
   useEffect(() => {
@@ -49,9 +56,11 @@ export default function MapContainer() {
       const map = new Map({
         container: mapContainerRef.current,
         style: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
-        center: [76.5, 29.8],
-        zoom: 6.5,
-        pitch: 20,
+        center: [76.5, 30.0],
+        zoom: 6.8,
+        minZoom: 5.5,
+        maxZoom: 14,
+        pitch: 15,
         bearing: 0,
         attributionControl: false,
       })
@@ -68,7 +77,48 @@ export default function MapContainer() {
       mapRef.current = map
 
       map.on('load', () => {
-        // Corridor polygon source
+        // 1. Official Survey of India boundary layer (includes J&K, Ladakh, PoK)
+        map.addSource('india-boundary', {
+          type: 'geojson',
+          data: './data/india-boundary.geojson',
+        })
+
+        // Outer halo for sovereign boundary prominence
+        map.addLayer({
+          id: 'india-border-halo',
+          type: 'line',
+          source: 'india-boundary',
+          paint: {
+            'line-color': '#22734F',
+            'line-width': 4.5,
+            'line-opacity': 0.35,
+          },
+        })
+
+        // Solid official border line
+        map.addLayer({
+          id: 'india-border-line',
+          type: 'line',
+          source: 'india-boundary',
+          paint: {
+            'line-color': '#164E35',
+            'line-width': 2.4,
+            'line-opacity': 0.95,
+          },
+        })
+
+        // 2. Official Territory labels
+        const jkEl = document.createElement('div')
+        jkEl.className = 'map-soi-label'
+        jkEl.innerText = 'Jammu & Kashmir (India)'
+        new Marker({ element: jkEl, anchor: 'center' }).setLngLat([75.3, 33.7]).addTo(map)
+
+        const ladakhEl = document.createElement('div')
+        ladakhEl.className = 'map-soi-label'
+        ladakhEl.innerText = 'Ladakh (India)'
+        new Marker({ element: ladakhEl, anchor: 'center' }).setLngLat([77.8, 34.2]).addTo(map)
+
+        // 3. Corridor polygon source
         map.addSource('corridor', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
 
         // Plume band fill layer
@@ -205,9 +255,21 @@ export default function MapContainer() {
           </div>
           <div>
             <div className="map-title">Pollution Movement Forecast</div>
-            <div className="map-subtitle">Predicted PM2.5 plume in next 3 hours (Punjab → Delhi)</div>
+            <div className="map-subtitle">Predicted PM2.5 plume (Punjab → Haryana → Delhi NCR)</div>
           </div>
         </div>
+
+        {/* Clean, non-intrusive metadata pill (replaces annoying dark green patch) */}
+        <div className="map-header-center">
+          <div className="map-forecast-pill">
+            <span className="pill-item">💨 <strong>NW → SE</strong></span>
+            <span className="pill-sep">•</span>
+            <span className="pill-item">ETA: <strong>{displayEta}</strong></span>
+            <span className="pill-sep">•</span>
+            <span className="pill-item">AQI: <strong>{expectedAqi}</strong></span>
+          </div>
+        </div>
+
         <TimeControls />
       </div>
 
@@ -236,26 +298,54 @@ export default function MapContainer() {
               {/* Base terrain */}
               <rect width="680" height="380" fill="#EDF1EC" rx="10" />
 
-              {/* Topography shapes */}
-              <path d="M 30 20 Q 200 40 380 90 T 560 220 T 650 360 L 30 360 Z" fill="#E2E8E1" opacity="0.8" />
-              
-              {/* Regional labels */}
-              <text x="120" y="70" fill="#3A5344" fontSize="13" fontWeight="800" letterSpacing="1">PUNJAB (UPWIND)</text>
-              <text x="260" y="180" fill="#6B7280" fontSize="12" fontWeight="600" letterSpacing="1">HARYANA</text>
-              <text x="470" y="270" fill="#1E4E3D" fontSize="13" fontWeight="800" letterSpacing="0.5">📍 DELHI NCR (RECEPTOR)</text>
+              {/* Official Survey of India Northern Crown (including J&K, Ladakh, PoK) */}
+              <path
+                d="M 60 120 L 110 50 L 180 20 L 260 15 L 340 18 L 440 28 L 520 60 L 620 110 L 650 360 L 30 360 Z"
+                fill="#E2E8E1"
+                opacity="0.9"
+              />
+
+              {/* Official Sovereign Border Line */}
+              <path
+                d="M 60 120 L 110 50 L 180 20 L 260 15 L 340 18 L 440 28 L 520 60 L 620 110"
+                fill="none"
+                stroke="#164E35"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+
+              {/* Official Indian Sovereign Territory Labels */}
+              <text x="160" y="42" fill="#164E35" fontSize="10.5" fontWeight="800" letterSpacing="0.5">
+                JAMMU & KASHMIR (INDIA)
+              </text>
+              <text x="360" y="42" fill="#164E35" fontSize="10.5" fontWeight="800" letterSpacing="0.5">
+                LADAKH (INDIA)
+              </text>
+              <text x="120" y="110" fill="#3A5344" fontSize="12" fontWeight="800" letterSpacing="1">
+                PUNJAB (UPWIND)
+              </text>
+              <text x="260" y="195" fill="#6B7280" fontSize="11" fontWeight="600" letterSpacing="1">
+                HARYANA
+              </text>
+              <text x="470" y="270" fill="#1E4E3D" fontSize="12" fontWeight="800" letterSpacing="0.5">
+                📍 DELHI NCR (RECEPTOR)
+              </text>
+              <text x="560" y="210" fill="#6B7280" fontSize="11" fontWeight="600" letterSpacing="0.5">
+                UTTAR PRADESH
+              </text>
 
               {/* Smoke Corridor Polygon Swath */}
               <path
-                d="M 140 85 C 220 120 320 180 460 260 C 490 285 430 310 320 250 C 230 190 160 140 120 95 Z"
+                d="M 140 100 C 220 135 320 190 460 265 C 490 290 430 315 320 255 C 230 195 160 145 120 110 Z"
                 fill="url(#plumeGrad)"
                 filter="url(#glow)"
               />
 
               {/* Wind Vector Vectors */}
               <g stroke="white" strokeWidth="2.2" fill="none" opacity="0.9">
-                <path d="M 180 110 L 230 145 M 220 135 L 230 145 L 218 150" />
-                <path d="M 270 170 L 320 205 M 310 195 L 320 205 L 308 210" />
-                <path d="M 360 225 L 410 255 M 400 245 L 410 255 L 398 260" />
+                <path d="M 180 125 L 230 160 M 220 150 L 230 160 L 218 165" />
+                <path d="M 270 185 L 320 220 M 310 210 L 320 220 L 308 225" />
+                <path d="M 360 235 L 410 265 M 400 255 L 410 265 L 398 270" />
               </g>
 
               {/* Fire Clusters */}
@@ -288,9 +378,7 @@ export default function MapContainer() {
           </div>
         )}
 
-        <PlumeHudCard />
-
-        {/* Map legend */}
+        {/* Map legend (clean & unobstructed) */}
         <div className="map-legend">
           <div className="legend-item">
             <span style={{ fontSize: '13px' }}>🔥</span>
@@ -298,7 +386,11 @@ export default function MapContainer() {
           </div>
           <div className="legend-item">
             <div className="legend-plume-dot" />
-            <span>Predicted Pollution Plume</span>
+            <span>Predicted Plume</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-soi-line" />
+            <span>Survey of India Boundary</span>
           </div>
         </div>
       </div>

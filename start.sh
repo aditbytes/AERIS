@@ -179,7 +179,8 @@ fi
 echo -e "\n${CYAN}[3/5] Verifying real data snapshots...${NC}"
 mkdir -p "$WEB_DATA"
 
-SNAPSHOTS=("sources.json" "corridor.geojson" "ranked_sites.json" "actions.json" "aqi.json" "wind.json")
+SNAPSHOTS=("sources.json" "corridor.geojson" "ranked_sites.json" "actions.json" "aqi.json" "wind.json" "india-boundary.geojson")
+
 for file in "${SNAPSHOTS[@]}"; do
   SRC="$DATA_LIVE/$file"
   DST="$WEB_DATA/$file"
