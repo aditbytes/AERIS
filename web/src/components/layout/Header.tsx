@@ -1,7 +1,6 @@
 import {
   Bell,
   ChevronDown,
-  ChevronRight,
   LogOut,
   PanelLeft,
   RefreshCw,
@@ -9,21 +8,20 @@ import {
   Settings,
   ShieldCheck,
   User,
-  Wind,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import './Header.css'
 import { useAeris } from '@/services/dataContext'
 
-const TAB_META: Record<string, { section: string; label: string }> = {
-  dashboard:  { section: 'Overview',     label: 'Dashboard' },
-  map:        { section: 'Overview',     label: 'Map Explorer' },
-  analytics:  { section: 'Intelligence', label: 'Analytics & Trends' },
-  wind:       { section: 'Intelligence', label: 'Wind & Meteorology' },
-  sources:    { section: 'Intelligence', label: 'Fire Sources (VIIRS)' },
-  population: { section: 'Operations',   label: 'Population Risk Registry' },
-  shield:     { section: 'Operations',   label: 'Protective Actions' },
-  settings:   { section: 'System',       label: 'System Settings' },
+const TAB_META: Record<string, { label: string; subtitle: string }> = {
+  dashboard:  { label: 'Dashboard',                subtitle: 'Real-Time Monitoring' },
+  map:        { label: 'Map Explorer',             subtitle: 'GIS Spatial Analysis' },
+  analytics:  { label: 'Analytics & Trends',       subtitle: 'Atmospheric Projections' },
+  wind:       { label: 'Wind & Meteorology',       subtitle: 'GFS Forecast Modeling' },
+  sources:    { label: 'Fire Sources (VIIRS)',     subtitle: 'NASA Satellite Detection' },
+  population: { label: 'Population Risk Registry', subtitle: 'Critical Facility Exposure' },
+  shield:     { label: 'Protective Actions',       subtitle: 'CPCB & CAQM Directives' },
+  settings:   { label: 'System Settings',          subtitle: 'Configuration & System State' },
 }
 
 export default function Header() {
@@ -33,9 +31,8 @@ export default function Header() {
     setFlyToLocation,
     activeTab,
     setActiveTab,
+    isSidebarCollapsed,
     toggleSidebar,
-    wind,
-    avgAqi,
   } = useAeris()
 
   const [searchInput, setSearchInput] = useState('')
@@ -91,74 +88,52 @@ export default function Header() {
     }
   }
 
-  const currentMeta = TAB_META[activeTab] ?? { section: 'Overview', label: 'Dashboard' }
-  const firstSpeedMs = wind?.points?.[0]?.hours?.[0]?.speed_ms
-  const windText = firstSpeedMs != null ? `${Math.round(firstSpeedMs * 3.6)} km/h` : '18 km/h'
-  const aqiVal = avgAqi ?? 382
+  const currentMeta = TAB_META[activeTab] ?? { label: 'Dashboard', subtitle: 'Real-Time Monitoring' }
 
   return (
     <header className="header">
-      {/* Left: Sidebar Toggle + Breadcrumb */}
+      {/* Left: View Title & Context Subtitle (Only show toggle when sidebar is collapsed) */}
       <div className="header-left">
-        <button
-          className="header-sidebar-toggle-btn"
-          onClick={toggleSidebar}
-          title="Toggle Sidebar (⌘B)"
-          aria-label="Toggle Navigation Sidebar"
-          type="button"
-        >
-          <PanelLeft size={18} />
-        </button>
-
-        <div className="header-breadcrumbs">
+        {isSidebarCollapsed && (
           <button
-            className="breadcrumb-root-btn"
-            onClick={() => setActiveTab('dashboard')}
-            title="AERIS Main"
+            className="header-sidebar-toggle-btn"
+            onClick={toggleSidebar}
+            title="Expand Sidebar (⌘B)"
+            aria-label="Expand Sidebar"
             type="button"
           >
-            AERIS
+            <PanelLeft size={18} />
           </button>
-          <ChevronRight size={13} className="breadcrumb-separator" />
-          <span className="breadcrumb-section">{currentMeta.section}</span>
-          <ChevronRight size={13} className="breadcrumb-separator" />
-          <span className="breadcrumb-active">{currentMeta.label}</span>
+        )}
+
+        <div className="header-title-wrap">
+          <h1 className="header-view-title">{currentMeta.label}</h1>
+          <span className="header-view-subtitle-pill">{currentMeta.subtitle}</span>
         </div>
       </div>
 
-      {/* Center: Live Environmental Status Ticker */}
-      <div className="header-center-ticker">
-        <div className="live-status-pill" title="Live meteorological and CAQM statutory alert status">
-          <span className="status-live-dot" />
-          <span className="ticker-item">
-            <strong>GFS Wind:</strong> {windText} NW → SE
-          </span>
-          <span className="ticker-divider">•</span>
-          <span className="ticker-item">
-            <strong>CAQM:</strong> GRAP IV Active
-          </span>
-          <span className="ticker-divider">•</span>
-          <span className="ticker-item aqi-highlight">
-            <strong>Avg AQI:</strong> {aqiVal}
-          </span>
-        </div>
-      </div>
-
-      {/* Right Controls: Search + Refresh + Alerts + Profile */}
-      <div className="header-right">
-        {/* Search */}
+      {/* Center: Prominent Global Search Bar */}
+      <div className="header-center">
         <form className="header-search" onSubmit={handleSearch}>
-          <Search size={14} className="search-icon" />
+          <Search size={15} className="search-icon" />
           <input
             ref={searchInputRef}
             className="search-input"
-            placeholder="Search location (e.g. Delhi, Leh)..."
+            placeholder="Search location, facility, or source (e.g. Delhi, Karnal, Leh)..."
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
           />
           <kbd className="search-kbd" title="Press ⌘K to search">⌘K</kbd>
         </form>
+      </div>
+
+      {/* Right: Live Status Badge + Refresh + Notifications + Officer Profile */}
+      <div className="header-right">
+        <div className="live-status-chip" title="Live satellite and ground station streams synced">
+          <span className="live-status-dot" />
+          <span className="live-status-text">LIVE</span>
+        </div>
 
         <button
           className="icon-btn refresh-btn"
