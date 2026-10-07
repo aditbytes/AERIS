@@ -72,6 +72,29 @@
   height: 100%;
 }
 
+.bar-col.interactive-scenario {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  transition: transform 0.15s ease;
+}
+
+.bar-col.interactive-scenario:hover {
+  transform: translateY(-2px);
+}
+
+.bar-col.interactive-scenario.active .bar-track {
+  border: 1.5px solid var(--brand-primary);
+  box-shadow: 0 0 10px var(--brand-glow);
+}
+
+.bar-col.interactive-scenario.active .bar-label {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
 .bar-track {
   flex: 1;
   width: 100%;
@@ -81,6 +104,7 @@
   display: flex;
   align-items: flex-end;
   border: 1px solid var(--border-subtle);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .bar-fill {

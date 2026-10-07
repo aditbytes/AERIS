@@ -20,6 +20,8 @@ import { useAeris } from '@/services/dataContext'
 export default function Header() {
   const { loading, refreshData, setFlyToLocation, setActiveTab } = useAeris()
   const [searchInput, setSearchInput] = useState('')
+  const [showNotifs, setShowNotifs] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(3)
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -95,10 +97,76 @@ export default function Header() {
           <RefreshCw size={16} className={loading ? 'spinning' : ''} />
         </button>
 
-        <button className="icon-btn notif-btn" aria-label="Notifications">
-          <Bell size={17} />
-          <span className="notif-badge">3</span>
-        </button>
+        <div className="notif-wrapper">
+          <button
+            className="icon-btn notif-btn"
+            aria-label="Notifications"
+            onClick={() => setShowNotifs(!showNotifs)}
+          >
+            <Bell size={17} />
+            {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
+          </button>
+
+          {showNotifs && (
+            <div className="notif-dropdown">
+              <div className="notif-dropdown-header">
+                <span className="notif-title">Active Environmental Alerts</span>
+                <button
+                  className="notif-mark-read"
+                  onClick={() => setUnreadCount(0)}
+                >
+                  Mark all as read
+                </button>
+              </div>
+              <div className="notif-list">
+                <div
+                  className="notif-item alert"
+                  onClick={() => {
+                    setActiveTab('sources')
+                    setShowNotifs(false)
+                  }}
+                >
+                  <div className="notif-dot alert" />
+                  <div className="notif-content">
+                    <span className="notif-headline">🚨 High Stubble Cluster Detected</span>
+                    <p className="notif-desc">VIIRS detected 676 MW cluster in Sangrur, Punjab with 36 active fire pixels.</p>
+                    <span className="notif-time">15 mins ago • NASA FIRMS</span>
+                  </div>
+                </div>
+
+                <div
+                  className="notif-item warning"
+                  onClick={() => {
+                    setActiveTab('wind')
+                    setShowNotifs(false)
+                  }}
+                >
+                  <div className="notif-dot warning" />
+                  <div className="notif-content">
+                    <span className="notif-headline">⚠️ Nocturnal Inversion Warning</span>
+                    <p className="notif-desc">Boundary layer height (PBLH) dropping below 150m tonight; extreme pollutant trapping expected.</p>
+                    <span className="notif-time">32 mins ago • Open-Meteo GFS</span>
+                  </div>
+                </div>
+
+                <div
+                  className="notif-item notice"
+                  onClick={() => {
+                    setActiveTab('shield')
+                    setShowNotifs(false)
+                  }}
+                >
+                  <div className="notif-dot notice" />
+                  <div className="notif-content">
+                    <span className="notif-headline">📋 CAQM GRAP Stage IV Active</span>
+                    <p className="notif-desc">Mandatory heavy truck diversions and indoor school protocols enforced across NCR.</p>
+                    <span className="notif-time">1 hour ago • Statutory Order</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="user-profile">
           <div className="user-avatar">

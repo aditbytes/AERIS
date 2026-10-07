@@ -46,6 +46,7 @@ export default function MapContainer() {
     etaHours,
     setActiveTab,
     flyToLocation,
+    interventionScenario,
   } = useAeris()
 
   const displayEta = etaHours != null
@@ -195,6 +196,26 @@ export default function MapContainer() {
     }
     waitForSource()
   }, [corridor, timeHorizon, webGlSupported])
+
+  // ── 2b. Adjust plume visual intensity based on What-If scenario ─────────
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !webGlSupported) return
+
+    const updateLayer = () => {
+      if (!map.getLayer('plume-fill')) {
+        setTimeout(updateLayer, 100)
+        return
+      }
+
+      const opacity = interventionScenario === 'full' ? 0.38
+        : interventionScenario === 'partial' ? 0.62
+        : 0.90
+
+      map.setPaintProperty('plume-fill', 'fill-opacity', opacity)
+    }
+    updateLayer()
+  }, [interventionScenario, webGlSupported])
 
   // ── 3. Place fire source and receptor site markers ──────────────────────
   useEffect(() => {

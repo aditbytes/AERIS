@@ -26,7 +26,7 @@ function priorityBadge(p: Priority) {
 }
 
 export default function RecommendedActions() {
-  const { actions } = useAeris()
+  const { actions, setShowActionsModal } = useAeris()
 
   // Map real agent actions to display items (no fallback mock items)
   const items: ActionItem[] = actions?.actions.slice(0, 4).map(a => ({
@@ -35,16 +35,91 @@ export default function RecommendedActions() {
     priority: a.priority <= 2 ? 'high' : a.priority <= 4 ? 'medium' : 'low',
   })) ?? []
 
+  // Initialize checked state from localStorage
+  const [checked, setChecked] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem('aeris_dispatched_actions')
+      if (saved) return JSON.parse(saved)
+    } catch {
+      // Ignore
+    }
+    return { 's_0-1': true, 's_1-2': true }
+  })
 
-  const [checked, setChecked] = useState<Record<string, boolean>>({ a1: true, a2: true })
+  const toggleCheck = (id: string) => {
+    setChecked(prev => {
+      const next = { ...prev, [id]: !prev[id] }
+      try {
+        localStorage.setItem('aeris_dispatched_actions', JSON.stringify(next))
+      } catch {
+        // Ignore
+      }
+      return next
+    })
+  }
+
+  const dispatchedCount = items.filter(i => !!checked[i.id]).length
+
+  const handleExportCsv = (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (!actions) {
+      setShowActionsModal(true)
+      return
+    }
+
+    const headers = ['Priority', 'Site_ID', 'Target_Entity', 'Action_Directive', 'Deadline_Hours', 'Status', 'Reason']
+    const rows = actions.actions.map(a => {
+      const id = `${a.site_id}-${a.priority}`
+      const status = checked[id] ? 'DISPATCHED' : 'PENDING'
+      return [
+        `#${a.priority}`,
+        `"${a.site_id}"`,
+        `"${a.who.replace(/"/g, '""')}"`,
+        `"${a.action.replace(/"/g, '""')}"`,
+        `${a.deadline_hours}h`,
+        status,
+        `"${a.reason.replace(/"/g, '""')}"`,
+      ].join(',')
+    })
+
+    const csvContent = [headers.join(','), ...rows].join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `AERIS_CPCB_Directives_${new Date().toISOString().slice(0, 10)}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
 
   return (
     <div className="rec-actions card">
       <div className="section-header">
-        <h3 className="section-title">Recommended Actions</h3>
-        <button className="section-link" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3 className="section-title">Recommended Actions</h3>
+          {items.length > 0 && (
+            <span
+              style={{
+                fontSize: '10px',
+                fontWeight: 700,
+                color: '#22734F',
+                background: '#E6F2EB',
+                padding: '2px 7px',
+                borderRadius: '9999px',
+              }}
+            >
+              {dispatchedCount}/{items.length} Ready
+            </span>
+          )}
+        </div>
+        <button
+          className="section-link"
+          onClick={handleExportCsv}
+          title="Download official CSV Action Directives Report"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+        >
           <FileText size={12} />
-          Generate Report →
+          Export Report ↓
         </button>
       </div>
 
@@ -56,7 +131,7 @@ export default function RecommendedActions() {
                 type="checkbox"
                 className="action-checkbox"
                 checked={!!checked[item.id]}
-                onChange={() => setChecked(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+                onChange={() => toggleCheck(item.id)}
                 aria-label={item.text}
               />
               <span className="checkmark" />

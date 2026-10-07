@@ -138,6 +138,28 @@ export const AqiFileSchema = z.object({
 export type AqiStation = z.infer<typeof AqiStationSchema>
 export type AqiFile    = z.infer<typeof AqiFileSchema>
 
+// ─── wind.json (Open-Meteo GFS) ─────────────────────────────────────────────
+export interface WindHour {
+  t: string
+  u_ms: number
+  v_ms: number
+  speed_ms: number
+  dir_from_deg: number
+  pblh_m: number
+}
+
+export interface WindPoint {
+  lat: number
+  lon: number
+  hours: WindHour[]
+}
+
+export interface WindFile {
+  generated_at: string
+  source: string
+  points: WindPoint[]
+}
+
 // ─── Risk level helper ───────────────────────────────────────────────────────
 export type RiskLevel = 'very-high' | 'high' | 'medium' | 'low'
 

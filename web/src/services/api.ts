@@ -86,3 +86,12 @@ export async function getAqi(): Promise<AqiFile> {
   )
 }
 
+export async function getWind(): Promise<import('@/types/schemas').WindFile> {
+  const url = endpoint('/wind', 'wind.json')
+  const res = await fetch(url)
+  if (!res.ok) {
+    throw new Error(`[AERIS] Failed to fetch wind data: HTTP ${res.status} from ${url}`)
+  }
+  return res.json()
+}
+

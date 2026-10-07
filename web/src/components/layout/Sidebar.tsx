@@ -13,6 +13,8 @@ export default function Sidebar() {
           return (
             <li key={id}>
               <button
+                id={`nav-${id}`}
+                data-nav-id={id}
                 className={`sidebar-btn ${isActive ? 'active' : ''}`}
                 onClick={() => {
                   if (id !== 'logout') {

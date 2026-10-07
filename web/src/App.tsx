@@ -11,6 +11,12 @@ import Sidebar from '@/components/layout/Sidebar'
 import MapContainer from '@/components/map/MapContainer'
 import MapExplorerView from '@/components/map/MapExplorerView'
 import TopAffectedAreas from '@/components/sites/TopAffectedAreas'
+import AnalyticsView from '@/components/views/AnalyticsView'
+import WindWeatherView from '@/components/views/WindWeatherView'
+import FireSourcesView from '@/components/views/FireSourcesView'
+import PopulationRiskView from '@/components/views/PopulationRiskView'
+import ActionsWorkbenchView from '@/components/views/ActionsWorkbenchView'
+import SettingsView from '@/components/views/SettingsView'
 import './App.css'
 
 function LoadingScreen() {
@@ -50,14 +56,22 @@ function Dashboard() {
   if (loading) return <LoadingScreen />
   if (error)   return <ErrorScreen message={error} />
 
+  const isDedicatedView = ['map', 'analytics', 'wind', 'sources', 'population', 'shield', 'settings'].includes(activeTab)
+
   return (
     <div className="app-shell">
       <Sidebar />
       <div className="main-content">
         <Header />
-        {activeTab === 'map' ? (
-          <MapExplorerView />
-        ) : (
+        {activeTab === 'map' && <MapExplorerView />}
+        {activeTab === 'analytics' && <AnalyticsView />}
+        {activeTab === 'wind' && <WindWeatherView />}
+        {activeTab === 'sources' && <FireSourcesView />}
+        {activeTab === 'population' && <PopulationRiskView />}
+        {activeTab === 'shield' && <ActionsWorkbenchView />}
+        {activeTab === 'settings' && <SettingsView />}
+
+        {!isDedicatedView && (
           <div className="dashboard-body">
             {/* Row 1: KPI Metrics */}
             <MetricGrid />

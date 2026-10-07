@@ -7,10 +7,12 @@
  */
 
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { getActions, getAqi, getCorridor, getRankedSites, getSources } from './api'
-import type { ActionsFile, AqiFile, CorridorGeoJSON, RankedSite, RankedSitesFile, SourcesFile } from '@/types/schemas'
+import { getActions, getAqi, getCorridor, getRankedSites, getSources, getWind } from './api'
+import type { ActionsFile, AqiFile, CorridorGeoJSON, RankedSite, RankedSitesFile, SourcesFile, WindFile } from '@/types/schemas'
 
 export type TimeHorizon = 0 | 1 | 2 | 3
+
+export type InterventionScenario = 'none' | 'partial' | 'full'
 
 interface AerisState {
   // Data
@@ -19,32 +21,37 @@ interface AerisState {
   rankedSites:  RankedSitesFile | null
   actions:      ActionsFile | null
   aqi:          AqiFile | null
+  wind:         WindFile | null
 
   // UI State
-  timeHorizon:    TimeHorizon        // selected time filter in hours
-  selectedSiteId: string | null      // clicked site in Top Affected list
-  showActionsModal: boolean
-  activeTab:        string
-  searchTerm:       string
-  flyToLocation:    { lon: number; lat: number; zoom?: number; name?: string } | null
+  timeHorizon:          TimeHorizon        // selected time filter in hours
+  selectedSiteId:       string | null      // clicked site in Top Affected list
+  showActionsModal:     boolean
+  activeTab:            string
+  searchTerm:           string
+  flyToLocation:        { lon: number; lat: number; zoom?: number; name?: string } | null
+  interventionScenario: InterventionScenario
 
   // Status
   loading: boolean
   error:   string | null
 
   // Derived convenience
-  exposedPopulation: number | null
-  etaHours: number | null           // min ETA of highest-ranked source
-  avgAqi: number | null             // mean AQI across live ground stations
+  exposedPopulation:       number | null
+  activeExposedPopulation: number | null
+  avertedExposures:        number
+  etaHours:                number | null           // min ETA of highest-ranked source
+  avgAqi:                  number | null           // mean AQI across live ground stations
 
   // Actions
-  setTimeHorizon:     (h: TimeHorizon) => void
-  setSelectedSiteId:  (id: string | null) => void
-  setShowActionsModal:(v: boolean) => void
-  setActiveTab:       (tab: string) => void
-  setSearchTerm:      (term: string) => void
-  setFlyToLocation:   (loc: { lon: number; lat: number; zoom?: number; name?: string } | null) => void
-  refreshData:        () => void
+  setTimeHorizon:          (h: TimeHorizon) => void
+  setSelectedSiteId:       (id: string | null) => void
+  setShowActionsModal:     (v: boolean) => void
+  setActiveTab:            (tab: string) => void
+  setSearchTerm:           (term: string) => void
+  setFlyToLocation:        (loc: { lon: number; lat: number; zoom?: number; name?: string } | null) => void
+  setInterventionScenario: (s: InterventionScenario) => void
+  refreshData:             () => void
 }
 
 const AerisContext = createContext<AerisState | null>(null)
@@ -55,32 +62,36 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
   const [rankedSites, setRankedSites] = useState<RankedSitesFile | null>(null)
   const [actions,     setActions]     = useState<ActionsFile | null>(null)
   const [aqi,         setAqi]         = useState<AqiFile | null>(null)
+  const [wind,        setWind]        = useState<WindFile | null>(null)
   const [loading,     setLoading]     = useState(true)
   const [error,       setError]       = useState<string | null>(null)
 
-  const [timeHorizon,      setTimeHorizon]      = useState<TimeHorizon>(1)
-  const [selectedSiteId,   setSelectedSiteId]   = useState<string | null>(null)
-  const [showActionsModal, setShowActionsModal] = useState(false)
-  const [activeTab,        setActiveTab]        = useState('dashboard')
-  const [searchTerm,       setSearchTerm]       = useState('')
-  const [flyToLocation,    setFlyToLocation]    = useState<{ lon: number; lat: number; zoom?: number; name?: string } | null>(null)
+  const [timeHorizon,          setTimeHorizon]          = useState<TimeHorizon>(1)
+  const [selectedSiteId,       setSelectedSiteId]       = useState<string | null>(null)
+  const [showActionsModal,     setShowActionsModal]     = useState(false)
+  const [activeTab,            setActiveTab]            = useState('dashboard')
+  const [searchTerm,           setSearchTerm]           = useState('')
+  const [flyToLocation,        setFlyToLocation]        = useState<{ lon: number; lat: number; zoom?: number; name?: string } | null>(null)
+  const [interventionScenario, setInterventionScenario] = useState<InterventionScenario>('partial')
 
   const loadData = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const [s, c, r, a, q] = await Promise.all([
+      const [s, c, r, a, q, w] = await Promise.all([
         getSources(),
         getCorridor(),
         getRankedSites(),
         getActions(),
         getAqi(),
+        getWind().catch(() => null),
       ])
       setSources(s)
       setCorridor(c)
       setRankedSites(r)
       setActions(a)
       setAqi(q)
+      setWind(w)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error loading AERIS data.')
     } finally {
@@ -90,8 +101,17 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => { loadData() }, [loadData])
 
-  // Derived: exposed population from ranked_sites
+  // Derived: baseline exposed population from ranked_sites
   const exposedPopulation = rankedSites?.exposed_population.estimate ?? null
+
+  // Derived: active simulated exposed population based on scenario
+  const rawExposed = exposedPopulation ?? 570938
+  const activeExposedPopulation =
+    interventionScenario === 'none' ? rawExposed
+    : interventionScenario === 'partial' ? Math.round(rawExposed * 0.65)
+    : Math.round(rawExposed * 0.45)
+
+  const avertedExposures = rawExposed - activeExposedPopulation
 
   // Derived: minimum ETA across top-3 ranked sites
   const etaHours = rankedSites
@@ -109,16 +129,15 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
     : null
 
   const value: AerisState = {
-    sources, corridor, rankedSites, actions, aqi,
+    sources, corridor, rankedSites, actions, aqi, wind,
     timeHorizon, selectedSiteId, showActionsModal,
-    activeTab, searchTerm, flyToLocation,
+    activeTab, searchTerm, flyToLocation, interventionScenario,
     loading, error,
-    exposedPopulation, etaHours, avgAqi,
+    exposedPopulation, activeExposedPopulation, avertedExposures, etaHours, avgAqi,
     setTimeHorizon, setSelectedSiteId, setShowActionsModal,
-    setActiveTab, setSearchTerm, setFlyToLocation,
+    setActiveTab, setSearchTerm, setFlyToLocation, setInterventionScenario,
     refreshData: loadData,
   }
-
 
   return (
     <AerisContext.Provider value={value}>

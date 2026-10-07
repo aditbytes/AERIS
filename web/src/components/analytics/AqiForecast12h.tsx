@@ -1,6 +1,4 @@
-/**
- * AQI 12h Forecast — dynamically computed from Lagrangian corridor advection & live AQI
- */
+import { useState } from 'react'
 import { useAeris } from '@/services/dataContext'
 import type { CorridorBandProperties } from '@/types/schemas'
 import './AqiForecast12h.css'
@@ -27,6 +25,7 @@ function aqiCategory(val: number): string {
 
 export default function AqiForecast12h() {
   const { corridor, avgAqi } = useAeris()
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null)
 
   const baseline = avgAqi ?? 180
 
@@ -38,28 +37,28 @@ export default function AqiForecast12h() {
   const timeSteps = [0, 2, 4, 6, 8, 10, 12]
 
   const points = timeSteps.map(h => {
-    // Find highest plume contribution active at hour h
     const matchingBands = bands.filter(b => b.hour_from <= h && b.hour_to >= h)
     const maxDelta = matchingBands.length > 0
       ? Math.max(...matchingBands.map(b => b.pm25_delta_ugm3))
       : 0
 
-    // Indian AQI conversion approx for PM2.5 delta
     const modeledAqi = Math.min(500, Math.round(baseline + maxDelta * 1.35))
 
     return {
       h,
       aqi: modeledAqi,
+      delta: Math.round(maxDelta),
       label: h === 0 ? 'Now' : `${h}h`,
     }
   })
 
   // Find peak hour
   const peakVal = Math.max(...points.map(p => p.aqi))
-  const pts = points.map(d => ({
+  const pts = points.map((d, idx) => ({
     x: aqiX(d.h),
     y: aqiY(d.aqi),
     peak: d.aqi === peakVal,
+    idx,
     ...d,
   }))
 
@@ -67,6 +66,22 @@ export default function AqiForecast12h() {
   const areaPath = `${linePath} L${pts[pts.length - 1].x},${H - PADB} L${pts[0].x},${H - PADB} Z`
 
   const peak = pts.find(p => p.peak)
+  const activePt = hoverIdx !== null ? pts[hoverIdx] : peak
+
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const relX = ((e.clientX - rect.left) / rect.width) * W
+    let closestIdx = 0
+    let minDiff = Infinity
+    pts.forEach((p, i) => {
+      const diff = Math.abs(p.x - relX)
+      if (diff < minDiff) {
+        minDiff = diff
+        closestIdx = i
+      }
+    })
+    setHoverIdx(closestIdx)
+  }
 
   return (
     <div className="aqi-forecast card">
@@ -77,10 +92,13 @@ export default function AqiForecast12h() {
         width="100%"
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setHoverIdx(null)}
+        style={{ cursor: 'crosshair' }}
         aria-label="12-hour AQI forecast chart modeled from plume corridor"
       >
         <defs>
-          <linearGradient id="aqiGrad" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id="aqiGrad" x1="0%" y1="0%" x2="0%" y2="1">
             <stop offset="0%"   stopColor="#C92A2A" stopOpacity="0.25" />
             <stop offset="100%" stopColor="#C92A2A" stopOpacity="0"    />
           </linearGradient>
@@ -109,15 +127,46 @@ export default function AqiForecast12h() {
           strokeLinejoin="round"
         />
 
-        {/* Peak marker */}
-        {peak && (
+        {/* Hover vertical crosshair */}
+        {activePt && (
+          <line
+            x1={activePt.x}
+            y1={0}
+            x2={activePt.x}
+            y2={H - PADB}
+            stroke="#C92A2A"
+            strokeWidth="1.2"
+            strokeDasharray="3 2"
+            opacity="0.75"
+          />
+        )}
+
+        {/* Active point marker */}
+        {activePt && (
           <>
-            <circle cx={peak.x} cy={peak.y} r="5" fill="#C92A2A" />
-            <circle cx={peak.x} cy={peak.y} r="9" fill="none" stroke="#C92A2A" strokeWidth="1.5" opacity="0.4" />
-            {/* Peak tooltip */}
-            <rect x={peak.x - 52} y={peak.y - 36} width="104" height="28" rx="6" fill="white" stroke="#E8EDE8" />
-            <text x={peak.x} y={peak.y - 22} textAnchor="middle" fontSize="9.5" fontWeight="600" fill="#C92A2A" fontFamily="Outfit, sans-serif">
-              {`${peak.label} • AQI ${peak.aqi} — ${aqiCategory(peak.aqi)}`}
+            <circle cx={activePt.x} cy={activePt.y} r="5" fill="#C92A2A" />
+            <circle cx={activePt.x} cy={activePt.y} r="9" fill="none" stroke="#C92A2A" strokeWidth="1.5" opacity="0.4" />
+            {/* Tooltip box */}
+            <rect
+              x={Math.max(10, Math.min(W - 130, activePt.x - 60))}
+              y={Math.max(4, activePt.y - 34)}
+              width="120"
+              height="26"
+              rx="6"
+              fill="white"
+              stroke="#E8EDE8"
+              filter="drop-shadow(0 2px 4px rgba(0,0,0,0.08))"
+            />
+            <text
+              x={Math.max(10, Math.min(W - 130, activePt.x - 60)) + 60}
+              y={Math.max(4, activePt.y - 34) + 16}
+              textAnchor="middle"
+              fontSize="9"
+              fontWeight="700"
+              fill="#C92A2A"
+              fontFamily="Outfit, sans-serif"
+            >
+              {`${activePt.label} • AQI ${activePt.aqi} (${aqiCategory(activePt.aqi)})`}
             </text>
           </>
         )}
@@ -130,7 +179,8 @@ export default function AqiForecast12h() {
             y={H - 5}
             textAnchor="middle"
             fontSize="9"
-            fill="#7A8E88"
+            fill={activePt?.h === p.h ? '#1A2421' : '#7A8E88'}
+            fontWeight={activePt?.h === p.h ? '700' : '500'}
             fontFamily="Outfit, sans-serif"
           >
             {p.label}

@@ -4,6 +4,8 @@
 import { useAeris } from '@/services/dataContext'
 import './SourceBreakdown.css'
 
+import { useState } from 'react'
+
 interface Segment {
   label: string
   pct: number
@@ -15,22 +17,27 @@ interface Segment {
 function DonutChart({
   total,
   segments,
+  activeSegment,
+  setActiveSegment,
 }: {
   total: number
   segments: Segment[]
+  activeSegment: Segment | null
+  setActiveSegment: (s: Segment | null) => void
 }) {
   const cx = 60, cy = 60, r = 44, stroke = 22
   const circumference = 2 * Math.PI * r
   let offset = 0
 
   return (
-    <svg width="120" height="120" viewBox="0 0 120 120" aria-hidden="true">
+    <svg width="120" height="120" viewBox="0 0 120 120" aria-label="Source Intensity Donut Chart">
       {/* Background ring */}
       <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F0F4F0" strokeWidth={stroke} />
 
       {segments.map((seg, i) => {
         const dash = (seg.pct / 100) * circumference
         const gap  = circumference - dash
+        const isHovered = activeSegment?.label === seg.label
         const el = (
           <circle
             key={i}
@@ -39,22 +46,30 @@ function DonutChart({
             r={r}
             fill="none"
             stroke={seg.color}
-            strokeWidth={stroke}
+            strokeWidth={isHovered ? stroke + 4 : stroke}
             strokeDasharray={`${dash} ${gap}`}
             strokeDashoffset={-offset}
-            style={{ transform: 'rotate(-90deg)', transformOrigin: '60px 60px' }}
+            onMouseEnter={() => setActiveSegment(seg)}
+            onMouseLeave={() => setActiveSegment(null)}
+            style={{
+              transform: 'rotate(-90deg)',
+              transformOrigin: '60px 60px',
+              cursor: 'pointer',
+              transition: 'stroke-width 0.15s ease, opacity 0.15s ease',
+              opacity: activeSegment && !isHovered ? 0.45 : 1,
+            }}
           />
         )
         offset += dash
         return el
       })}
 
-      {/* Center text */}
-      <text x={cx} y={cy - 4} textAnchor="middle" fontSize="18" fontWeight="800" fill="#1A2421" fontFamily="Outfit, sans-serif">
-        {total}
+      {/* Dynamic Center text */}
+      <text x={cx} y={cy - 4} textAnchor="middle" fontSize={activeSegment ? "15" : "18"} fontWeight="800" fill="#1A2421" fontFamily="Outfit, sans-serif">
+        {activeSegment ? `${activeSegment.frpMw} MW` : total}
       </text>
       <text x={cx} y={cy + 13} textAnchor="middle" fontSize="10" fill="#7A8E88" fontFamily="Outfit, sans-serif">
-        Clusters
+        {activeSegment ? `${activeSegment.count} Hotspots` : 'Clusters'}
       </text>
     </svg>
   )
@@ -62,6 +77,8 @@ function DonutChart({
 
 export default function SourceBreakdown() {
   const { sources } = useAeris()
+  const [activeSegment, setActiveSegment] = useState<Segment | null>(null)
+
   const rawSources = sources?.sources ?? []
   const total = rawSources.length
 
@@ -112,15 +129,36 @@ export default function SourceBreakdown() {
         <h3 className="section-title">Source Intensity (FRP)</h3>
       </div>
       <div className="breakdown-body">
-        <DonutChart total={total} segments={segments} />
+        <DonutChart
+          total={total}
+          segments={segments}
+          activeSegment={activeSegment}
+          setActiveSegment={setActiveSegment}
+        />
         <ul className="breakdown-legend">
-          {segments.map(seg => (
-            <li key={seg.label} className="legend-row">
-              <span className="legend-dot" style={{ background: seg.color }} />
-              <span className="legend-label">{seg.label}</span>
-              <span className="legend-pct">{seg.pct}%</span>
-            </li>
-          ))}
+          {segments.map(seg => {
+            const isHovered = activeSegment?.label === seg.label
+            return (
+              <li
+                key={seg.label}
+                className="legend-row"
+                onMouseEnter={() => setActiveSegment(seg)}
+                onMouseLeave={() => setActiveSegment(null)}
+                style={{
+                  background: isHovered ? 'var(--surface-subtle)' : 'transparent',
+                  borderRadius: '6px',
+                  padding: '2px 4px',
+                  cursor: 'pointer',
+                  fontWeight: isHovered ? '700' : '500',
+                  transition: 'background 0.15s ease',
+                }}
+              >
+                <span className="legend-dot" style={{ background: seg.color }} />
+                <span className="legend-label">{seg.label}</span>
+                <span className="legend-pct">{seg.pct}%</span>
+              </li>
+            )
+          })}
         </ul>
       </div>
     </div>

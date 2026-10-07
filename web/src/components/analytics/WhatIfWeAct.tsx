@@ -11,22 +11,19 @@ function formatM(n: number): string {
 }
 
 export default function WhatIfWeAct() {
-  const { exposedPopulation, rankedSites } = useAeris()
+  const { exposedPopulation, rankedSites, interventionScenario, setInterventionScenario } = useAeris()
 
   const total = exposedPopulation ?? 570_938
   const siteCount = rankedSites?.sites.length ?? 494
 
-  // Modeled counterfactual:
-  // - Phase 1: Protecting 494 schools & hospitals shields ~35% of vulnerable student/patient exposure
-  // - Phase 2: Full authority intervention (GRAP IV + agricultural suppression) avoids up to 55% peak impact
   const schoolHosp = Math.round(total * 0.65)
   const allIntervene = Math.round(total * 0.45)
   const reduction = Math.round((1 - allIntervene / total) * 100)
 
-  const bars = [
-    { label: 'No Action',         value: total,        color: '#E03131' },
-    { label: `${siteCount} Facilities`, value: schoolHosp,   color: '#F59F00' },
-    { label: 'Full Intervene',    value: allIntervene, color: '#22734F' },
+  const bars: { id: 'none' | 'partial' | 'full'; label: string; value: number; color: string }[] = [
+    { id: 'none',    label: 'No Action',         value: total,        color: '#E03131' },
+    { id: 'partial', label: `${siteCount} Facilities`, value: schoolHosp,   color: '#F59F00' },
+    { id: 'full',    label: 'Full Intervene',    value: allIntervene, color: '#22734F' },
   ]
 
   const maxVal = total
@@ -47,23 +44,32 @@ export default function WhatIfWeAct() {
       </div>
 
       <div className="whatif-bars">
-        {bars.map(bar => (
-          <div key={bar.label} className="bar-col">
-            <div className="bar-track">
-              <div
-                className="bar-fill"
-                style={{
-                  height: `${(bar.value / maxVal) * 100}%`,
-                  background: bar.color,
-                }}
-              />
-            </div>
-            <div className="bar-value" style={{ color: bar.color }}>
-              {formatM(bar.value)}
-            </div>
-            <div className="bar-label">{bar.label}</div>
-          </div>
-        ))}
+        {bars.map(bar => {
+          const isSelected = interventionScenario === bar.id
+          return (
+            <button
+              key={bar.id}
+              className={`bar-col interactive-scenario ${isSelected ? 'active' : ''}`}
+              onClick={() => setInterventionScenario(bar.id)}
+              title={`Simulate: ${bar.label} (${formatM(bar.value)} exposed)`}
+              type="button"
+            >
+              <div className="bar-track">
+                <div
+                  className="bar-fill"
+                  style={{
+                    height: `${(bar.value / maxVal) * 100}%`,
+                    background: bar.color,
+                  }}
+                />
+              </div>
+              <div className="bar-value" style={{ color: bar.color }}>
+                {formatM(bar.value)}
+              </div>
+              <div className="bar-label">{bar.label}</div>
+            </button>
+          )
+        })}
       </div>
     </div>
   )

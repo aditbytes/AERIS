@@ -56,10 +56,22 @@ function AreaSparkline({ color }: { color: string }) {
 }
 
 export default function MetricGrid() {
-  const { sources, rankedSites, exposedPopulation } = useAeris()
+  const { sources, rankedSites, activeExposedPopulation, interventionScenario } = useAeris()
 
   const sourceCount  = sources?.sources.length ?? 0
   const siteCount    = rankedSites?.sites.length ?? 0
+
+  const exposedDisplay = activeExposedPopulation
+    ? formatPopulation(activeExposedPopulation)
+    : '571K'
+
+  const exposedDeltaText = interventionScenario === 'full'
+    ? '↓ 55% Averted'
+    : interventionScenario === 'partial'
+    ? '↓ 35% Shielded'
+    : '↑ Acute Risk'
+
+  const exposedDeltaClass = interventionScenario === 'none' ? 'delta-up' : 'delta-down'
 
   return (
     <div className="metric-grid">
@@ -93,14 +105,12 @@ export default function MetricGrid() {
         <div className="metric-body">
           <span className="metric-label">People Potentially Exposed</span>
           <div className="metric-value-row">
-            <span className="metric-value">
-              {exposedPopulation ? formatPopulation(exposedPopulation) : '—'}
-            </span>
-            <span className="delta delta-up">↑ +28%</span>
+            <span className="metric-value">{exposedDisplay}</span>
+            <span className={`delta ${exposedDeltaClass}`}>{exposedDeltaText}</span>
           </div>
         </div>
         <div className="metric-chart">
-          <AreaSparkline color="#C92A2A" />
+          <AreaSparkline color={interventionScenario === 'none' ? '#C92A2A' : '#22734F'} />
         </div>
       </div>
 
