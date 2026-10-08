@@ -5,6 +5,45 @@
   flex-direction: column;
 }
 
+.source-breakdown-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.breakdown-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+  padding: 2px;
+  border-radius: 6px;
+}
+
+.mode-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.mode-btn:hover {
+  color: var(--text-primary);
+}
+
+.mode-btn.active {
+  background: white;
+  color: var(--brand-dark);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
 .breakdown-body {
   display: flex;
   align-items: center;

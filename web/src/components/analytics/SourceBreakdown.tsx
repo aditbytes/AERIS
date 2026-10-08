@@ -78,6 +78,7 @@ function DonutChart({
 export default function SourceBreakdown() {
   const { sources } = useAeris()
   const [activeSegment, setActiveSegment] = useState<Segment | null>(null)
+  const [viewMode, setViewMode] = useState<'frp' | 'scope'>('frp')
 
   const rawSources = sources?.sources ?? []
   const total = rawSources.length
@@ -90,9 +91,13 @@ export default function SourceBreakdown() {
   const moderate = rawSources.filter(s => s.total_frp_mw >= 50 && s.total_frp_mw < 100)
   const low = rawSources.filter(s => s.total_frp_mw < 50)
 
+  // Territory grouping
+  const indiaSources = rawSources.filter(s => s.territory === 'india')
+  const transSources = rawSources.filter(s => s.territory === 'transboundary')
+
   const calcFrp = (arr: typeof rawSources) => arr.reduce((acc, s) => acc + s.total_frp_mw, 0)
 
-  const segments: Segment[] = [
+  const frpSegments: Segment[] = [
     {
       label: 'Severe (>200 MW)',
       pct: Math.round((calcFrp(severe) / totalFrp) * 100) || 70,
@@ -123,10 +128,53 @@ export default function SourceBreakdown() {
     },
   ]
 
+  const scopeSegments: Segment[] = [
+    {
+      label: '🇮🇳 Domestic (India)',
+      pct: Math.round((calcFrp(indiaSources) / totalFrp) * 100) || 70,
+      color: '#DC2626',
+      count: indiaSources.length,
+      frpMw: Math.round(calcFrp(indiaSources)),
+    },
+    {
+      label: '🌐 Transboundary Influx',
+      pct: Math.round((calcFrp(transSources) / totalFrp) * 100) || 30,
+      color: '#D97706',
+      count: transSources.length,
+      frpMw: Math.round(calcFrp(transSources)),
+    },
+  ]
+
+  const segments = viewMode === 'frp' ? frpSegments : scopeSegments
+
   return (
     <div className="source-breakdown card">
-      <div className="section-header">
+      <div className="section-header source-breakdown-head">
         <h3 className="section-title">Source Intensity (FRP)</h3>
+        <div className="breakdown-mode-toggle">
+          <button
+            type="button"
+            className={`mode-btn ${viewMode === 'frp' ? 'active' : ''}`}
+            onClick={() => {
+              setViewMode('frp')
+              setActiveSegment(null)
+            }}
+            title="Group by Fire Radiative Power tiers"
+          >
+            FRP Tiers
+          </button>
+          <button
+            type="button"
+            className={`mode-btn ${viewMode === 'scope' ? 'active' : ''}`}
+            onClick={() => {
+              setViewMode('scope')
+              setActiveSegment(null)
+            }}
+            title="Group by Domestic vs Transboundary Influx"
+          >
+            Airshed Scope
+          </button>
+        </div>
       </div>
       <div className="breakdown-body">
         <DonutChart

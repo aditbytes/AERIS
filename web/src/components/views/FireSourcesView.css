@@ -316,3 +316,118 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Territory Scope Controls */
+.scope-pills-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f0f4f1;
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid #ccd8cf;
+}
+
+.scope-filter-pill {
+  border: none;
+  background: transparent;
+  color: #4b5563;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.scope-filter-pill:hover {
+  color: #164e35;
+}
+
+.scope-filter-pill.active {
+  background: #ffffff;
+  color: #164e35;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* District Cell Formatting */
+.coords-text-sub {
+  font-size: 10px;
+  color: #6b7280;
+  font-family: monospace;
+}
+
+.district-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.district-main {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.district-sub {
+  font-size: 10.5px;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+/* Territory Pills */
+.territory-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2.5px 8px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.territory-pill.india {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.territory-pill.transboundary {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.flame-icon.trans {
+  color: #d97706;
+}
+
+.flame-icon.dom {
+  color: #dc2626;
+}
+
+.frp-bar-fill.trans-bar {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.rank-name-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.rank-flag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: #f3f4f6;
+  color: #4b5563;
+}

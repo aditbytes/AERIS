@@ -17,12 +17,21 @@ export default function FireSourcesView() {
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState<'frp' | 'count' | 'confidence'>('frp')
   const [minFrp, setMinFrp] = useState(0)
+  const [scopeFilter, setScopeFilter] = useState<'all' | 'india' | 'transboundary'>('all')
 
   const sourceList = sources?.sources ?? []
 
   // Metrics
   const totalFrp = useMemo(() => {
     return Math.round(sourceList.reduce((acc, s) => acc + s.total_frp_mw, 0))
+  }, [sourceList])
+
+  const indiaSources = useMemo(() => {
+    return sourceList.filter(s => s.territory === 'india')
+  }, [sourceList])
+
+  const transboundarySources = useMemo(() => {
+    return sourceList.filter(s => s.territory === 'transboundary')
   }, [sourceList])
 
   const totalHotspots = useMemo(() => {
@@ -42,34 +51,39 @@ export default function FireSourcesView() {
   const filteredSources = useMemo(() => {
     return sourceList
       .filter((s) => {
-        const matchesQuery = s.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          s.lat.toFixed(2).includes(searchTerm) ||
-          s.lon.toFixed(2).includes(searchTerm)
+        const query = searchTerm.toLowerCase()
+        const matchesQuery = s.id.toLowerCase().includes(query) ||
+          (s.district && s.district.toLowerCase().includes(query)) ||
+          (s.location_name && s.location_name.toLowerCase().includes(query)) ||
+          s.lat.toFixed(2).includes(query) ||
+          s.lon.toFixed(2).includes(query)
         const matchesFrp = s.total_frp_mw >= minFrp
-        return matchesQuery && matchesFrp
+        const matchesScope = scopeFilter === 'all' || s.territory === scopeFilter
+        return matchesQuery && matchesFrp && matchesScope
       })
       .sort((a, b) => {
         if (sortBy === 'frp') return b.total_frp_mw - a.total_frp_mw
         if (sortBy === 'count') return b.fire_count - a.fire_count
         return b.confidence - a.confidence
       })
-  }, [sourceList, searchTerm, minFrp, sortBy])
+  }, [sourceList, searchTerm, minFrp, scopeFilter, sortBy])
 
   // Export CSV
   const exportCsv = () => {
-    const headers = ['Cluster ID', 'Type', 'Latitude', 'Longitude', 'Hotspot Count', 'Total FRP (MW)', 'Radius (km)', 'Confidence', 'Emission Strength', 'First Seen', 'Last Seen']
+    const headers = ['Cluster ID', 'Territory', 'District', 'State', 'Country', 'Latitude', 'Longitude', 'Hotspots', 'FRP (MW)', 'Confidence', 'Emission Flux', 'Airshed Role']
     const rows = sourceList.map((s) => [
       s.id,
-      s.type,
+      s.territory || 'india',
+      `"${s.district || ''}"`,
+      `"${s.state || ''}"`,
+      `"${s.country || ''}"`,
       s.lat,
       s.lon,
       s.fire_count,
       s.total_frp_mw,
-      s.radius_km,
       (s.confidence * 100).toFixed(0) + '%',
       s.emission_strength.toFixed(2),
-      s.first_seen,
-      s.last_seen,
+      `"${s.airshed_role || ''}"`,
     ])
     const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
@@ -164,16 +178,41 @@ export default function FireSourcesView() {
           <Search size={15} className="search-icon" />
           <input
             type="text"
-            placeholder="Search by cluster ID or coordinates..."
+            placeholder="Search by district, cluster ID, or coordinates..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
+        {/* Territory Scope Pills */}
+        <div className="scope-pills-group">
+          <button
+            type="button"
+            className={`scope-filter-pill ${scopeFilter === 'all' ? 'active' : ''}`}
+            onClick={() => setScopeFilter('all')}
+          >
+            All Airshed ({sourceList.length})
+          </button>
+          <button
+            type="button"
+            className={`scope-filter-pill ${scopeFilter === 'india' ? 'active' : ''}`}
+            onClick={() => setScopeFilter('india')}
+          >
+            🇮🇳 India Scope ({indiaSources.length})
+          </button>
+          <button
+            type="button"
+            className={`scope-filter-pill ${scopeFilter === 'transboundary' ? 'active' : ''}`}
+            onClick={() => setScopeFilter('transboundary')}
+          >
+            🌐 Transboundary ({transboundarySources.length})
+          </button>
+        </div>
+
         <div className="filters-row">
           <div className="sort-group">
             <SlidersHorizontal size={14} />
-            <span>Sort by:</span>
+            <span>Sort:</span>
             <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
               <option value="frp">Radiative Power (FRP)</option>
               <option value="count">Hotspot Count</option>
@@ -203,39 +242,51 @@ export default function FireSourcesView() {
             <table className="fires-table">
               <thead>
                 <tr>
-                  <th>Cluster ID</th>
-                  <th>Location (Lat/Lon)</th>
-                  <th>Fire Radiative Power</th>
+                  <th>Cluster / ID</th>
+                  <th>District / Location</th>
+                  <th>Airshed Scope</th>
+                  <th>FRP Intensity</th>
                   <th>Hotspots</th>
-                  <th>Confidence</th>
-                  <th>Emission Factor</th>
+                  <th>Sensor Conf.</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredSources.map((s) => {
                   const frpPct = Math.min(100, (s.total_frp_mw / 700) * 100)
+                  const isTrans = s.territory === 'transboundary'
                   return (
                     <tr key={s.id}>
                       <td>
                         <div className="cluster-id-cell">
-                          <Flame size={15} className="flame-icon" />
-                          <strong>{s.id}</strong>
+                          <Flame size={15} className={`flame-icon ${isTrans ? 'trans' : 'dom'}`} />
+                          <div>
+                            <strong>{s.id}</strong>
+                            <div className="coords-text-sub">{s.lat.toFixed(3)}°N, {s.lon.toFixed(3)}°E</div>
+                          </div>
                         </div>
                       </td>
                       <td>
-                        <span className="coords-text">{s.lat.toFixed(4)}°N, {s.lon.toFixed(4)}°E</span>
+                        <div className="district-cell">
+                          <span className="district-main">{s.district || s.type}</span>
+                          <span className="district-sub">{s.location_name || s.type}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`territory-pill ${isTrans ? 'transboundary' : 'india'}`}>
+                          {isTrans ? '🌐 Transboundary' : '🇮🇳 Domestic'}
+                        </span>
                       </td>
                       <td>
                         <div className="frp-cell">
                           <div className="frp-val">{s.total_frp_mw.toFixed(1)} MW</div>
                           <div className="frp-bar-bg">
-                            <div className="frp-bar-fill" style={{ width: `${frpPct}%` }} />
+                            <div className={`frp-bar-fill ${isTrans ? 'trans-bar' : ''}`} style={{ width: `${frpPct}%` }} />
                           </div>
                         </div>
                       </td>
                       <td>
-                        <span className="count-pill">{s.fire_count} pts</span>
+                        <span className="count-pill">{s.fire_count} fires</span>
                       </td>
                       <td>
                         <span className={`conf-badge ${s.confidence >= 0.8 ? 'high' : 'med'}`}>
@@ -243,12 +294,9 @@ export default function FireSourcesView() {
                         </span>
                       </td>
                       <td>
-                        <span className="strength-text">{s.emission_strength.toFixed(2)}</span>
-                      </td>
-                      <td>
                         <button
                           className="btn-inspect-map"
-                          onClick={() => handleInspectMap(s.lat, s.lon, s.id)}
+                          onClick={() => handleInspectMap(s.lat, s.lon, s.district || s.id)}
                           title="Fly to cluster on GIS map"
                         >
                           <MapPin size={13} />
@@ -277,16 +325,28 @@ export default function FireSourcesView() {
               .map((s, idx) => {
                 const maxVal = sourceList[0]?.total_frp_mw || 1
                 const pct = (s.total_frp_mw / maxVal) * 100
+                const isTrans = s.territory === 'transboundary'
 
                 return (
                   <div key={s.id} className="rank-item">
                     <div className="rank-item-header">
                       <span className="rank-num">#{idx + 1}</span>
-                      <span className="rank-name">{s.id}</span>
+                      <div className="rank-name-box">
+                        <span className="rank-name">{s.district || s.id}</span>
+                        <span className="rank-flag">{isTrans ? '🌐 PK' : '🇮🇳 IN'}</span>
+                      </div>
                       <span className="rank-frp">{s.total_frp_mw.toFixed(1)} MW</span>
                     </div>
                     <div className="rank-track">
-                      <div className="rank-fill" style={{ width: `${pct}%` }} />
+                      <div
+                        className="rank-fill"
+                        style={{
+                          width: `${pct}%`,
+                          background: isTrans
+                            ? 'linear-gradient(90deg, #F59E0B, #D97706)'
+                            : 'linear-gradient(90deg, #F59E0B, #DC2626)',
+                        }}
+                      />
                     </div>
                   </div>
                 )
