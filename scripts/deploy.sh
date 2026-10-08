@@ -25,7 +25,8 @@ sam deploy \
   --no-confirm-changeset \
   --no-fail-on-empty-changeset \
   --parameter-overrides "AlertEmail=$ALERT_EMAIL" "MonthlyBudgetUsd=${MONTHLY_BUDGET_USD:-50}" \
-    ${AGENT_MODEL_ID:+"AgentModelId=$AGENT_MODEL_ID"}
+    ${AGENT_MODEL_ID:+"AgentModelId=$AGENT_MODEL_ID"} \
+    ${AGENT_FALLBACK_MODEL_IDS:+"AgentFallbackModelIds=$AGENT_FALLBACK_MODEL_IDS"}
 
 aws cloudformation describe-stacks --region "$REGION" --stack-name "$STACK" \
   --query 'Stacks[0].Outputs' --output table
