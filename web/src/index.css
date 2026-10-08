@@ -1,0 +1,323 @@
+/* =========================================================
+   AERIS — Global Design System
+   index.css
+   ========================================================= */
+
+/* 1. Google Font import fallback (loaded in <head> too) */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+/* 2. CSS Custom Properties — Design Tokens */
+:root {
+  /* Surfaces */
+  --bg-app:              #F2F5F2;
+  --surface-card:        #FFFFFF;
+  --surface-subtle:      #F8FAF8;
+  --border-subtle:       rgba(0, 40, 20, 0.07);
+  --shadow-card:         0 2px 16px -4px rgba(18, 50, 30, 0.08), 0 1px 4px -1px rgba(18, 50, 30, 0.04);
+  --shadow-float:        0 12px 40px -8px rgba(18, 50, 30, 0.16);
+  --shadow-sm:           0 1px 6px rgba(18, 50, 30, 0.06);
+
+  /* Brand — Forest Green */
+  --brand-dark:          #1A4433;
+  --brand-primary:       #22734F;
+  --brand-medium:        #2D9765;
+  --brand-light:         #E6F2EB;
+  --brand-glow:          rgba(34, 115, 79, 0.15);
+
+  /* Risk Severity */
+  --risk-vh-text:        #C92A2A;
+  --risk-vh-bg:          #FFF0F0;
+  --risk-vh-border:      #FFCDD2;
+  --risk-h-text:         #D4620A;
+  --risk-h-bg:           #FFF4EC;
+  --risk-h-border:       #FFD6B0;
+  --risk-m-text:         #B45309;
+  --risk-m-bg:           #FFFBEB;
+  --risk-m-border:       #FDE68A;
+  --risk-l-text:         #166534;
+  --risk-l-bg:           #F0FDF4;
+  --risk-l-border:       #BBF7D0;
+
+  /* Neutral Text */
+  --text-primary:        #1A2421;
+  --text-secondary:      #4A5E56;
+  --text-tertiary:       #7A8E88;
+  --text-disabled:       #B0BEB8;
+
+  /* Spacing & Shape */
+  --radius-card:         18px;
+  --radius-card-sm:      12px;
+  --radius-pill:         9999px;
+  --radius-btn:          10px;
+
+  /* Typography */
+  --font:                'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* 3. Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--bg-app);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 4. Scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--brand-light) transparent;
+}
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--brand-light); border-radius: 10px; }
+
+/* 5. App Shell Layout */
+.app-shell {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: var(--bg-app);
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.dashboard-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+
+/* 6. Card Base */
+.card {
+  background: var(--surface-card);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  position: relative;
+}
+
+.card-sm {
+  border-radius: var(--radius-card-sm);
+}
+
+/* 7. Risk Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.badge-vh  { color: var(--risk-vh-text); background: var(--risk-vh-bg); border: 1px solid var(--risk-vh-border); }
+.badge-h   { color: var(--risk-h-text);  background: var(--risk-h-bg);  border: 1px solid var(--risk-h-border); }
+.badge-m   { color: var(--risk-m-text);  background: var(--risk-m-bg);  border: 1px solid var(--risk-m-border); }
+.badge-l   { color: var(--risk-l-text);  background: var(--risk-l-bg);  border: 1px solid var(--risk-l-border); }
+
+/* 8. Delta Pills (KPI cards) */
+.delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+}
+.delta-up   { background: #E8F5E9; color: #2E7D32; }
+.delta-down { background: #FBE9E7; color: #BF360C; }
+
+/* 9. Buttons */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  background: var(--brand-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-btn);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+}
+.btn-primary:hover {
+  background: var(--brand-dark);
+  box-shadow: 0 4px 14px var(--brand-glow);
+  transform: translateY(-1px);
+}
+.btn-primary:active { transform: translateY(0); }
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: transparent;
+  color: var(--brand-primary);
+  border: 1px solid var(--brand-light);
+  border-radius: var(--radius-btn);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.btn-ghost:hover { background: var(--brand-light); border-color: var(--brand-medium); }
+
+/* 10. Section Headers */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.section-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brand-primary);
+  cursor: pointer;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  transition: gap 0.15s;
+}
+.section-link:hover { gap: 6px; }
+
+/* 11. Utility */
+.text-sm { font-size: 12px; }
+.text-xs { font-size: 11px; }
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary  { color: var(--text-tertiary); }
+.font-semibold  { font-weight: 600; }
+.font-bold      { font-weight: 700; }
+.flex           { display: flex; }
+.items-center   { align-items: center; }
+.gap-2          { gap: 8px; }
+.gap-1          { gap: 4px; }
+
+/* 12. Pulsing fire marker animation */
+@keyframes pulse-ring {
+  0%   { transform: scale(0.9); opacity: 0.8; }
+  50%  { transform: scale(1.4); opacity: 0; }
+  100% { transform: scale(0.9); opacity: 0; }
+}
+
+.pulse-marker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pulse-marker::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(220, 53, 69, 0.4);
+  animation: pulse-ring 1.6s ease-out infinite;
+}
+
+/* 13. Fade-in animation for cards */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.card { animation: fadeInUp 0.35s ease both; }
+
+/* 14. MapLibre GL override — remove default attribution UI clutter */
+.maplibregl-ctrl-attrib { display: none !important; }
+.maplibregl-ctrl-logo   { display: none !important; }
+
+/* 15. Accessibility & Motion Preferences (WCAG AA) */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 16. Visible Focus Indicators (WCAG AA) */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--brand-primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* 17. Executive Briefing Print Stylesheet */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .sidebar,
+  .map-layer-dock,
+  .time-controls,
+  .refresh-btn,
+  .notif-wrapper,
+  .officer-session-chip,
+  .export-btn,
+  .section-link {
+    display: none !important;
+  }
+  .app-shell, .main-content, .dashboard-body {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #CBD5E1 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 12px;
+  }
+}
