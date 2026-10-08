@@ -558,6 +558,53 @@ Resources:
             # FIRMS lands every 15 min; refresh the derived files every 30
             ScheduleExpression: rate(30 minutes)
 
+  # --- API: gold/ -> API Gateway (HTTP API) --------------------------------
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins:
+          - http://localhost:5173
+        AllowMethods: [GET, POST, OPTIONS]
+        AllowHeaders: [Content-Type]
+        MaxAge: 600
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 50
+        ThrottlingRateLimit: 20
+      RouteSettings:
+        "POST /run":
+          ThrottlingBurstLimit: 1
+          ThrottlingRateLimit: 1
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      CodeUri: lambda/
+      Handler: api.handlers.app.lambda_handler
+      Role: !GetAtt ApiRole.Arn
+      MemorySize: 512
+      Timeout: 15
+      Environment:
+        Variables:
+          STATE_MACHINE_ARN: !Ref PipelineStateMachine
+      Events:
+        Health: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /health}}
+        Sources: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /sources}}
+        Corridor: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /corridor}}
+        Sites: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /sites}}
+        RankedSites: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /ranked-sites}}
+        SitesRanked: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /sites/ranked}}
+        Actions: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /actions}}
+        Stations: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /stations}}
+        Aqi: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /aqi}}
+        Wind: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /wind}}
+        Fires: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /fires}}
+        Summary: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /summary}}
+        StartRun: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: POST, Path: /run}}
+        RunStatus: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: "/run/{run_id}"}}
+
   # --- Cost guard ---------------------------------------------------------
   MonthlyBudget:
     Type: AWS::Budgets::Budget
@@ -578,6 +625,9 @@ Resources:
           Subscribers: [{SubscriptionType: EMAIL, Address: !Ref AlertEmail}]
 
 Outputs:
+  ApiUrl:
+    Description: API_BASE_URL for the web build
+    Value: !Sub https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com
   PipelineStateMachineArn: {Value: !Ref PipelineStateMachine}
   FetchDlqUrl: {Value: !Ref FetchDlq}
   FetchDlqArn: {Value: !GetAtt FetchDlq.Arn}
