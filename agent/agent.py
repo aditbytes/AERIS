@@ -163,7 +163,8 @@ def generate_action_plan(data_dir: Path | None = None) -> ActionsOutput:
         AuthorityAction(
             who="Directorate of Education (DoE)",
             action="Issue mandatory circular for all outdoor school activities and assemblies to remain indoors until 12:00 PM",
-            reason=f"Top 50 schools located directly along the downwind dispersion path",
+            reason=f"{sum(1 for s in get_ranked_sites(top_n=100_000) if s.get('type') == 'school'):,} "
+            "ranked schools located inside the forecast corridor",
         ),
     ]
 
