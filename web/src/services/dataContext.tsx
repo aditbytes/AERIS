@@ -47,7 +47,7 @@ export interface AerisState extends TimeContextState {
   // Derived convenience
   exposedPopulation:       number | null
   activeExposedPopulation: number | null
-  avertedExposures:        number
+  avertedExposures:        number | null
   etaHours:                number | null           // min ETA of highest-ranked source
   avgAqi:                  number | null           // mean AQI across live ground stations
 
@@ -187,7 +187,8 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
 
   // Derived: active simulated exposed population based on scenario (memoized)
   const activeExposedPopulation = useMemo(() => {
-    const raw = exposedPopulation ?? 570938
+    if (exposedPopulation == null) return null
+    const raw = exposedPopulation
     return interventionScenario === 'none'
       ? raw
       : interventionScenario === 'partial'
@@ -196,8 +197,8 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
   }, [exposedPopulation, interventionScenario])
 
   const avertedExposures = useMemo(() => {
-    const raw = exposedPopulation ?? 570938
-    return raw - activeExposedPopulation
+    if (exposedPopulation == null || activeExposedPopulation == null) return null
+    return exposedPopulation - activeExposedPopulation
   }, [exposedPopulation, activeExposedPopulation])
 
   // Derived: minimum ETA across top-3 ranked sites (memoized)
