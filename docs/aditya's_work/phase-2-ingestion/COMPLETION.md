@@ -2,7 +2,7 @@
 
 > ⚠️ **No demo data.** AERIS uses only real data from live sources. Never create mock, sample, placeholder or fabricated data — not in code, UI, tests or as a fallback. If a live source is down, return an error and show an error state. Only real snapshots captured into `data/live/` (stamped with source and fetch time) are allowed offline.
 
-Date: 2026-10-08 · PR: [#5](https://github.com/aditbytes/AERIS/pull/5) (merged) plus the `aditya_8oct_phase2_close` follow-up · Stack: `aeris-foundation`, region `ap-south-1`
+Date: 2026-10-08 · PR: [#5](https://github.com/aditbytes/AERIS/pull/5) (merged) plus the `aditya_8oct_phases_2_to_4` follow-up · Stack: `aeris-foundation`, region `ap-south-1`
 
 ## Status: done — scheduled real data has been landing in `bronze/` all day
 
