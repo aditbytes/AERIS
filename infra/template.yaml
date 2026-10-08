@@ -6,6 +6,10 @@ Globals:
   Function:
     Runtime: python3.12
     Architectures: [arm64]
+    Environment:
+      Variables:
+        AERIS_STORAGE: s3
+        AERIS_S3_BUCKET: !Ref DataBucket
 
 Parameters:
   AlertEmail:
