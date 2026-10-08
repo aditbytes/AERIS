@@ -90,3 +90,35 @@ def test_run_routes_disabled_without_state_machine(gold):
 
 def test_unknown_route_is_404(gold):
     assert call("GET /nope")[0] == 404
+
+
+class _FakeSfn:
+    """Stand-in for the Step Functions client; records calls, returns no data payloads."""
+
+    class exceptions:
+        class ExecutionDoesNotExist(Exception):
+            pass
+
+    def __init__(self, running):
+        self.running, self.started = running, False
+
+    def list_executions(self, **kw):
+        return {"executions": [{"executionArn": "arn:aws:states:r:1:execution:sm:busy-run"}] if self.running else []}
+
+    def start_execution(self, **kw):
+        self.started = True
+        return {"executionArn": "arn:aws:states:r:1:execution:sm:new-run", "startDate": datetime.now(timezone.utc)}
+
+
+@pytest.mark.parametrize("running,status", [(True, 409), (False, 200)])
+def test_run_allows_one_execution_at_a_time(gold, monkeypatch, running, status):
+    fake = _FakeSfn(running)
+    monkeypatch.setenv("STATE_MACHINE_ARN", "arn:aws:states:r:1:stateMachine:sm")
+    monkeypatch.setattr(app, "_sfn", lambda: fake)
+    code, body, _ = call("POST /run")
+    assert code == status
+    assert fake.started is (not running)
+    if running:
+        assert body["error"] == "run_in_progress"
+    else:
+        assert body["run_id"] == "new-run"

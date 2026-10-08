@@ -138,7 +138,13 @@ def _start_run(_: dict[str, str]) -> dict[str, Any]:
     arn = os.environ.get("STATE_MACHINE_ARN")
     if not arn:
         raise ApiError(501, "not_configured", "POST /run is not enabled on this deployment")
-    resp = _sfn().start_execution(stateMachineArn=arn)
+    sfn = _sfn()
+    # Public route: allow one run at a time so it cannot be used to pile up Bedrock calls.
+    running = sfn.list_executions(stateMachineArn=arn, statusFilter="RUNNING", maxResults=1)["executions"]
+    if running:
+        run_id = running[0]["executionArn"].rsplit(":", 1)[-1]
+        raise ApiError(409, "run_in_progress", f"Run {run_id} is still running")
+    resp = sfn.start_execution(stateMachineArn=arn)
     run_id = resp["executionArn"].rsplit(":", 1)[-1]
     return {"run_id": run_id, "status": "running", "started_at": resp["startDate"].isoformat()}
 
