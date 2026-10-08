@@ -269,3 +269,54 @@ body {
 /* 14. MapLibre GL override — remove default attribution UI clutter */
 .maplibregl-ctrl-attrib { display: none !important; }
 .maplibregl-ctrl-logo   { display: none !important; }
+
+/* 15. Accessibility & Motion Preferences (WCAG AA) */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 16. Visible Focus Indicators (WCAG AA) */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--brand-primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* 17. Executive Briefing Print Stylesheet */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .sidebar,
+  .map-layer-dock,
+  .time-controls,
+  .refresh-btn,
+  .notif-wrapper,
+  .officer-session-chip,
+  .export-btn,
+  .section-link {
+    display: none !important;
+  }
+  .app-shell, .main-content, .dashboard-body {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #CBD5E1 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 12px;
+  }
+}

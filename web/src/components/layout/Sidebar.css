@@ -15,8 +15,8 @@
 }
 
 .sidebar.expanded {
-  width: 236px;
-  min-width: 236px;
+  width: 248px;
+  min-width: 248px;
 }
 
 .sidebar.collapsed {
@@ -223,29 +223,41 @@
 
 .btn-label-text {
   flex: 1;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   letter-spacing: -0.01em;
 }
 
-/* Shortcuts & Badges in Expanded Mode */
+/* Shortcuts & Badges in Expanded Mode: Shortcut hidden by default so it doesn't look like data */
 .btn-shortcut-key {
   font-size: 10px;
   font-weight: 600;
   color: var(--text-tertiary);
-  opacity: 0.6;
+  opacity: 0;
+  visibility: hidden;
   padding: 1px 5px;
   border-radius: 4px;
   background: var(--surface-subtle);
   margin-left: 4px;
   flex-shrink: 0;
+  transform: translateX(4px);
+  transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+}
+
+.sidebar-item-wrapper:hover .btn-shortcut-key,
+.sidebar-nav-item-btn:focus-visible .btn-shortcut-key,
+.sidebar-item-wrapper:focus-within .btn-shortcut-key {
+  opacity: 0.85;
+  visibility: visible;
+  transform: translateX(0);
 }
 
 .sidebar-nav-item-btn.active .btn-shortcut-key {
   background: rgba(255, 255, 255, 0.2);
   color: white;
-  opacity: 0.85;
 }
 
 .nav-badge-pill {
@@ -454,4 +466,3 @@
   color: var(--brand-primary);
   border-color: var(--brand-medium);
 }
-

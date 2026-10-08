@@ -43,7 +43,7 @@ export const SATELLITE_STYLE: any = {
       minzoom: 0,
       maxzoom: 19,
       paint: {
-        'raster-opacity': 0.95,
+        'raster-opacity': 0.60,
       },
     },
   ],
@@ -155,7 +155,7 @@ export function setupMapLayers(map: Map, mode: BasemapMode) {
     })
   }
 
-  // Plume fill layer
+  // Plume fill layer with clear discrete color ramp for 0-2h, 2-4h, 4-8h, 8-24h bands
   if (!map.getLayer('plume-fill')) {
     map.addLayer({
       id: 'plume-fill',
@@ -164,13 +164,15 @@ export function setupMapLayers(map: Map, mode: BasemapMode) {
       filter: ['==', ['get', 'kind'], 'band'],
       paint: {
         'fill-color': [
-          'interpolate', ['linear'], ['get', 'hour_from'],
-          0, isDarkOrSat ? 'rgba(239, 68, 68, 0.82)' : 'rgba(201, 42, 42, 0.68)',
-          2, isDarkOrSat ? 'rgba(249, 115, 22, 0.70)' : 'rgba(212, 98, 10, 0.58)',
-          4, isDarkOrSat ? 'rgba(245, 158, 11, 0.52)' : 'rgba(245, 159, 0, 0.42)',
-          8, isDarkOrSat ? 'rgba(234, 179, 8, 0.35)'  : 'rgba(245, 215, 0, 0.28)',
+          'match',
+          ['get', 'hour_from'],
+          0, '#DC2626',
+          2, '#EA580C',
+          4, '#D97706',
+          8, '#CA8A04',
+          '#DC2626',
         ],
-        'fill-opacity': isDarkOrSat ? 0.92 : 0.85,
+        'fill-opacity': isDarkOrSat ? 0.72 : 0.62,
       },
     })
   }
@@ -183,14 +185,14 @@ export function setupMapLayers(map: Map, mode: BasemapMode) {
       source: 'corridor',
       filter: ['==', ['get', 'kind'], 'band'],
       paint: {
-        'line-color': isDarkOrSat ? 'rgba(254, 202, 202, 0.7)' : 'rgba(180, 40, 40, 0.5)',
+        'line-color': isDarkOrSat ? 'rgba(254, 226, 226, 0.75)' : '#991B1B',
         'line-width': 1.2,
         'line-opacity': 0.8,
       },
     })
   }
 
-  // Plume centerline (dispersion trajectory trajectory vector)
+  // Plume centerline (dispersion trajectory vector)
   if (!map.getLayer('plume-centerline')) {
     map.addLayer({
       id: 'plume-centerline',
@@ -199,9 +201,51 @@ export function setupMapLayers(map: Map, mode: BasemapMode) {
       filter: ['==', ['get', 'kind'], 'centerline'],
       paint: {
         'line-color': '#FFFFFF',
-        'line-width': 2.4,
+        'line-width': 2.2,
         'line-dasharray': [4, 2],
         'line-opacity': 0.95,
+      },
+    })
+  }
+
+  // Centerline ETA milestone ticks source & layer
+  if (!map.getSource('corridor-eta')) {
+    map.addSource('corridor-eta', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] },
+    })
+  }
+
+  if (!map.getLayer('corridor-eta-circles')) {
+    map.addLayer({
+      id: 'corridor-eta-circles',
+      type: 'circle',
+      source: 'corridor-eta',
+      paint: {
+        'circle-radius': 3.5,
+        'circle-color': '#FFFFFF',
+        'circle-stroke-width': 1.5,
+        'circle-stroke-color': '#0F172A',
+      },
+    })
+  }
+
+  if (!map.getLayer('corridor-eta-labels')) {
+    map.addLayer({
+      id: 'corridor-eta-labels',
+      type: 'symbol',
+      source: 'corridor-eta',
+      layout: {
+        'text-field': ['get', 'label'],
+        'text-size': 9.5,
+        'text-offset': [0, 1.2],
+        'text-anchor': 'top',
+        'text-allow-overlap': true,
+      },
+      paint: {
+        'text-color': '#FFFFFF',
+        'text-halo-color': '#0F172A',
+        'text-halo-width': 2,
       },
     })
   }

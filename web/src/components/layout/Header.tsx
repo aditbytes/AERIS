@@ -1,13 +1,9 @@
 import {
   Bell,
-  ChevronDown,
-  LogOut,
   PanelLeft,
   RefreshCw,
   Search,
-  Settings,
   ShieldCheck,
-  User,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import './Header.css'
@@ -33,11 +29,14 @@ export default function Header() {
     setActiveTab,
     isSidebarCollapsed,
     toggleSidebar,
+    sources,
+    actions,
+    rankedSites,
+    aqi,
   } = useAeris()
 
   const [searchInput, setSearchInput] = useState('')
   const [showNotifs, setShowNotifs] = useState(false)
-  const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [unreadCount, setUnreadCount] = useState(3)
 
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -128,12 +127,54 @@ export default function Header() {
         </form>
       </div>
 
-      {/* Right: Live Status Badge + Refresh + Notifications + Officer Profile */}
+      {/* Right: Live Status Badge + Refresh + Notifications + Operational Desk Chip */}
       <div className="header-right">
-        <div className="live-status-chip" title="Live satellite and ground station streams synced">
-          <span className="live-status-dot" />
-          <span className="live-status-text">LIVE</span>
-        </div>
+        {(() => {
+          const timestamps = [
+            sources?.generated_at,
+            actions?.generated_at,
+            rankedSites?.generated_at,
+            aqi?.generated_at,
+          ].filter(Boolean) as string[]
+
+          let liveText = 'LIVE'
+          let isStale = false
+          let freshnessTitle = 'Data synchronized'
+
+          if (timestamps.length > 0) {
+            const latestTime = Math.max(...timestamps.map(t => new Date(t).getTime()))
+            const now = Date.now()
+            const diffMs = Math.max(0, now - latestTime)
+            const diffMin = Math.floor(diffMs / 60000)
+            const diffHours = Math.floor(diffMin / 60)
+            const diffDays = Math.floor(diffHours / 24)
+
+            if (diffDays >= 1) {
+              isStale = true
+              liveText = `Stale · ${diffDays}d old`
+              freshnessTitle = `Telemetry snapshot from ${new Date(latestTime).toLocaleDateString('en-IN')}`
+            } else if (diffHours >= 1) {
+              liveText = `Live · ${diffHours}h ago`
+              freshnessTitle = `Snapshot updated ${diffHours}h ago (${new Date(latestTime).toLocaleTimeString('en-IN')})`
+            } else if (diffMin > 0) {
+              liveText = `Live · updated ${diffMin} min ago`
+              freshnessTitle = `Snapshot updated ${diffMin} min ago`
+            } else {
+              liveText = 'Live · updated just now'
+              freshnessTitle = 'Synchronized with latest data snapshot'
+            }
+          }
+
+          return (
+            <div
+              className={`live-status-chip ${isStale ? 'stale' : 'live'}`}
+              title={freshnessTitle}
+            >
+              <span className="live-status-dot" />
+              <span className="live-status-text">{liveText}</span>
+            </div>
+          )
+        })()}
 
         <button
           className="icon-btn refresh-btn"
@@ -152,7 +193,6 @@ export default function Header() {
             aria-label="Notifications"
             onClick={() => {
               setShowNotifs(!showNotifs)
-              setShowProfileMenu(false)
             }}
             type="button"
           >
@@ -228,62 +268,20 @@ export default function Header() {
           )}
         </div>
 
-        {/* User Profile */}
-        <div className="user-profile-wrapper">
-          <div
-            className="user-profile"
-            onClick={() => {
-              setShowProfileMenu(!showProfileMenu)
-              setShowNotifs(false)
-            }}
-            role="button"
-            tabIndex={0}
-          >
-            <div className="user-avatar">
-              <User size={15} color="white" />
-            </div>
-            <div className="user-info">
-              <span className="user-name">Saba Saeed</span>
-              <span className="user-role">Environmental Officer</span>
-            </div>
-            <ChevronDown size={14} className="user-chevron" />
+        {/* Operational Officer Desk Chip (Replaces mock profile/logout) */}
+        <div
+          className="officer-session-chip"
+          title="Active CAQM / DPCC Operations Desk (Local Read-Only Session)"
+        >
+          <div className="officer-avatar-badge">
+            <ShieldCheck size={14} color="#059669" />
           </div>
-
-          {showProfileMenu && (
-            <div className="profile-dropdown-menu">
-              <div className="profile-menu-header">
-                <span className="menu-name">Saba Saeed</span>
-                <span className="menu-email">sabasaid826@gmail.com</span>
-                <span className="menu-badge">
-                  <ShieldCheck size={12} /> Officer Clearance
-                </span>
-              </div>
-              <div className="profile-menu-items">
-                <button
-                  className="profile-menu-item"
-                  onClick={() => {
-                    setActiveTab('settings')
-                    setShowProfileMenu(false)
-                  }}
-                  type="button"
-                >
-                  <Settings size={15} />
-                  <span>System Settings</span>
-                </button>
-                <button
-                  className="profile-menu-item danger"
-                  onClick={() => setShowProfileMenu(false)}
-                  type="button"
-                >
-                  <LogOut size={15} />
-                  <span>End Session</span>
-                </button>
-              </div>
-            </div>
-          )}
+          <div className="officer-meta">
+            <span className="officer-desk-title">CAQM Incident Desk</span>
+            <span className="officer-session-tag">Duty Officer · Local Session</span>
+          </div>
         </div>
       </div>
     </header>
   )
 }
-

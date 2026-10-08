@@ -1,6 +1,6 @@
+import { lazy, Suspense } from 'react'
 import { useAeris } from '@/services/dataContext'
 import AgentWidget from '@/components/agent/AgentWidget'
-import ActionsModal from '@/components/agent/ActionsModal'
 import AqiForecast12h from '@/components/analytics/AqiForecast12h'
 import RecommendedActions from '@/components/analytics/RecommendedActions'
 import SourceBreakdown from '@/components/analytics/SourceBreakdown'
@@ -9,29 +9,77 @@ import MetricGrid from '@/components/kpi/MetricGrid'
 import Header from '@/components/layout/Header'
 import Sidebar from '@/components/layout/Sidebar'
 import MapContainer from '@/components/map/MapContainer'
-import MapExplorerView from '@/components/map/MapExplorerView'
 import TopAffectedAreas from '@/components/sites/TopAffectedAreas'
-import AnalyticsView from '@/components/views/AnalyticsView'
-import WindWeatherView from '@/components/views/WindWeatherView'
-import FireSourcesView from '@/components/views/FireSourcesView'
-import PopulationRiskView from '@/components/views/PopulationRiskView'
-import ActionsWorkbenchView from '@/components/views/ActionsWorkbenchView'
-import SettingsView from '@/components/views/SettingsView'
 import './App.css'
 
-function LoadingScreen() {
+// Lazy-loaded non-dashboard views for route-level code splitting
+const MapExplorerView = lazy(() => import('@/components/map/MapExplorerView'))
+const AnalyticsView = lazy(() => import('@/components/views/AnalyticsView'))
+const WindWeatherView = lazy(() => import('@/components/views/WindWeatherView'))
+const FireSourcesView = lazy(() => import('@/components/views/FireSourcesView'))
+const PopulationRiskView = lazy(() => import('@/components/views/PopulationRiskView'))
+const ActionsWorkbenchView = lazy(() => import('@/components/views/ActionsWorkbenchView'))
+const SettingsView = lazy(() => import('@/components/views/SettingsView'))
+const ActionsModal = lazy(() => import('@/components/agent/ActionsModal'))
+
+function ViewSkeleton() {
   return (
-    <div className="loading-screen">
-      <div className="loading-logo">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#22734F" strokeWidth="2" strokeLinecap="round">
-          <path d="M12 2C6 8 4 13 8 17c1.5 1.5 4 2 6 2" />
-          <path d="M12 2c6 6 8 11 4 15-1.5 1.5-4 2-6 2" />
-          <line x1="12" y1="2" x2="12" y2="10" />
-        </svg>
+    <div className="view-skeleton-container" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div className="skeleton-box" style={{ height: '40px', width: '280px', borderRadius: '8px' }} />
+      <div className="skeleton-box" style={{ height: '540px', width: '100%', borderRadius: '12px' }} />
+    </div>
+  )
+}
+
+function SkeletonDashboard() {
+  return (
+    <div className="dashboard-body skeleton-mode">
+      {/* KPI Skeleton Row */}
+      <div className="kpi-grid">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="card skeleton-card" style={{ height: '110px' }}>
+            <div className="skeleton-box" style={{ width: '40%', height: '14px', marginBottom: '12px' }} />
+            <div className="skeleton-box" style={{ width: '60%', height: '28px', marginBottom: '10px' }} />
+            <div className="skeleton-box" style={{ width: '80%', height: '12px' }} />
+          </div>
+        ))}
       </div>
-      <div className="loading-title">AERIS</div>
-      <div className="loading-sub">Loading real-time environmental data...</div>
-      <div className="loading-bar"><div className="loading-bar-fill" /></div>
+
+      {/* Main Map + Agent Row */}
+      <div className="main-row">
+        <div className="map-area">
+          <div className="card skeleton-card" style={{ height: '440px', width: '100%' }}>
+            <div className="skeleton-box" style={{ width: '100%', height: '100%' }} />
+          </div>
+        </div>
+        <div className="agent-area">
+          <div className="card skeleton-card" style={{ height: '440px', width: '100%' }}>
+            <div className="skeleton-box" style={{ width: '50%', height: '20px', marginBottom: '16px' }} />
+            <div className="skeleton-box" style={{ width: '100%', height: '80px', marginBottom: '12px' }} />
+            <div className="skeleton-box" style={{ width: '100%', height: '180px' }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Analytics Row */}
+      <div className="analytics-row-3col">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="card skeleton-card" style={{ height: '220px' }}>
+            <div className="skeleton-box" style={{ width: '50%', height: '16px', marginBottom: '14px' }} />
+            <div className="skeleton-box" style={{ width: '100%', height: '140px' }} />
+          </div>
+        ))}
+      </div>
+
+      {/* Receptors Row */}
+      <div className="receptors-row-2col">
+        {[1, 2].map(i => (
+          <div key={i} className="card skeleton-card" style={{ height: '260px' }}>
+            <div className="skeleton-box" style={{ width: '40%', height: '16px', marginBottom: '14px' }} />
+            <div className="skeleton-box" style={{ width: '100%', height: '180px' }} />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -53,8 +101,7 @@ function ErrorScreen({ message }: { message: string }) {
 function Dashboard() {
   const { loading, error, activeTab } = useAeris()
 
-  if (loading) return <LoadingScreen />
-  if (error)   return <ErrorScreen message={error} />
+  if (error) return <ErrorScreen message={error} />
 
   const isDedicatedView = ['map', 'analytics', 'wind', 'sources', 'population', 'shield', 'settings'].includes(activeTab)
 
@@ -63,45 +110,55 @@ function Dashboard() {
       <Sidebar />
       <div className="main-content">
         <Header />
-        {activeTab === 'map' && <MapExplorerView />}
-        {activeTab === 'analytics' && <AnalyticsView />}
-        {activeTab === 'wind' && <WindWeatherView />}
-        {activeTab === 'sources' && <FireSourcesView />}
-        {activeTab === 'population' && <PopulationRiskView />}
-        {activeTab === 'shield' && <ActionsWorkbenchView />}
-        {activeTab === 'settings' && <SettingsView />}
+
+        <Suspense fallback={<ViewSkeleton />}>
+          {activeTab === 'map' && <MapExplorerView />}
+          {activeTab === 'analytics' && <AnalyticsView />}
+          {activeTab === 'wind' && <WindWeatherView />}
+          {activeTab === 'sources' && <FireSourcesView />}
+          {activeTab === 'population' && <PopulationRiskView />}
+          {activeTab === 'shield' && <ActionsWorkbenchView />}
+          {activeTab === 'settings' && <SettingsView />}
+        </Suspense>
 
         {!isDedicatedView && (
-          <div className="dashboard-body">
-            {/* Row 1: KPI Metrics */}
-            <MetricGrid />
+          loading ? (
+            <SkeletonDashboard />
+          ) : (
+            <div className="dashboard-body">
+              {/* Row 1: KPI Metrics */}
+              <MetricGrid />
 
-            {/* Row 2: 2 Columns - Expanded Map (span 3) + Agent (span 1) */}
-            <div className="main-row">
-              <div className="map-area">
-                <MapContainer />
+              {/* Row 2: 2 Columns - Expanded Map (span 3) + Agent (span 1) */}
+              <div className="main-row">
+                <div className="map-area">
+                  <MapContainer />
+                </div>
+                <div className="agent-area">
+                  <AgentWidget />
+                </div>
               </div>
-              <div className="agent-area">
-                <AgentWidget />
+
+              {/* Row 3: 3 tabs in a row - Environmental & Forecasting Analytics */}
+              <div className="analytics-row-3col">
+                <SourceBreakdown />
+                <AqiForecast12h />
+                <WhatIfWeAct />
+              </div>
+
+              {/* Row 4: Top Affected Areas and Recommended Actions in the row below */}
+              <div className="receptors-row-2col">
+                <TopAffectedAreas />
+                <RecommendedActions />
               </div>
             </div>
-
-            {/* Row 3: 3 tabs in a row - Environmental & Forecasting Analytics */}
-            <div className="analytics-row-3col">
-              <SourceBreakdown />
-              <AqiForecast12h />
-              <WhatIfWeAct />
-            </div>
-
-            {/* Row 4: Top Affected Areas and Recommended Actions in the row below */}
-            <div className="receptors-row-2col">
-              <TopAffectedAreas />
-              <RecommendedActions />
-            </div>
-          </div>
+          )
         )}
       </div>
-      <ActionsModal />
+
+      <Suspense fallback={null}>
+        <ActionsModal />
+      </Suspense>
     </div>
   )
 }

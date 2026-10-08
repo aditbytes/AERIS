@@ -1,21 +1,27 @@
 /**
  * AERIS Data Context
  * Centralized React Context that:
- *  1. Loads all four data files on mount
- *  2. Provides shared state: time filter, selected site, error/loading status
- *  3. Acts as the single source of truth for the entire dashboard
+ *  1. Loads all scientific data contracts on mount
+ *  2. Memoizes derived metrics (exposed population, averted exposures, etaHours, avgAqi)
+ *  3. Splits timeHorizon context to prevent tree-wide re-renders
+ *  4. Acts as the single source of truth for the entire dashboard
  */
 
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { getActions, getAqi, getCorridor, getRankedSites, getSources, getWind } from './api'
 import type { ActionsFile, AqiFile, CorridorGeoJSON, RankedSite, RankedSitesFile, SourcesFile, WindFile } from '@/types/schemas'
 
-export type TimeHorizon = 0 | 1 | 2 | 3
+export type TimeHorizon = 0 | 2 | 4 | 8 | 24
 
 export type InterventionScenario = 'none' | 'partial' | 'full'
 export type BasemapMode = 'satellite' | 'globe' | 'dark' | 'topo'
 
-interface AerisState {
+export interface TimeContextState {
+  timeHorizon: TimeHorizon
+  setTimeHorizon: React.Dispatch<React.SetStateAction<TimeHorizon>>
+}
+
+export interface AerisState extends TimeContextState {
   // Data
   sources:      SourcesFile | null
   corridor:     CorridorGeoJSON | null
@@ -25,7 +31,6 @@ interface AerisState {
   wind:         WindFile | null
 
   // UI State
-  timeHorizon:          TimeHorizon        // selected time filter in hours
   selectedSiteId:       string | null      // clicked site in Top Affected list
   showActionsModal:     boolean
   activeTab:            string
@@ -52,7 +57,6 @@ interface AerisState {
   setSidebarCollapsed:  (collapsed: boolean) => void
 
   // Actions
-  setTimeHorizon:          (h: TimeHorizon) => void
   setSelectedSiteId:       (id: string | null) => void
   setShowActionsModal:     (v: boolean) => void
   setActiveTab:            (tab: string) => void
@@ -63,6 +67,7 @@ interface AerisState {
 }
 
 const AerisContext = createContext<AerisState | null>(null)
+const TimeHorizonContext = createContext<TimeContextState | null>(null)
 
 export function AerisProvider({ children }: { children: React.ReactNode }) {
   const [sources,     setSources]     = useState<SourcesFile | null>(null)
@@ -74,13 +79,13 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
   const [loading,     setLoading]     = useState(true)
   const [error,       setError]       = useState<string | null>(null)
 
-  const [timeHorizon,          setTimeHorizon]          = useState<TimeHorizon>(1)
+  const [timeHorizon,          setTimeHorizon]          = useState<TimeHorizon>(2)
   const [selectedSiteId,       setSelectedSiteId]       = useState<string | null>(null)
   const [showActionsModal,     setShowActionsModal]     = useState(false)
   const [activeTab,            setActiveTab]            = useState('dashboard')
   const [searchTerm,           setSearchTerm]           = useState('')
   const [flyToLocation,        setFlyToLocation]        = useState<{ lon: number; lat: number; zoom?: number; name?: string } | null>(null)
-  const [interventionScenario, setInterventionScenario] = useState<InterventionScenario>('partial')
+  const [interventionScenario, setInterventionScenario] = useState<InterventionScenario>('none')
 
   // Production Basemap Engine Mode with localStorage persistence (default: satellite)
   const [basemapMode, setBasemapModeState] = useState<BasemapMode>(() => {
@@ -174,34 +179,52 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => { loadData() }, [loadData])
 
-  // Derived: baseline exposed population from ranked_sites
-  const exposedPopulation = rankedSites?.exposed_population.estimate ?? null
+  // Derived: baseline exposed population from ranked_sites (memoized)
+  const exposedPopulation = useMemo(
+    () => rankedSites?.exposed_population.estimate ?? null,
+    [rankedSites]
+  )
 
-  // Derived: active simulated exposed population based on scenario
-  const rawExposed = exposedPopulation ?? 570938
-  const activeExposedPopulation =
-    interventionScenario === 'none' ? rawExposed
-    : interventionScenario === 'partial' ? Math.round(rawExposed * 0.65)
-    : Math.round(rawExposed * 0.45)
+  // Derived: active simulated exposed population based on scenario (memoized)
+  const activeExposedPopulation = useMemo(() => {
+    const raw = exposedPopulation ?? 570938
+    return interventionScenario === 'none'
+      ? raw
+      : interventionScenario === 'partial'
+        ? Math.round(raw * 0.65)
+        : Math.round(raw * 0.45)
+  }, [exposedPopulation, interventionScenario])
 
-  const avertedExposures = rawExposed - activeExposedPopulation
+  const avertedExposures = useMemo(() => {
+    const raw = exposedPopulation ?? 570938
+    return raw - activeExposedPopulation
+  }, [exposedPopulation, activeExposedPopulation])
 
-  // Derived: minimum ETA across top-3 ranked sites
-  const etaHours = rankedSites
-    ? Math.min(...(rankedSites.sites.slice(0, 3).map((s: RankedSite) => s.eta_hours)))
-    : null
+  // Derived: minimum ETA across top-3 ranked sites (memoized)
+  const etaHours = useMemo(() => {
+    if (!rankedSites || rankedSites.sites.length === 0) return null
+    return Math.min(...rankedSites.sites.slice(0, 3).map((s: RankedSite) => s.eta_hours))
+  }, [rankedSites])
 
-  // Derived: mean observed AQI across reporting ground stations
-  const avgAqi = aqi
-    ? Math.round(
-        aqi.stations
-          .map(s => s.aqi)
-          .filter((v): v is number => typeof v === 'number' && v > 0)
-          .reduce((acc, v, _, arr) => acc + v / arr.length, 0)
-      )
-    : null
+  // Derived: mean observed AQI across reporting ground stations (memoized)
+  const avgAqi = useMemo(() => {
+    if (!aqi || aqi.stations.length === 0) return null
+    const valid = aqi.stations
+      .map(s => s.aqi)
+      .filter((v): v is number => typeof v === 'number' && v > 0)
+    return valid.length > 0
+      ? Math.round(valid.reduce((acc, v) => acc + v, 0) / valid.length)
+      : null
+  }, [aqi])
 
-  const value: AerisState = {
+  // Dedicated Time Context Value to isolate fast timeline updates
+  const timeContextValue = useMemo<TimeContextState>(() => ({
+    timeHorizon,
+    setTimeHorizon,
+  }), [timeHorizon])
+
+  // Main context value memoized to prevent redundant renders
+  const value: AerisState = useMemo(() => ({
     sources, corridor, rankedSites, actions, aqi, wind,
     timeHorizon, selectedSiteId, showActionsModal,
     activeTab, searchTerm, flyToLocation, interventionScenario,
@@ -212,17 +235,36 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
     setTimeHorizon, setSelectedSiteId, setShowActionsModal,
     setActiveTab, setSearchTerm, setFlyToLocation, setInterventionScenario,
     refreshData: loadData,
-  }
+  }), [
+    sources, corridor, rankedSites, actions, aqi, wind,
+    timeHorizon, selectedSiteId, showActionsModal,
+    activeTab, searchTerm, flyToLocation, interventionScenario,
+    basemapMode, setBasemapMode,
+    loading, error,
+    exposedPopulation, activeExposedPopulation, avertedExposures, etaHours, avgAqi,
+    isSidebarCollapsed, toggleSidebar, setSidebarCollapsed,
+    setSelectedSiteId, setShowActionsModal,
+    setActiveTab, setSearchTerm, setFlyToLocation, setInterventionScenario,
+    loadData,
+  ])
 
   return (
-    <AerisContext.Provider value={value}>
-      {children}
-    </AerisContext.Provider>
+    <TimeHorizonContext.Provider value={timeContextValue}>
+      <AerisContext.Provider value={value}>
+        {children}
+      </AerisContext.Provider>
+    </TimeHorizonContext.Provider>
   )
 }
 
 export function useAeris(): AerisState {
   const ctx = useContext(AerisContext)
   if (!ctx) throw new Error('useAeris must be used inside <AerisProvider>')
+  return ctx
+}
+
+export function useTimeHorizon(): TimeContextState {
+  const ctx = useContext(TimeHorizonContext)
+  if (!ctx) throw new Error('useTimeHorizon must be used inside <AerisProvider>')
   return ctx
 }

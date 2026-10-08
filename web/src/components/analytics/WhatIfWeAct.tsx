@@ -20,10 +20,10 @@ export default function WhatIfWeAct() {
   const allIntervene = Math.round(total * 0.45)
   const reduction = Math.round((1 - allIntervene / total) * 100)
 
-  const bars: { id: 'none' | 'partial' | 'full'; label: string; value: number; color: string }[] = [
-    { id: 'none',    label: 'No Action',         value: total,        color: '#E03131' },
-    { id: 'partial', label: `${siteCount} Facilities`, value: schoolHosp,   color: '#F59F00' },
-    { id: 'full',    label: 'Full Intervene',    value: allIntervene, color: '#22734F' },
+  const bars: { id: 'none' | 'partial' | 'full'; label: string; icon: string; value: number; color: string; pattern?: string }[] = [
+    { id: 'none',    label: 'No Action',         icon: '⚠', value: total,        color: '#E03131' },
+    { id: 'partial', label: 'Partial Intervene', icon: '🛡', value: schoolHosp,   color: '#F59F00', pattern: 'repeating-linear-gradient(45deg, #F59F00, #F59F00 4px, #D97706 4px, #D97706 8px)' },
+    { id: 'full',    label: 'Full Intervene',    icon: '✓', value: allIntervene, color: '#22734F' },
   ]
 
   const maxVal = total
@@ -31,11 +31,23 @@ export default function WhatIfWeAct() {
   return (
     <div className="whatif card">
       <div className="whatif-header">
-        <h3 className="section-title">What If We Act?</h3>
-        <div className="whatif-reduction">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <h3 className="section-title">What If We Act?</h3>
+          <span
+            className="whatif-info-tag"
+            title="35% and 55% reductions are assumed policy scenario multipliers (not atmospheric model outputs). Illustrates potential acute exposure mitigation under prompt intervention."
+            style={{ cursor: 'help', fontSize: '11px', color: 'var(--text-tertiary)' }}
+          >
+            ⓘ
+          </span>
+        </div>
+        <div
+          className="whatif-reduction"
+          title="Assumed scenario multipliers: 35% reduction with school/hospital shielding; 55% with comprehensive NCR-wide intervention. These are assumed scenario parameters, not model output."
+        >
           <span className="reduction-arrow">↓</span>
           <span className="reduction-pct">{reduction}%</span>
-          <span className="reduction-label">Modeled reduction in<br/>acute exposure</span>
+          <span className="reduction-label">Assumed scenario reduction<br/>in acute exposure</span>
         </div>
       </div>
 
@@ -59,14 +71,17 @@ export default function WhatIfWeAct() {
                   className="bar-fill"
                   style={{
                     height: `${(bar.value / maxVal) * 100}%`,
-                    background: bar.color,
+                    background: bar.pattern || bar.color,
                   }}
                 />
               </div>
               <div className="bar-value" style={{ color: bar.color }}>
                 {formatM(bar.value)}
               </div>
-              <div className="bar-label">{bar.label}</div>
+              <div className="bar-label">
+                <span style={{ marginRight: '3px', fontWeight: 700 }}>{bar.icon}</span>
+                {bar.label}
+              </div>
             </button>
           )
         })}

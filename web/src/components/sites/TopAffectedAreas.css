@@ -11,6 +11,51 @@
   margin-bottom: 4px;
 }
 
+.area-filter-chips {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 1.5px 3px;
+}
+
+.chip-btn {
+  background: transparent;
+  border: none;
+  border-radius: 9px;
+  padding: 1.5px 6px;
+  font-family: var(--font);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chip-btn:hover {
+  color: var(--brand-dark);
+}
+
+.chip-btn.active {
+  background: var(--brand-light);
+  color: var(--brand-dark);
+}
+
+.area-site-tag {
+  display: inline-block;
+  margin-left: 5px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  background: var(--surface-subtle);
+  padding: 1px 4px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+}
+
 .areas-empty {
   flex: 1;
   display: flex;

@@ -11,7 +11,7 @@
 import { Map, NavigationControl, Marker, Popup, setWorkerUrl, type GeoJSONSource } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Layers, Maximize2 } from 'lucide-react'
 import { useAeris } from '@/services/dataContext'
 import { getRiskLevel, riskLabel, type CorridorBandProperties } from '@/types/schemas'
@@ -20,16 +20,12 @@ import { getStyleForMode, setupMapLayers, applyProjectionAndPitch, isValidSubcon
 import TimeControls from './TimeControls'
 import './MapContainer.css'
 
+const SvgFallbackMap = lazy(() => import('./SvgFallbackMap'))
+
 try {
   setWorkerUrl(workerUrl)
 } catch {
   // Worker already initialized
-}
-
-function toSvgCoords(lon: number, lat: number, width = 680, height = 380): [number, number] {
-  const x = Math.max(30, Math.min(width - 30, ((lon - 73.0) / (78.5 - 73.0)) * width))
-  const y = Math.max(30, Math.min(height - 30, height - ((lat - 27.8) / (34.5 - 27.8)) * height))
-  return [x, y]
 }
 
 export default function MapContainer() {
@@ -123,7 +119,59 @@ export default function MapContainer() {
     return () => ro.disconnect()
   }, [])
 
-  // ── 2. Update corridor GeoJSON when data or timeHorizon changes ──────────
+  // ── Auto-fit bounds to active corridor + sources + top receptors ──────────
+  const hasFittedInitialBoundsRef = useRef(false)
+
+  const fitAirshedBounds = useCallback(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    let minLon = Infinity, minLat = Infinity, maxLon = -Infinity, maxLat = -Infinity
+    let count = 0
+
+    const addPoint = (lon: number, lat: number) => {
+      if (isValidSubcontinentCoord(lat, lon)) {
+        minLon = Math.min(minLon, lon)
+        minLat = Math.min(minLat, lat)
+        maxLon = Math.max(maxLon, lon)
+        maxLat = Math.max(maxLat, lat)
+        count++
+      }
+    }
+
+    // Include sources
+    sources?.sources.forEach(s => addPoint(s.lon, s.lat))
+    // Include top 8 receptors
+    rankedSites?.sites.slice(0, 8).forEach(s => addPoint(s.lon, s.lat))
+    // Include corridor coordinates
+    corridor?.features.forEach(f => {
+      if (f.geometry?.type === 'LineString' && Array.isArray(f.geometry.coordinates)) {
+        f.geometry.coordinates.forEach((c: number[]) => addPoint(c[0], c[1]))
+      }
+    })
+
+    if (count > 0 && minLon < maxLon && minLat < maxLat) {
+      map.fitBounds(
+        [[minLon, minLat], [maxLon, maxLat]],
+        {
+          padding: { top: 40, bottom: 40, left: 40, right: 40 },
+          maxZoom: 9.5,
+          duration: 900,
+        }
+      )
+    }
+  }, [sources, rankedSites, corridor])
+
+  // Fit bounds automatically on first data availability
+  useEffect(() => {
+    if (hasFittedInitialBoundsRef.current || !mapRef.current || !webGlSupported) return
+    if ((sources?.sources.length ?? 0) > 0 || (corridor?.features.length ?? 0) > 0) {
+      fitAirshedBounds()
+      hasFittedInitialBoundsRef.current = true
+    }
+  }, [sources, corridor, fitAirshedBounds, webGlSupported])
+
+  // ── 2. Update corridor GeoJSON and ETA ticks when data or timeHorizon changes ──
   useEffect(() => {
     const map = mapRef.current
     if (!map || !corridor || !webGlSupported) return
@@ -141,6 +189,33 @@ export default function MapContainer() {
         }),
       }
       source.setData(filtered as Parameters<GeoJSONSource['setData']>[0])
+
+      // Update centerline milestone ETA ticks (+2h, +4h, +8h, +12h, +18h, +24h)
+      const etaSource = map.getSource('corridor-eta') as GeoJSONSource | undefined
+      if (etaSource) {
+        const centerline = corridor.features.find(f => f.properties.kind === 'centerline')
+        type PointFeature = {
+          type: 'Feature'
+          geometry: { type: 'Point'; coordinates: number[] }
+          properties: { eta: number; label: string }
+        }
+        const etaFeatures: PointFeature[] = []
+        if (centerline && Array.isArray(centerline.geometry?.coordinates)) {
+          const coords = centerline.geometry.coordinates as number[][]
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const etas = (centerline.properties as any).points_eta_hours || []
+          etas.forEach((eta: number, idx: number) => {
+            if ([2, 4, 8, 12, 18, 24].includes(eta) && coords[idx]) {
+              etaFeatures.push({
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: coords[idx] },
+                properties: { eta, label: `+${eta}h` },
+              })
+            }
+          })
+        }
+        etaSource.setData({ type: 'FeatureCollection', features: etaFeatures } as Parameters<GeoJSONSource['setData']>[0])
+      }
     }
     waitForSource()
   }, [corridor, timeHorizon, webGlSupported])
@@ -292,11 +367,11 @@ export default function MapContainer() {
           <div className="map-header-presets">
             <button
               className="map-header-chip"
-              onClick={() => mapRef.current?.flyTo({ center: [76.5, 30.0], zoom: 6.8, speed: 1.2 })}
-              title="Focus on Smoke Dispersion Corridor (Punjab to Delhi NCR)"
+              onClick={fitAirshedBounds}
+              title="Focus on Active Smoke Dispersion Airshed (Punjab to NCR)"
               type="button"
             >
-              <span>🎯 Corridor</span>
+              <span>🎯 Airshed</span>
             </button>
             <button
               className="map-header-chip"
@@ -327,123 +402,22 @@ export default function MapContainer() {
         {webGlSupported ? (
           <div ref={mapContainerRef} className="map-canvas" />
         ) : (
-          <div className="map-fallback-canvas">
-            <svg viewBox="0 0 680 380" className="svg-map">
-              <defs>
-                <linearGradient id="plumeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#D63333" stopOpacity="0.75" />
-                  <stop offset="35%" stopColor="#EA580C" stopOpacity="0.65" />
-                  <stop offset="70%" stopColor="#D97706" stopOpacity="0.45" />
-                  <stop offset="100%" stopColor="#CA8A04" stopOpacity="0.25" />
-                </linearGradient>
-                <filter id="glow">
-                  <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-                  <feMerge>
-                    <feMergeNode in="coloredBlur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
-
-              {/* Base terrain */}
-              <rect width="680" height="380" fill="#EDF1EC" rx="10" />
-
-              {/* Official Survey of India Northern Crown (including J&K, Ladakh, PoK) */}
-              <path
-                d="M 60 120 L 110 50 L 180 20 L 260 15 L 340 18 L 440 28 L 520 60 L 620 110 L 650 360 L 30 360 Z"
-                fill="#E2E8E1"
-                opacity="0.9"
-              />
-
-              {/* Official Sovereign Border Line */}
-              <path
-                d="M 60 120 L 110 50 L 180 20 L 260 15 L 340 18 L 440 28 L 520 60 L 620 110"
-                fill="none"
-                stroke="#164E35"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-              />
-
-              {/* Official Indian Sovereign Territory Labels */}
-              <text x="160" y="42" fill="#164E35" fontSize="10.5" fontWeight="800" letterSpacing="0.5">
-                JAMMU & KASHMIR (INDIA)
-              </text>
-              <text x="360" y="42" fill="#164E35" fontSize="10.5" fontWeight="800" letterSpacing="0.5">
-                LADAKH (INDIA)
-              </text>
-              <text x="120" y="110" fill="#3A5344" fontSize="12" fontWeight="800" letterSpacing="1">
-                PUNJAB (UPWIND)
-              </text>
-              <text x="260" y="195" fill="#6B7280" fontSize="11" fontWeight="600" letterSpacing="1">
-                HARYANA
-              </text>
-              <text x="470" y="270" fill="#1E4E3D" fontSize="12" fontWeight="800" letterSpacing="0.5">
-                📍 DELHI NCR (RECEPTOR)
-              </text>
-              <text x="560" y="210" fill="#6B7280" fontSize="11" fontWeight="600" letterSpacing="0.5">
-                UTTAR PRADESH
-              </text>
-
-              {/* Smoke Corridor Polygon Swath */}
-              <path
-                d="M 140 100 C 220 135 320 190 460 265 C 490 290 430 315 320 255 C 230 195 160 145 120 110 Z"
-                fill="url(#plumeGrad)"
-                filter="url(#glow)"
-              />
-
-              {/* Wind Vector Vectors */}
-              <g stroke="white" strokeWidth="2.2" fill="none" opacity="0.9">
-                <path d="M 180 125 L 230 160 M 220 150 L 230 160 L 218 165" />
-                <path d="M 270 185 L 320 220 M 310 210 L 320 220 L 308 225" />
-                <path d="M 360 235 L 410 265 M 400 255 L 410 265 L 398 270" />
-              </g>
-
-              {/* Fire Clusters */}
-              {sources?.sources
-                .filter(src => scopeFilter === 'all' || src.territory === 'india')
-                .slice(0, 8)
-                .map((src) => {
-                  const [cx, cy] = toSvgCoords(src.lon, src.lat, 680, 380)
-                  const isTrans = src.territory === 'transboundary'
-                  return (
-                    <g key={src.id} transform={`translate(${cx}, ${cy})`}>
-                      <circle r="14" fill={isTrans ? 'rgba(245, 158, 11, 0.25)' : 'rgba(239, 68, 68, 0.28)'} />
-                      <circle r="6" fill={isTrans ? '#D97706' : '#DC2626'} />
-                      <text x="10" y="4" fontSize="9.5" fontWeight="700" fill={isTrans ? '#92400E' : '#991B1B'}>
-                        {isTrans ? '🌐' : '🔥'} {src.district || src.type} ({src.total_frp_mw.toFixed(0)} MW)
-                      </text>
-                    </g>
-                  )
-                })}
-
-              {/* Receptor Facilities */}
-              {rankedSites?.sites.slice(0, 4).map((site) => {
-                const [sx, sy] = toSvgCoords(site.lon, site.lat, 680, 380)
-                return (
-                  <g key={site.site_id} transform={`translate(${sx}, ${sy})`}>
-                    <circle r="5" fill="#1E4E3D" stroke="white" strokeWidth="1.5" />
-                    <text x="8" y="3" fontSize="9.5" fontWeight="600" fill="#111827">
-                      {site.type === 'hospital' ? '🏥' : '🏫'} {site.name.slice(0, 22)}
-                    </text>
-                  </g>
-                )
-              })}
-            </svg>
-          </div>
+          <Suspense fallback={<div className="map-fallback-canvas" />}>
+            <SvgFallbackMap sources={sources} rankedSites={rankedSites} scopeFilter={scopeFilter} />
+          </Suspense>
         )}
 
         {/* Sleek Top-Right Floating Layer Switcher */}
+        {/* Sleek Top-Right Floating Layer Switcher (Stray dot removed) */}
         <div className="map-layer-dock" onClick={(e) => e.stopPropagation()}>
           <button
             className={`map-layer-trigger-btn ${isLayerMenuOpen ? 'active' : ''}`}
             onClick={() => setIsLayerMenuOpen(!isLayerMenuOpen)}
-            title="Switch Basemap Style"
+            title={`Basemap Engine: ${basemapMode}`}
+            aria-label="Switch Basemap Style"
             type="button"
           >
-            <Layers size={13} />
-            <span className="layer-mode-emoji">
-              {basemapMode === 'satellite' ? '🛰️' : basemapMode === 'globe' ? '🪐' : basemapMode === 'dark' ? '🌑' : '🗺️'}
-            </span>
+            <Layers size={14} />
           </button>
 
           {isLayerMenuOpen && (
@@ -519,7 +493,7 @@ export default function MapContainer() {
           </button>
         </div>
 
-        {/* Micro-compact translucent legend & scope toggle */}
+        {/* Micro-compact translucent legend with clear 4-band corridor color ramp & ETA */}
         <div className="map-micro-legend">
           <button
             className={`micro-legend-scope-btn ${scopeFilter === 'india' ? 'active' : ''}`}
@@ -535,11 +509,27 @@ export default function MapContainer() {
           <div className="micro-legend-divider" />
           <div className="micro-legend-item">
             <span className="micro-legend-glyph" style={{ color: '#EF4444', fontWeight: 800 }}>⊕</span>
-            <span>{scopeFilter === 'india' ? '6 Hotspots' : '10 Hotspots'}</span>
+            <span>{scopeFilter === 'india' ? '6 Fires' : '10 Fires'}</span>
           </div>
-          <div className="micro-legend-item">
-            <div className="micro-legend-swatch plume" />
-            <span>Plume</span>
+          <div className="micro-legend-item" title="0–2h immediate plume arrival band">
+            <span className="micro-legend-swatch" style={{ background: '#DC2626', width: 8, height: 7 }} />
+            <span>0-2h</span>
+          </div>
+          <div className="micro-legend-item" title="2–4h dispersion corridor band">
+            <span className="micro-legend-swatch" style={{ background: '#EA580C', width: 8, height: 7 }} />
+            <span>2-4h</span>
+          </div>
+          <div className="micro-legend-item" title="4–8h forward plume band">
+            <span className="micro-legend-swatch" style={{ background: '#D97706', width: 8, height: 7 }} />
+            <span>4-8h</span>
+          </div>
+          <div className="micro-legend-item" title="8–24h downstream dispersion band">
+            <span className="micro-legend-swatch" style={{ background: '#CA8A04', width: 8, height: 7 }} />
+            <span>8-24h</span>
+          </div>
+          <div className="micro-legend-item" title="Centerline with milestone ETA ticks">
+            <span style={{ color: 'var(--brand-dark)', fontWeight: 800, fontSize: '9px', letterSpacing: '-1px' }}>---</span>
+            <span>ETA</span>
           </div>
           <div className="micro-legend-item">
             <div className="micro-legend-swatch soi" />

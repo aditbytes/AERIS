@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   BarChart2,
   LayoutDashboard,
-  LogOut,
   Map,
   PanelLeftClose,
   PanelLeftOpen,
@@ -57,7 +56,6 @@ const SECTIONS: NavSectionConfig[] = [
     section: 'System',
     items: [
       { id: 'settings', label: 'Settings', icon: Settings, shortcut: '8' },
-      { id: 'logout', label: 'Logout', icon: LogOut, shortcut: '9' },
     ],
   },
 ]
@@ -88,7 +86,7 @@ export default function Sidebar() {
       return `${count}`
     }
     if (item.badgeKey === 'actions') {
-      const count = actions?.actions?.length ?? 4
+      const count = actions?.actions?.length ?? 8
       return `${count}`
     }
     if (item.badgeKey === 'wind') {
@@ -164,11 +162,7 @@ export default function Sidebar() {
                       id={`nav-${item.id}`}
                       data-nav-id={item.id}
                       className={`sidebar-nav-item-btn ${isActive ? 'active' : ''}`}
-                      onClick={() => {
-                        if (item.id !== 'logout') {
-                          setActiveTab(item.id)
-                        }
-                      }}
+                      onClick={() => setActiveTab(item.id)}
                       aria-label={item.label}
                       aria-current={isActive ? 'page' : undefined}
                       type="button"
@@ -192,7 +186,7 @@ export default function Sidebar() {
                               {badge}
                             </span>
                           )}
-                          <span className="btn-shortcut-key">{item.shortcut}</span>
+                          <span className="btn-shortcut-key" aria-hidden="true">{item.shortcut}</span>
                         </>
                       )}
                     </button>

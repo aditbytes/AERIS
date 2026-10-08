@@ -1,26 +1,32 @@
 import { useState, useEffect } from 'react'
 import { Play, Pause } from 'lucide-react'
-import { useAeris, type TimeHorizon } from '@/services/dataContext'
+import { useTimeHorizon, type TimeHorizon } from '@/services/dataContext'
 import './TimeControls.css'
 
-const OPTIONS: { label: string; value: TimeHorizon }[] = [
-  { label: 'Now', value: 0 },
-  { label: '+1h', value: 1 },
-  { label: '+2h', value: 2 },
-  { label: '+3h', value: 3 },
+const OPTIONS: { label: string; value: TimeHorizon; title: string }[] = [
+  { label: 'Now', value: 0, title: '0–2h initial plume footprint' },
+  { label: '+2h', value: 2, title: '2–4h dispersion boundary' },
+  { label: '+4h', value: 4, title: '4–8h forward transit footprint' },
+  { label: '+8h', value: 8, title: '8–24h downstream corridor' },
+  { label: '+24h', value: 24, title: '24h full modeled trajectory' },
 ]
 
 export default function TimeControls({ showPlayToggle = true }: { showPlayToggle?: boolean }) {
-  const { timeHorizon, setTimeHorizon } = useAeris()
+  const { timeHorizon, setTimeHorizon } = useTimeHorizon()
   const [isPlaying, setIsPlaying] = useState(false)
 
   useEffect(() => {
     if (!isPlaying) return
     const interval = setInterval(() => {
-      setTimeHorizon((((timeHorizon + 1) % 4) as TimeHorizon))
+      if (document.hidden) return
+      setTimeHorizon((prev) => {
+        const curIdx = OPTIONS.findIndex(o => o.value === prev)
+        const nextIdx = (curIdx + 1) % OPTIONS.length
+        return OPTIONS[nextIdx].value
+      })
     }, 2200)
     return () => clearInterval(interval)
-  }, [isPlaying, timeHorizon, setTimeHorizon])
+  }, [isPlaying, setTimeHorizon])
 
   return (
     <div className="time-controls" role="group" aria-label="Plume time horizon">

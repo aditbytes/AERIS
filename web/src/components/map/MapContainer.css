@@ -259,6 +259,7 @@
 .reticle-telemetry-hud {
   position: absolute;
   top: calc(100% - 2px);
+  left: 50%;
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -274,7 +275,7 @@
   z-index: 5;
   backdrop-filter: blur(8px);
   opacity: 0;
-  transform: translateY(-3px) scale(0.92);
+  transform: translateX(-50%) translateY(-3px) scale(0.92);
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -283,7 +284,7 @@
 .aeris-sensor-reticle:hover .reticle-telemetry-hud,
 .aeris-sensor-reticle.is-selected .reticle-telemetry-hud {
   opacity: 1;
-  transform: translateY(0) scale(1);
+  transform: translateX(-50%) translateY(0) scale(1);
   pointer-events: auto;
 }
 
@@ -600,13 +601,6 @@
   transform: scale(1.06);
 }
 
-.layer-mode-emoji {
-  position: absolute;
-  bottom: -2px;
-  right: -2px;
-  font-size: 10px;
-  line-height: 1;
-}
 
 .map-layer-dropdown {
   position: absolute;
@@ -833,4 +827,25 @@
 .d-site-ico {
   font-size: 11px;
   line-height: 1;
+}
+
+@media (max-width: 640px) {
+  .map-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+  .map-header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+  .map-header-divider {
+    display: none;
+  }
+  .map-micro-legend {
+    display: none;
+  }
 }

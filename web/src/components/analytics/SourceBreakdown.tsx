@@ -150,7 +150,12 @@ export default function SourceBreakdown() {
   return (
     <div className="source-breakdown card">
       <div className="section-header source-breakdown-head">
-        <h3 className="section-title">Source Intensity (FRP)</h3>
+        <div>
+          <h3 className="section-title">Source Intensity (% of Total FRP)</h3>
+          <span className="text-xs text-tertiary" style={{ fontSize: '10px' }}>
+            Measures share of {Math.round(totalFrp)} MW Fire Radiative Power
+          </span>
+        </div>
         <div className="breakdown-mode-toggle">
           <button
             type="button"
@@ -202,8 +207,13 @@ export default function SourceBreakdown() {
                 }}
               >
                 <span className="legend-dot" style={{ background: seg.color }} />
-                <span className="legend-label">{seg.label}</span>
-                <span className="legend-pct">{seg.pct}%</span>
+                <span className="legend-shape-icon" style={{ fontSize: '9px', color: seg.color, marginRight: '4px' }}>
+                  {seg.label.includes('Severe') ? '▲' : seg.label.includes('High') ? '■' : seg.label.includes('Moderate') ? '◆' : '●'}
+                </span>
+                <span className="legend-label">
+                  {seg.label} <small style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>({seg.count} clus)</small>
+                </span>
+                <span className="legend-pct">{seg.pct}% FRP</span>
               </li>
             )
           })}

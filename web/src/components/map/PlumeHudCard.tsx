@@ -9,9 +9,10 @@ export default function PlumeHudCard() {
     : '~ 2 hours'
 
   const expectedAqi = timeHorizon === 0 ? '280 – 320'
-    : timeHorizon === 1 ? '350 – 420'
-    : timeHorizon === 2 ? '400 – 480'
-    : '430 – 520'
+    : timeHorizon === 2 ? '350 – 420'
+    : timeHorizon === 4 ? '400 – 480'
+    : timeHorizon === 8 ? '430 – 500'
+    : '450 – 520'
 
   return (
     <div className="plume-hud card">

@@ -106,11 +106,16 @@ export default function MapExplorerView() {
   // ── Auto-play timer ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isPlaying) return
+    const horizons: TimeHorizon[] = [0, 2, 4, 8, 24]
     const interval = setInterval(() => {
-      setTimeHorizon((((timeHorizon + 1) % 4) as TimeHorizon))
+      setTimeHorizon((prev) => {
+        const curIdx = horizons.indexOf(prev)
+        const nextIdx = (curIdx + 1) % horizons.length
+        return horizons[nextIdx]
+      })
     }, 2200)
     return () => clearInterval(interval)
-  }, [isPlaying, timeHorizon, setTimeHorizon])
+  }, [isPlaying, setTimeHorizon])
 
   // ── 1. Initialize MapLibre ──────────────────────────────────────────────────
   useEffect(() => {
@@ -638,7 +643,7 @@ export default function MapExplorerView() {
               <span>{isPlaying ? 'Pause' : 'Auto Play'}</span>
             </button>
             <div className="hud-time-pills">
-              {([0, 1, 2, 3] as TimeHorizon[]).map(h => (
+              {([0, 2, 4, 8, 24] as TimeHorizon[]).map(h => (
                 <button
                   key={h}
                   className={`hud-time-pill ${timeHorizon === h ? 'active' : ''}`}
