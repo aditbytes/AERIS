@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-10-08T12:25:47.569285Z",
+  "generated_at": "2026-10-08T13:15:50.897304Z",
   "exposed_population": {
-    "estimate": 0,
-    "low": 0,
-    "high": 0
+    "estimate": 23096309,
+    "low": 16982081,
+    "high": 32459392
   },
   "sites": [
     {

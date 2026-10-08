@@ -14,9 +14,9 @@ All files are produced by running the fetchers in `ingest/`.
 | `wind.json` | Open-Meteo GFS | 2026-10-07T18:37Z | 3.2 MB | 323 grid points × 48 h |
 | `sites.geojson` | OpenStreetMap / Overpass | 2026-10-07T18:49Z | 1.3 MB | 3,132 schools/hospitals |
 | `aqi.json` | OpenAQ v3 | 2026-10-07T18:53Z | TBC | 230 active PM2.5 stations |
-| `population.json` | WorldPop 2020 1 km | 2026-10-08T05:51Z | 863 bytes | 0 cells (fallback/error state due to upstream download limits) |
+| `population.json` | WorldPop 2020 1 km (India-specific) | 2026-10-08T13:13Z | ~17 MB | 222,792 cells |
 
-> **Note:** `data/raw/ppp_2020_1km_Aggregated.tif` is gitignored (829 MB).
+> **Note:** `data/raw/ind_ppp_2020_1km_Aggregated.tif` is gitignored (~18 MB).
 > Run `python -m ingest.population.handler` to download it and generate `population.json`.
 
 ---
@@ -125,7 +125,7 @@ CPCB/data.gov.in backup: `api.data.gov.in` was unreachable from this machine dur
   "generated_at": "<ISO-8601 UTC>",
   "source": {
     "name":    "WorldPop Global High Resolution Population Denominators",
-    "url":     "https://data.worldpop.org/GIS/Population/Global_2000_2020/2020/0_Mosaicked/ppp_2020_1km_Aggregated.tif",
+    "url":     "https://worldpop-public-data.soton.ac.uk/GIS/Population/Global_2000_2020_1km/2020/IND/ind_ppp_2020_1km_Aggregated.tif",
     "doi":     "10.5258/SOTON/WP00647",
     "year":    2020,
     "license": "CC BY 4.0"
@@ -154,7 +154,7 @@ See `ingest/README.md` for full instructions.
 
 ---
 
-## Pending
+## Known Status
 
-- `corridor.geojson` — produced by Pritam's plume model; not yet available
-- `ranked_sites.json` — produced by `models/exposure/rank_sites.py`; requires `corridor.geojson`
+- `population.json` now uses the official India-specific WorldPop dataset (~18 MB) which successfully resolves the previous download timeout issue seen with the 845 MB global raster.
+- `corridor.geojson` and `ranked_sites.json` are now fully populated and use the real data pipelines to calculate exposure counts.
