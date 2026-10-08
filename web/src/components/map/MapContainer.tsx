@@ -12,7 +12,7 @@ import { Map, NavigationControl, Marker, Popup, setWorkerUrl, type GeoJSONSource
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import { useEffect, useRef, useState } from 'react'
-import { Maximize2 } from 'lucide-react'
+import { Layers, Maximize2 } from 'lucide-react'
 import { useAeris } from '@/services/dataContext'
 import { getRiskLevel, riskLabel, type CorridorBandProperties } from '@/types/schemas'
 import { createThermalMarkerElement, createThermalPopupHtml } from './thermalMarker'
@@ -39,6 +39,7 @@ export default function MapContainer() {
   const markersRef      = useRef<Marker[]>([])
   const [webGlSupported, setWebGlSupported] = useState(true)
   const [scopeFilter, setScopeFilter]       = useState<'all' | 'india'>('all')
+  const [isLayerMenuOpen, setIsLayerMenuOpen] = useState(false)
 
   const {
     sources,
@@ -189,8 +190,16 @@ export default function MapContainer() {
         return true
       })
 
+      // Identify single peak emitter cluster to highlight cleanly without stacking
+      let peakSourceId: string | null = null
+      if (activeSources.length > 0) {
+        const sorted = [...activeSources].sort((a, b) => b.total_frp_mw - a.total_frp_mw)
+        peakSourceId = sorted[0].id
+      }
+
       activeSources.forEach(src => {
-        const el = createThermalMarkerElement(src)
+        const isPeak = src.id === peakSourceId
+        const el = createThermalMarkerElement(src, { isPeak })
         const popupHtml = createThermalPopupHtml(src)
 
         const marker = new Marker({ element: el, anchor: 'center' })
@@ -284,11 +293,42 @@ export default function MapContainer() {
         </div>
 
         <div className="map-header-actions">
+          {/* Preset Camera Bookmarks in Card Header */}
+          <div className="map-header-presets">
+            <button
+              className="map-header-chip"
+              onClick={() => mapRef.current?.flyTo({ center: [76.5, 30.0], zoom: 6.8, speed: 1.2 })}
+              title="Focus on Smoke Dispersion Corridor (Punjab to Delhi NCR)"
+              type="button"
+            >
+              <span>🎯 Corridor</span>
+            </button>
+            <button
+              className="map-header-chip"
+              onClick={() => mapRef.current?.flyTo({ center: [78.9, 23.5], zoom: 4.2, speed: 1.2 })}
+              title="Fit Entire Sovereign India (Survey of India Boundary with PoK/Ladakh)"
+              type="button"
+            >
+              <span>🇮🇳 All India</span>
+            </button>
+          </div>
+
+          <div className="map-header-divider" />
+
           <TimeControls showPlayToggle={true} />
+          <button
+            className="map-header-expand-btn"
+            onClick={() => setActiveTab('map')}
+            title="Open Full GIS Map Explorer"
+            type="button"
+          >
+            <Maximize2 size={13} />
+            <span>Full Map</span>
+          </button>
         </div>
       </div>
 
-      <div className="map-canvas-area">
+      <div className="map-canvas-area" onClick={() => isLayerMenuOpen && setIsLayerMenuOpen(false)}>
         {webGlSupported ? (
           <div ref={mapContainerRef} className="map-canvas" />
         ) : (
@@ -397,82 +437,69 @@ export default function MapContainer() {
           </div>
         )}
 
-        {/* Unified Top-Right Floating Quick Action Capsule */}
-        <div className="map-quick-hud">
-          {/* Production Basemap Engine Switcher */}
-          <div className="basemap-hud-switcher">
-            <button
-              className={`quick-hud-chip ${basemapMode === 'satellite' ? 'active' : ''}`}
-              onClick={() => setBasemapMode('satellite')}
-              title="ESRI Photorealistic Satellite Imagery"
-              type="button"
-            >
-              <span>🛰️ Sat</span>
-            </button>
-            <button
-              className={`quick-hud-chip ${basemapMode === 'globe' ? 'active' : ''}`}
-              onClick={() => setBasemapMode('globe')}
-              title="3D Spherical Earth Globe Projection"
-              type="button"
-            >
-              <span>🪐 3D Globe</span>
-            </button>
-            <button
-              className={`quick-hud-chip ${basemapMode === 'dark' ? 'active' : ''}`}
-              onClick={() => setBasemapMode('dark')}
-              title="Tactical Dark Matter GIS Console"
-              type="button"
-            >
-              <span>🌑 Dark</span>
-            </button>
-            <button
-              className={`quick-hud-chip ${basemapMode === 'topo' ? 'active' : ''}`}
-              onClick={() => setBasemapMode('topo')}
-              title="Clean Topographic Street Basemap"
-              type="button"
-            >
-              <span>🗺️ Topo</span>
-            </button>
-          </div>
+        {/* Sleek Top-Right Floating Layer Switcher */}
+        <div className="map-layer-dock" onClick={(e) => e.stopPropagation()}>
+          <button
+            className={`map-layer-trigger-btn ${isLayerMenuOpen ? 'active' : ''}`}
+            onClick={() => setIsLayerMenuOpen(!isLayerMenuOpen)}
+            title="Switch Basemap Style"
+            type="button"
+          >
+            <Layers size={13} />
+            <span className="layer-mode-emoji">
+              {basemapMode === 'satellite' ? '🛰️' : basemapMode === 'globe' ? '🪐' : basemapMode === 'dark' ? '🌑' : '🗺️'}
+            </span>
+          </button>
 
-          <div className="quick-hud-divider" />
-
-          {/* Territory Scope Switcher */}
-          <button
-            className={`quick-hud-chip ${scopeFilter === 'india' ? 'active' : ''}`}
-            onClick={() => setScopeFilter(prev => prev === 'india' ? 'all' : 'india')}
-            title={scopeFilter === 'india' ? "Viewing India CPCB Scope — click for Full Transboundary Airshed" : "Viewing Full Regional Airshed — click for India CPCB Scope"}
-            type="button"
-          >
-            <span>{scopeFilter === 'india' ? '🇮🇳 India Scope' : '🌐 Full Airshed'}</span>
-          </button>
-          <div className="quick-hud-divider" />
-          <button
-            className="quick-hud-chip"
-            onClick={() => mapRef.current?.flyTo({ center: [78.9, 23.5], zoom: 4.2, speed: 1.2 })}
-            title="Fit Entire Sovereign India (Survey of India Boundary with PoK/Ladakh)"
-            type="button"
-          >
-            <span>🇮🇳 All India</span>
-          </button>
-          <button
-            className="quick-hud-chip"
-            onClick={() => mapRef.current?.flyTo({ center: [76.5, 30.0], zoom: 6.8, speed: 1.2 })}
-            title="Focus on Smoke Dispersion Corridor (Punjab to Delhi NCR)"
-            type="button"
-          >
-            <span>🎯 Corridor</span>
-          </button>
-          <div className="quick-hud-divider" />
-          <button
-            className="quick-hud-chip expand-chip"
-            onClick={() => setActiveTab('map')}
-            title="Open Full GIS Map Explorer"
-            type="button"
-          >
-            <Maximize2 size={12} />
-            <span>Expand</span>
-          </button>
+          {isLayerMenuOpen && (
+            <div className="map-layer-dropdown">
+              <div className="layer-dropdown-header">Basemap Engine</div>
+              <button
+                className={`layer-dropdown-item ${basemapMode === 'satellite' ? 'active' : ''}`}
+                onClick={() => { setBasemapMode('satellite'); setIsLayerMenuOpen(false); }}
+                type="button"
+              >
+                <span className="item-icon">🛰️</span>
+                <div className="item-text">
+                  <strong>Satellite</strong>
+                  <small>ESRI Photorealistic</small>
+                </div>
+              </button>
+              <button
+                className={`layer-dropdown-item ${basemapMode === 'globe' ? 'active' : ''}`}
+                onClick={() => { setBasemapMode('globe'); setIsLayerMenuOpen(false); }}
+                type="button"
+              >
+                <span className="item-icon">🪐</span>
+                <div className="item-text">
+                  <strong>3D Globe</strong>
+                  <small>Spherical Earth</small>
+                </div>
+              </button>
+              <button
+                className={`layer-dropdown-item ${basemapMode === 'dark' ? 'active' : ''}`}
+                onClick={() => { setBasemapMode('dark'); setIsLayerMenuOpen(false); }}
+                type="button"
+              >
+                <span className="item-icon">🌑</span>
+                <div className="item-text">
+                  <strong>Dark GIS</strong>
+                  <small>Night console</small>
+                </div>
+              </button>
+              <button
+                className={`layer-dropdown-item ${basemapMode === 'topo' ? 'active' : ''}`}
+                onClick={() => { setBasemapMode('topo'); setIsLayerMenuOpen(false); }}
+                type="button"
+              >
+                <span className="item-icon">🗺️</span>
+                <div className="item-text">
+                  <strong>Topographic</strong>
+                  <small>Cartographic roads</small>
+                </div>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Bottom-Right Zoom Dock */}
@@ -497,11 +524,23 @@ export default function MapContainer() {
           </button>
         </div>
 
-        {/* Micro-compact translucent legend */}
+        {/* Micro-compact translucent legend & scope toggle */}
         <div className="map-micro-legend">
+          <button
+            className={`micro-legend-scope-btn ${scopeFilter === 'india' ? 'active' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              setScopeFilter(prev => prev === 'india' ? 'all' : 'india')
+            }}
+            title={scopeFilter === 'india' ? "Viewing India Scope — click for Full Regional Airshed" : "Viewing Full Airshed — click for India Scope"}
+            type="button"
+          >
+            <span>{scopeFilter === 'india' ? '🇮🇳 India Scope' : '🌐 Full Airshed'}</span>
+          </button>
+          <div className="micro-legend-divider" />
           <div className="micro-legend-item">
             <span className="micro-legend-glyph" style={{ color: '#EF4444', fontWeight: 800 }}>⊕</span>
-            <span>{scopeFilter === 'india' ? 'India Hotspots (6)' : 'Airshed Hotspots (10)'}</span>
+            <span>{scopeFilter === 'india' ? '6 Hotspots' : '10 Hotspots'}</span>
           </div>
           <div className="micro-legend-item">
             <div className="micro-legend-swatch plume" />

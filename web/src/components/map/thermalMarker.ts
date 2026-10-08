@@ -17,10 +17,12 @@ export function createThermalMarkerElement(
   options?: {
     onClick?: (e: MouseEvent) => void
     isSelected?: boolean
+    isPeak?: boolean
   }
 ): HTMLElement {
   const isTransboundary = src.territory === 'transboundary'
   const severity = getThermalSeverity(src.total_frp_mw)
+  const isPeak = !!options?.isPeak
 
   // Calibrated optic dimensions
   const sizeMap = {
@@ -31,7 +33,7 @@ export function createThermalMarkerElement(
   const dims = sizeMap[severity]
 
   const el = document.createElement('div')
-  el.className = `aeris-sensor-reticle severity-${severity} ${isTransboundary ? 'is-transboundary' : 'is-india'} ${options?.isSelected ? 'is-selected' : ''}`
+  el.className = `aeris-sensor-reticle severity-${severity} ${isTransboundary ? 'is-transboundary' : 'is-india'} ${options?.isSelected ? 'is-selected' : ''} ${isPeak ? 'is-peak-cluster' : ''}`
   el.dataset.sourceId = src.id
   el.dataset.territory = src.territory || 'india'
 
@@ -79,6 +81,7 @@ export function createThermalMarkerElement(
       </div>
     </div>
     <div class="reticle-telemetry-hud ${isTransboundary ? 'hud-transboundary' : 'hud-india'}">
+      ${isPeak ? '<span class="hud-peak-tag">⚡ PEAK</span>' : ''}
       <span class="hud-territory-tag">${territoryCode}</span>
       <span class="hud-mw-val">${frpFormatted} MW</span>
     </div>

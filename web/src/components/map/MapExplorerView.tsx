@@ -276,12 +276,20 @@ export default function MapExplorerView() {
         return true
       })
 
+      let peakSourceId: string | null = null
+      if (filteredSources.length > 0) {
+        const sorted = [...filteredSources].sort((a, b) => b.total_frp_mw - a.total_frp_mw)
+        peakSourceId = sorted[0].id
+      }
+
       filteredSources.forEach(src => {
         const isTransboundary = src.territory === 'transboundary'
         const isSelected = selectedFeature?.type === 'fire' && selectedFeature.title.includes(src.id)
+        const isPeak = src.id === peakSourceId
 
         const el = createThermalMarkerElement(src, {
           isSelected,
+          isPeak,
           onClick: () => {
             setSelectedFeature({
               type: 'fire',
