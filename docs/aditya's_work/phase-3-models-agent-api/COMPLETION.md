@@ -126,7 +126,16 @@ Every Anthropic model ID was tested with `aws bedrock-runtime converse` in ap-so
 
 **Automatic fallback to Amazon Nova (added after the findings above):** the agent tries the models in order and uses the first that returns a valid plan:
 1. `AgentModelId`: `global.anthropic.claude-sonnet-4-6`
-2. `AgentFallbackModelIds`: `apac.amazon.nova-pro-v1:0`, `amazon.nova-pro-v1:0`, `apac.amazon.nova-lite-v1:0`, `amazon.nova-lite-v1:0`
+2. `AgentFallbackModelIds`: `apac.amazon.nova-pro-v1:0`, `apac.amazon.nova-lite-v1:0`, `apac.amazon.nova-micro-v1:0`
 3. the rules plan
 
 Nova is billed directly by AWS (no Marketplace subscription), so the Strands agent keeps running on Bedrock while the Claude payment issue is open. Once the card is fixed it switches back to Claude by itself, with no redeploy. `generator` in `actions.json` names the model that wrote the plan. Every failed model is logged as a warning in `/aeris/aeris-foundation/AgentFunction`.
+
+### Live agent logs (2026-10-08, runs `c7b913d0…` and earlier)
+| Model | Error | Action |
+|-------|-------|--------|
+| `global.anthropic.claude-sonnet-4-6` | `INVALID_PAYMENT_INSTRUMENT`; later "IAM user or service role is not authorized to perform the required AWS Marketplace actions" | Fix the default card. Then subscribe once from `aeris-admin` by calling `aws bedrock-runtime converse` with this model ID. The Lambda role deliberately has no Marketplace permissions |
+| `apac.amazon.nova-pro-v1:0`, `apac.amazon.nova-lite-v1:0` | `ThrottlingException: Too many tokens per day` | Nova **works** on this account, but the new-account daily token quota is used up. Request an increase in Service Quotas → Amazon Bedrock ("tokens per day" for Nova Pro/Lite, cross-region), or wait for the daily reset |
+| `amazon.nova-pro-v1:0`, `amazon.nova-lite-v1:0` (bare) | On-demand throughput not supported | Removed from the chain; `apac.amazon.nova-micro-v1:0` added instead (separate daily quota) |
+
+- **Timeout fix:** the first run with the chain (`7e5e1e7d…`) timed out at 300 s, because Strands' default retries spent minutes on the throttled model. Each model now gets 2 attempts and a 60 s read timeout, the agent has a time budget, and the Lambda timeout is 600 s. The next run (`3d173548…`) **succeeded** and fell back to the rules plan within the time limit
