@@ -210,19 +210,20 @@ class TestBuildPopulation:
         assert result["cells"] == []
 
     def test_missing_rasterio_raises_import_error(self):
-        """If rasterio is not installed, ImportError should be raised clearly."""
-        import builtins
-        real_import = builtins.__import__
+        """If rasterio is not available, ImportError should be raised clearly.
 
-        def mock_import(name, *args, **kwargs):
-            if name in ("rasterio", "numpy"):
-                raise ImportError(f"Mocked: {name} not installed")
-            return real_import(name, *args, **kwargs)
+        With rasterio imported at module level, we simulate its absence by
+        patching the module-level 'rasterio' name to None — exactly the guard
+        that _clip_and_extract checks.
+        """
+        import ingest.population.build_population as _bp
 
-        with patch.object(builtins, "__import__", side_effect=mock_import):
-            with patch("pathlib.Path.exists", return_value=True):
-                with pytest.raises(ImportError, match="rasterio"):
-                    build_population(bbox=[73.5, 28.0, 77.5, 32.5])
+        with patch.object(_bp, "rasterio", None), \
+             patch.object(_bp, "np", None), \
+             patch("pathlib.Path.exists", return_value=True):
+            with pytest.raises(ImportError, match="rasterio"):
+                build_population(bbox=[73.5, 28.0, 77.5, 32.5])
+
 
     def test_population_not_hardcoded(self):
         """

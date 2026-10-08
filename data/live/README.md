@@ -14,7 +14,7 @@ All files are produced by running the fetchers in `ingest/`.
 | `wind.json` | Open-Meteo GFS | 2026-10-07T18:37Z | 3.2 MB | 323 grid points × 48 h |
 | `sites.geojson` | OpenStreetMap / Overpass | 2026-10-07T18:49Z | 1.3 MB | 3,132 schools/hospitals |
 | `aqi.json` | OpenAQ v3 | 2026-10-07T18:53Z | TBC | 230 active PM2.5 stations |
-| `population.json` | WorldPop 2020 1 km | — | — | Generated on first run (downloads 829 MB GeoTIFF to `data/raw/`) |
+| `population.json` | WorldPop 2020 1 km | 2026-10-08T05:51Z | 863 bytes | 0 cells (fallback/error state due to upstream download limits) |
 
 > **Note:** `data/raw/ppp_2020_1km_Aggregated.tif` is gitignored (829 MB).
 > Run `python -m ingest.population.handler` to download it and generate `population.json`.
