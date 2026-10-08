@@ -30,10 +30,12 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     bbox = event.get("bbox", DEFAULT_BBOX)
     logger.info("lambda_handler: bbox=%s", bbox)
     result = fetch_sites(bbox=bbox)
-    storage.write_json("sites", result, geojson=True)
     n = len(result.get("features", []))
-    logger.info("lambda_handler: wrote sites.geojson with %d features", n)
-    return result
+    if not n:
+        raise RuntimeError("Overpass returned no sites; keeping existing data")
+    location = storage.write_bronze("sites", result, geojson=True)
+    logger.info("lambda_handler: wrote %s with %d features", location, n)
+    return {"location": location, "count": n}
 
 
 def _cli() -> None:

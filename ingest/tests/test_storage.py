@@ -95,3 +95,10 @@ def test_s3_round_trip(monkeypatch):
 def test_s3_slash_key_used_verbatim():
     be = storage.S3Backend("b", "gold/", client=FakeS3())
     assert be.write("bronze/fires", "{}", False) == "s3://b/bronze/fires.json"
+
+
+def test_write_bronze_writes_stamped_and_latest(local):
+    loc = storage.write_bronze("thing", STAMPED)
+    assert "bronze/thing/" in loc
+    assert storage.read_json("bronze/thing/latest") == STAMPED
+    assert len(list((local / "bronze" / "thing").glob("*.json"))) == 2

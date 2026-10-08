@@ -19,3 +19,4 @@ docs/aditya's_work/aws_key/
 *.pem
 rootkey.csv
 *accessKeys.csv
+infra/lambda/ingest/

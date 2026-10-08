@@ -31,9 +31,11 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     step_deg = float(event.get("step_deg", DEFAULT_STEP_DEG))
     logger.info("lambda_handler: bbox=%s step_deg=%s", bbox, step_deg)
     result = fetch_wind(bbox=bbox, step_deg=step_deg)
-    storage.write_json("wind", result)
-    logger.info("lambda_handler: wrote wind.json with %d grid points", len(result["points"]))
-    return result
+    if not result["points"]:
+        raise RuntimeError("Open-Meteo returned no grid points; keeping existing data")
+    location = storage.write_bronze("wind", result)
+    logger.info("lambda_handler: wrote %s with %d grid points", location, len(result["points"]))
+    return {"location": location, "count": len(result["points"])}
 
 
 def _cli() -> None:
