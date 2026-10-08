@@ -13,7 +13,7 @@ Deployed on 2026-10-08. The smoke test passes against the live stack:
 | Website | https://d2iyso2niquge7.cloudfront.net |
 | API | https://gw9ljy2d43.execute-api.ap-south-1.amazonaws.com |
 | State machine | `aeris-foundation-pipeline` (runs every 30 min) |
-| Agent model | `global.anthropic.claude-sonnet-4-6` (stack parameter `AgentModelId`) |
+| Agent model | `global.anthropic.claude-sonnet-4-6`, then Amazon Nova (`AgentModelId`, `AgentFallbackModelIds`) |
 
 **Open:** `actions.json` is currently written by the **rules** generator, not Bedrock. Bedrock refuses Anthropic models on this account with `Model access is denied due to INVALID_PAYMENT_INSTRUMENT`. Anthropic models are billed through AWS Marketplace, which needs a valid default payment method. See "Bedrock access — findings" below.
 
@@ -124,4 +124,9 @@ Every Anthropic model ID was tested with `aws bedrock-runtime converse` in ap-so
 
 **Fix:** in Billing and Cost Management → Payment preferences, add a Visa or Mastercard credit card with international payments enabled and set it as the default. Then rerun `python3 scripts/smoke_test.py`; no redeploy is needed. `agent generator:` should then show `bedrock:global.anthropic.claude-sonnet-4-6`.
 
-**Alternative that avoids Marketplace billing:** Amazon Nova models also run through the Strands Agents SDK. Test an ID with `converse`, then `AGENT_MODEL_ID=<nova id> ALERT_EMAIL=… scripts/deploy.sh`.
+**Automatic fallback to Amazon Nova (added after the findings above):** the agent tries the models in order and uses the first that returns a valid plan:
+1. `AgentModelId`: `global.anthropic.claude-sonnet-4-6`
+2. `AgentFallbackModelIds`: `apac.amazon.nova-pro-v1:0`, `amazon.nova-pro-v1:0`, `apac.amazon.nova-lite-v1:0`, `amazon.nova-lite-v1:0`
+3. the rules plan
+
+Nova is billed directly by AWS (no Marketplace subscription), so the Strands agent keeps running on Bedrock while the Claude payment issue is open. Once the card is fixed it switches back to Claude by itself, with no redeploy. `generator` in `actions.json` names the model that wrote the plan. Every failed model is logged as a warning in `/aeris/aeris-foundation/AgentFunction`.
