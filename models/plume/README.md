@@ -7,8 +7,10 @@ The model estimates an **uncalibrated increment above background** from candidat
 fire sources. It does not invent a background, ingest observations, attribute
 ambient pollution, or provide medically validated public-health probabilities.
 All default physical parameters and the empirical concentration conversion are
-assumptions. No historical calibration, ML, optimization, networking, downloads,
-or AWS clients are implemented in this model package.
+assumptions. This package includes a calibration-ready engine with strict history
+eligibility; actual observational calibration remains blocked. The optional ML
+surrogate lives separately in `models/training/` and is not used by the corridor
+pipeline. These model packages make no network requests or downloads.
 
 ## Architecture and public interface
 
@@ -242,7 +244,7 @@ parameters must be positive integers. Policy/numerical settings are also
 explicit assumptions, not fitted values. A caller may supply a JSON parameter
 file, but file presence alone never means calibration. Actual future calibration
 requires correct timestamp provenance, observed PM2.5 histories and held-out
-validation, and is outside this task.
+validation; the calibration-ready engine below enforces those eligibility gates.
 
 ## CLI and pipeline integration
 
@@ -296,7 +298,7 @@ emissions, a simplified well-mixed vertical layer, empirical removal, hourly
 threshold sampling, and lack of observational calibration/uncertainty estimates.
 The numerical tests do not establish real PM2.5 forecast skill.
 
-## Real-snapshot validation result
+## Task 2 archived real-snapshot validation result
 
 Source input: `data/live/sources.json`; generated `2026-10-08T14:52:16.603976Z`.
 Wind input: `data/live/wind.json`; generated `2026-10-07T18:37:57.090632Z`.
@@ -356,7 +358,9 @@ is verified by labelled mathematical tests, not by these real captures.
 **Recommendation: READY_FOR_CALIBRATION** for the implemented baseline.
 Before fitting or assessing real predictive skill, capture fresh wind with
 the corrected UTC parser, provide sufficient temporal/spatial coverage,
-and collect actual PM2.5 histories. No calibration or ML was implemented.
+and collect actual PM2.5 histories. No calibration engine or ML was implemented
+at that Task 2 checkpoint; the later Task 3 and Task 4 sections describe their
+subsequent implementation and current limitations.
 
 ## Historical calibration eligibility (Task 3)
 

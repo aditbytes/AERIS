@@ -34,6 +34,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from ingest.weather.fetch_wind import (
+    DEFAULT_FORECAST_DAYS,
     _parse_point_hourly,
     build_grid,
     fetch_wind,
@@ -67,6 +68,17 @@ def test_wind_parser_utc_independent_of_host_timezone(monkeypatch, api_time, exp
 # ---------------------------------------------------------------------------
 # Wind-vector conversion — pure mathematical tests
 # ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("capture_hour", [0, 12, 23])
+def test_default_calendar_request_covers_pipeline_horizon_after_capture(capture_hour):
+    """Calendar arithmetic only, not a generated weather response or observation."""
+    from models.plume.corridor import DEFAULT_HOURS
+
+    midnight = datetime(2026, 10, 7, tzinfo=timezone.utc)
+    capture = midnight + timedelta(hours=capture_hour, minutes=59, seconds=59)
+    final_hourly_sample = midnight + timedelta(days=DEFAULT_FORECAST_DAYS, hours=-1)
+    assert final_hourly_sample >= capture + timedelta(hours=DEFAULT_HOURS)
 
 class TestWindComponents:
     """
@@ -179,13 +191,24 @@ _OM_SINGLE_POINT = {
 
 
 class TestFetchWind:
+    def test_default_buffer_is_sent_to_upstream(self):
+        # Reuse the existing format stub; this verifies request parameters only.
+        response = MagicMock()
+        response.json.return_value = _OM_SINGLE_POINT
+        with patch("ingest.weather.fetch_wind.get", return_value=response) as request:
+            fetch_wind(bbox=[73.5, 28.0, 73.5, 28.0])
+        params = request.call_args.kwargs["params"]
+        assert params["forecast_days"] == DEFAULT_FORECAST_DAYS
+        assert params["timezone"] == "UTC"
+
     def test_single_point_parsed(self):
-        with patch("ingest.weather.fetch_wind._fetch_batch", return_value=[_OM_SINGLE_POINT]):
+        with patch("ingest.weather.fetch_wind._fetch_batch", return_value=[_OM_SINGLE_POINT]) as batch:
             result = fetch_wind(
                 bbox=[73.5, 28.0, 73.5, 28.0],  # single point
                 step_deg=0.25,
                 forecast_days=2,
             )
+        assert batch.call_args.args[-1] == 2  # Explicit shorter requests remain supported.
         assert len(result["points"]) == 1
         point = result["points"][0]
         assert point["lat"] == pytest.approx(28.0)

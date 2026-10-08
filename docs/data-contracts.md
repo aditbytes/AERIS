@@ -1,6 +1,6 @@
 # AERIS — Data Contracts
 
-> ⚠️ **No demo data.** AERIS uses **only real data** from live sources. Do not create, hand-write, mock or hard-code sample, demo, placeholder or fabricated data — not in code, not in the UI, not in tests, and not as a "fallback". If a live source is unavailable, return an error and show an error state. The only offline files allowed are **real snapshots** that the fetchers captured from live sources into `data/live/` (each stamped with its source and fetch time). Tests may use small captured real API responses, labelled as such.
+> ⚠️ **Real production inputs; no fabricated fallback.** Files published through `data/live/` and the UI must come from real captured feeds or explicitly modelled outputs derived from those feeds. If an input is unavailable, return an error. Tests may use labelled captured responses or isolated mathematical cases. Task 4 permits explicitly labelled `BASELINE_SIMULATED` physics scenarios for optional surrogate training/evaluation outside `data/live/`; they are never real observations, historical calibration, or a replacement for unavailable live data.
 
 The shared file formats every member codes against. Change one only via PR and tell the downstream owner. All times are ISO-8601 UTC. Coordinates are WGS84 (`lat`, `lon`). Real snapshots live in `data/live/`. The JSON blocks below only illustrate each format; their values are placeholders and are **never** to be used as data.
 
@@ -78,6 +78,9 @@ GeoJSON `FeatureCollection` of `Point`s.
 ```
 `emission_strength` is normalised 0–1.
 
+Source classification, confidence and emission strength are uncalibrated
+fire-cluster heuristics, not proof of land use or causal source attribution.
+
 ## `corridor.geojson` (Pritam)
 `FeatureCollection` of `Polygon`s, one per source and time band, plus one `LineString` centreline per source. Top-level members: `generated_at`, `forecast_start` (hour 0 of the advection) and `wind_generated_at` (the `wind.json` it used).
 ```json
@@ -89,6 +92,13 @@ GeoJSON `FeatureCollection` of `Point`s.
                 "points_eta_hours": [0, 1, 2, 3]}}
 ```
 `risk` is 0–1 and `pm25_delta_ugm3` is the forecast PM2.5 increase from the source's smoke at that band.
+
+In the current baseline, band concentration is a modelled peak over selected
+cells/hourly frames, not an observed or uniform receptor concentration. Risk is
+an uncalibrated relative score; centreline ETA values are frame times for puff
+mass centres, not guaranteed first arrival or a medical exposure probability.
+The model supports up to 48 hours only when the supplied wind/PBLH covers every
+required location/time. See [model status and limits](../models/README.md).
 
 ## `ranked_sites.json` (Meenal)
 ```json

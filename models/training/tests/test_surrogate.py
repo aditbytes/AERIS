@@ -312,3 +312,29 @@ def test_explicit_model_selection_and_absent_artifact(dataset, artifact, tmp_pat
         predict_point(*args, model="surrogate", model_dir=tmp_path)
     with pytest.raises(ValueError):
         predict_point(*args, model="automatic")
+
+
+@pytest.mark.parametrize("unsupported", ["over_12_hours", "multiple_sources", "changing_wind",
+                                          "changing_pblh", "other_origin", "polygon_geometry",
+                                          "outside_coordinate_range"])
+def test_optional_point_surrogate_rejects_unsupported_scope(dataset, artifact, unsupported):
+    scenario = dataset["splits"]["test"][0]
+    case = copy.deepcopy(scenario["inputs"])
+    row = scenario["samples"][0]
+    east, north = row["east_m"], row["north_m"]
+    if unsupported == "over_12_hours":
+        case["forecast_hours"] = 13
+    elif unsupported == "multiple_sources":
+        case["sources"] = [case.copy(), case.copy()]
+    elif unsupported == "changing_wind":
+        case["u_ms"] = [case["u_ms"], case["u_ms"] + 1]
+    elif unsupported == "changing_pblh":
+        case["pblh_m"] = [case["pblh_m"], case["pblh_m"] + 1]
+    elif unsupported == "other_origin":
+        case["origin"] = {"lat": 31, "lon": 76}
+    elif unsupported == "polygon_geometry":
+        case["geometry"] = {"type": "Polygon"}
+    else:
+        east = 1e7
+    with pytest.raises(ValueError):
+        predict_point(case, east, north, model="surrogate", model_dir=artifact)

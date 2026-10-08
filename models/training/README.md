@@ -168,6 +168,16 @@ Explicit `model="surrogate"` requires a valid artifact and fails if absent; ther
 is no fabricated prediction or silent fallback. `model="physics"` is the default
 for this reference-scenario interface. The existing corridor pipeline is unchanged.
 
+Unsupported requests raise `ValueError`: hours above 12, multiple-source fields,
+wind/PBLH arrays, alternate-origin fields, polygon geometry and coordinates
+outside the feature domain. Only the documented scalar steady-weather case and
+projected reference-origin point are accepted. The feature-array SageMaker
+interface has the same fixed numerical scope; its coordinates must already be
+constructed for that reference. It cannot infer hidden weather histories or
+origin metadata that a caller omits. It rejects extra request fields rather than
+silently consuming a broader scenario. Use `predict_corridor()` for real sources,
+changing-weather and longer forecasts; the production pipeline always uses it.
+
 `train.py` reads `SM_CHANNEL_TRAIN/dataset.json` and writes `model.pkl` plus metadata
 to `SM_MODEL_DIR`. CLI arguments override those environment variables. A SageMaker
 source bundle must include the repository's `models` package, including plume and

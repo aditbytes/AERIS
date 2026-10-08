@@ -3,7 +3,7 @@
 <img src="docs/assets/logo.svg" alt="AERIS" width="520"/>
 
 **Source → Plume → Exposure → Action**<br>
-*An AI engine that finds where pollution comes from, predicts where it will move, and tells authorities what to do.*
+*An engine that groups satellite fire detections, models smoke transport, and supports response planning.*
 
 ![Track](https://img.shields.io/badge/Track-Air-1e88e5?style=flat-square)
 ![Hackathon](https://img.shields.io/badge/Environmental%20Hacks-Bharat%20Builds%20Tour-ed7100?style=flat-square)
@@ -17,19 +17,18 @@
 
 ## ⚡ Overview
 
-**AERIS** (*Air Exposure & Risk Intelligence System*) is an AI engine for air pollution that goes beyond "the AQI is bad today". By fusing real-world signals — satellite fire detections, ground air-quality sensors, wind and weather, and the locations of schools and hospitals — it works out **who is polluting, where the smoke is heading, who will be hit, and what authorities should do about it**. Instead of another AQI prediction dashboard, AERIS gives decision-makers a single map and a ranked action plan, **hours before the plume arrives**.
+**AERIS** (*Air Exposure & Risk Intelligence System*) combines satellite fire detections, ground air-quality readings, wind and weather, and the locations of schools and hospitals. It groups fires into **candidate source clusters**, estimates smoke transport with a simplified physics baseline, and connects modelled corridors to sites and response planning on a map. Source labels and risk scores are uncalibrated heuristics; the implementation does not establish causal attribution, observed forecast accuracy, or guaranteed exposure/arrival times. Current modelling evidence and limits are documented in [`models/README.md`](models/README.md).
 
 ```
 Source Detection  →  Plume Prediction  →  Human Exposure  →  Intervention
    (who/where)        (where it moves)      (who gets hit)     (what to do)
 ```
 
-> You only need to: let AERIS ingest fire, air-quality and weather data for a region.<br>
-> AERIS will return: the pollution source, the forecast risk corridor, the most vulnerable schools and hospitals in its path, and an agent-written action plan — all on one map.
+> With sufficiently covered real inputs, AERIS produces candidate fire-source clusters, modelled corridors, site rankings and a response plan. Missing input or wind coverage produces an explicit error; unavailable weather is never invented.
 
 ## 🎬 Example scenario
 
-> This is the story AERIS is built to tell, not stored data. AERIS runs **only on real, live data** and never ships demo, sample or fabricated data.
+> This is a proposed scenario, not measured performance or stored data. Production inputs are real captured feeds. Numerical tests and optional ML training use separately labelled mathematical/`BASELINE_SIMULATED` scenarios; these are never published as live observations or historical calibration.
 
 | | |
 |---|---|

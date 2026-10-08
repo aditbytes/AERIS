@@ -10,7 +10,7 @@ Endpoint:
     &longitude={lon1,lon2,...}
     &hourly=wind_speed_10m,wind_direction_10m,boundary_layer_height
     &wind_speed_unit=ms
-    &forecast_days=2
+    &forecast_days=4
     &timezone=UTC
 
 Output schema → docs/data-contracts.md (`wind.json`):
@@ -73,7 +73,11 @@ OPEN_METEO_FORECAST = "https://api.open-meteo.com/v1/forecast"
 
 DEFAULT_BBOX: list[float] = [73.5, 28.0, 77.5, 32.5]
 DEFAULT_STEP_DEG: float = 0.25
-DEFAULT_FORECAST_DAYS: int = 2
+# Calendar-day responses start at today's UTC midnight and end at the final
+# day's 23:00 sample. Two days never provide 48 future hours from capture;
+# even three days fall short after 23:00. Four days buffer the 48-hour pipeline
+# horizon without extrapolation. Actual per-point coverage is still validated.
+DEFAULT_FORECAST_DAYS: int = 4
 
 # Open-Meteo allows max 300 locations per call; our grid at 0.25° has ~323 →
 # split into two requests if needed.
@@ -259,7 +263,8 @@ def fetch_wind(
     step_deg:
         Grid spacing in degrees (default 0.25).
     forecast_days:
-        Number of forecast days (default 2 → 48 h).
+        Calendar days to request (default 4, buffering 48 hours after capture).
+        This requests coverage; it does not guarantee usable wind/PBLH samples.
 
     Returns
     -------

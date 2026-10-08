@@ -128,3 +128,17 @@ def test_agent_restores_data_dir(live_copy, monkeypatch):
     import os
 
     assert os.environ["AERIS_DATA_DIR"] == str(live_copy)
+
+
+def test_real_corridor_pipeline_does_not_load_optional_ml_artifact(live_copy, monkeypatch):
+    from models.training import inference
+    from pipeline.contracts import check_corridor
+
+    def forbidden_ml_load(*args, **kwargs):
+        raise AssertionError("The production corridor pipeline must remain physics")
+
+    monkeypatch.setattr(inference, "model_fn", forbidden_ml_load)
+    steps.detect_handler(_LOCAL_KEYS, None)
+    result = steps.corridor_handler(_covered_forecast_event(live_copy), None)
+    assert result["features"] > 0
+    assert check_corridor(_load(live_copy / "corridor.geojson")) == []
