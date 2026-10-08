@@ -24,6 +24,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -134,6 +135,17 @@ def write_json(key: str, obj: Any, *, geojson: bool = False) -> str:
     _validate(key, obj)
     body = json.dumps(obj, indent=2, ensure_ascii=False)
     return get_backend().write(key, body, geojson)
+
+
+def write_bronze(source: str, obj: Any, *, geojson: bool = False) -> str:
+    """
+    Store a raw fetch under ``bronze/<source>/<UTC stamp>`` and refresh
+    ``bronze/<source>/latest``. Returns the timestamped location.
+    """
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    loc = write_json(f"bronze/{source}/{stamp}", obj, geojson=geojson)
+    write_json(f"bronze/{source}/latest", obj, geojson=geojson)
+    return loc
 
 
 def read_json(key: str, *, geojson: bool = False) -> Any:
