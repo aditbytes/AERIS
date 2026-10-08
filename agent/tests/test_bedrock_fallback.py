@@ -54,3 +54,16 @@ def test_raises_when_every_model_fails(ids, monkeypatch):
     monkeypatch.setattr(bedrock_agent, "_run_model", fail)
     with pytest.raises(RuntimeError, match="All Bedrock models failed"):
         bedrock_agent.generate_bedrock_plan()
+
+
+def test_stops_starting_models_when_time_budget_is_used(ids, monkeypatch):
+    calls = []
+
+    def fail(mid):
+        calls.append(mid)
+        raise RuntimeError("throttled")
+
+    monkeypatch.setattr(bedrock_agent, "_run_model", fail)
+    with pytest.raises(RuntimeError, match="time budget used up"):
+        bedrock_agent.generate_bedrock_plan(time_budget_s=bedrock_agent.MIN_SECONDS_PER_MODEL - 1)
+    assert calls == []

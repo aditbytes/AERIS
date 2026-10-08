@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
 from datetime import datetime, timezone
 from typing import Any
 
@@ -107,15 +108,39 @@ def _model_ids(model_id: str | None) -> list[str]:
     return list(dict.fromkeys(ids))
 
 
+# Bounds for one model attempt. Strands' default retry (6 attempts, up to 240 s
+# backoff) can spend minutes on a throttled model and time the Lambda out before
+# the next model or the rules plan gets a chance.
+MAX_TURNS = 8
+READ_TIMEOUT_S = 60
+# Do not start another model with less than this many seconds left.
+MIN_SECONDS_PER_MODEL = 75
+
+
 def _run_model(model_id: str) -> _Plan:
-    from strands import Agent
+    from botocore.config import Config
+    from strands import Agent, ModelRetryStrategy
     from strands.models import BedrockModel
 
-    model = BedrockModel(model_id=model_id, region_name=os.environ.get("AWS_REGION"), max_tokens=8000)
-    agent = Agent(model=model, tools=_tools(), system_prompt=SYSTEM_PROMPT, callback_handler=None)
+    model = BedrockModel(
+        model_id=model_id,
+        region_name=os.environ.get("AWS_REGION"),
+        max_tokens=8000,
+        boto_client_config=Config(
+            connect_timeout=5, read_timeout=READ_TIMEOUT_S, retries={"max_attempts": 2, "mode": "standard"}
+        ),
+    )
+    agent = Agent(
+        model=model,
+        tools=_tools(),
+        system_prompt=SYSTEM_PROMPT,
+        callback_handler=None,
+        retry_strategy=ModelRetryStrategy(max_attempts=2, initial_delay=2, max_delay=10),
+    )
     result = agent(
         "Read the current AERIS situation with the tools and produce the action plan.",
         structured_output_model=_Plan,
+        limits={"turns": MAX_TURNS},
     )
     plan = result.structured_output
     if not isinstance(plan, _Plan):
@@ -124,13 +149,20 @@ def _run_model(model_id: str) -> _Plan:
     return plan
 
 
-def generate_bedrock_plan(model_id: str | None = None) -> dict[str, Any]:
+def generate_bedrock_plan(model_id: str | None = None, time_budget_s: float | None = None) -> dict[str, Any]:
     """
     Run the Strands agent on Bedrock and return an actions.json-shaped dict.
     Tries each model in turn (e.g. Claude, then Amazon Nova); raises if all fail.
+    With ``time_budget_s``, stops starting new models once less than
+    MIN_SECONDS_PER_MODEL remains, so the caller can still fall back in time.
     """
+    deadline = time.monotonic() + time_budget_s if time_budget_s else None
     errors = []
     for mid in _model_ids(model_id):
+        if deadline is not None and deadline - time.monotonic() < MIN_SECONDS_PER_MODEL:
+            errors.append(f"{mid}: skipped, time budget used up")
+            logger.warning("Skipping Bedrock model %s: time budget used up", mid)
+            continue
         try:
             plan = _run_model(mid)
         except Exception as exc:  # noqa: BLE001 - access, billing, throttling or validation: try the next model
