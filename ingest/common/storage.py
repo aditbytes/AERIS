@@ -142,9 +142,21 @@ def write_bronze(source: str, obj: Any, *, geojson: bool = False) -> str:
     Store a raw fetch under ``bronze/<source>/<UTC stamp>`` and refresh
     ``bronze/<source>/latest``. Returns the timestamped location.
     """
+    return _write_stamped("bronze", source, obj, geojson)
+
+
+def write_reference(source: str, obj: Any, *, geojson: bool = False) -> str:
+    """
+    Like :func:`write_bronze` but under ``reference/``, which never expires.
+    For one-time datasets (sites, population) that the pipeline reads forever.
+    """
+    return _write_stamped("reference", source, obj, geojson)
+
+
+def _write_stamped(prefix: str, source: str, obj: Any, geojson: bool) -> str:
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    loc = write_json(f"bronze/{source}/{stamp}", obj, geojson=geojson)
-    write_json(f"bronze/{source}/latest", obj, geojson=geojson)
+    loc = write_json(f"{prefix}/{source}/{stamp}", obj, geojson=geojson)
+    write_json(f"{prefix}/{source}/latest", obj, geojson=geojson)
     return loc
 
 
