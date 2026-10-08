@@ -4,6 +4,8 @@
 **Target Duration:** Exactly 3:00 minutes (180 seconds)  
 **Presenter:** Saba Saeed (Product & AI Agent Lead) + Aditya (AWS Cloud Architect)
 
+> ⚠️ **Read every number off the live dashboard at recording time.** Counts in this script (494 facilities, 571K → 257K, 104 fires, 314,000) came from an earlier snapshot and are out of date. With the corrected wind model, the corridor follows the real forecast wind, so on some days the smoke does not head toward Delhi. Narrate what the map shows.
+
 ---
 
 ## Storyboard Overview & Timing
