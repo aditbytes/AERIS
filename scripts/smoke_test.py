@@ -127,11 +127,15 @@ def main() -> None:
     problems += route_problems
     if args.web:
         problems += check_cors(api, args.web.rstrip("/"))
-        page = requests.get(args.web, timeout=TIMEOUT)
-        if page.status_code != 200 or "<div id=\"root\"" not in page.text:
-            problems.append(f"GET {args.web} -> HTTP {page.status_code}, no app root")
+        try:
+            page = requests.get(args.web, timeout=TIMEOUT)
+        except requests.RequestException as exc:
+            problems.append(f"GET {args.web}: {type(exc).__name__}")
         else:
-            print(f"GET {args.web}: ok")
+            if page.status_code != 200 or "<div id=\"root\"" not in page.text:
+                problems.append(f"GET {args.web} -> HTTP {page.status_code}, no app root")
+            else:
+                print(f"GET {args.web}: ok")
 
     for w in warnings:
         print(f"WARN  {w}")
