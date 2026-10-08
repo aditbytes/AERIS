@@ -1,0 +1,130 @@
+/* WhatIfWeAct.css */
+.whatif {
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.whatif-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.whatif-reduction {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: #E8F5E9;
+  border: 1px solid #BBF7D0;
+  border-radius: 8px;
+  padding: 3px 7px;
+  flex-shrink: 0;
+}
+
+.reduction-arrow {
+  font-size: 13px;
+  font-weight: 800;
+  color: #22734F;
+}
+
+.reduction-pct {
+  font-size: 14px;
+  font-weight: 800;
+  color: #22734F;
+}
+
+.reduction-label {
+  font-size: 8.5px;
+  color: #4A8C6A;
+  line-height: 1.2;
+}
+
+.whatif-pop {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.whatif-pop strong {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.whatif-bars {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  gap: 8px;
+  height: 58px;
+  margin-top: 2px;
+}
+
+
+.bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  height: 100%;
+}
+
+.bar-col.interactive-scenario {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  transition: transform 0.15s ease;
+}
+
+.bar-col.interactive-scenario:hover {
+  transform: translateY(-2px);
+}
+
+.bar-col.interactive-scenario.active .bar-track {
+  border: 1.5px solid var(--brand-primary);
+  box-shadow: 0 0 10px var(--brand-glow);
+}
+
+.bar-col.interactive-scenario.active .bar-label {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.bar-track {
+  flex: 1;
+  width: 100%;
+  background: var(--surface-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  border: 1px solid var(--border-subtle);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.bar-fill {
+  width: 100%;
+  border-radius: 7px 7px 0 0;
+  transition: height 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.bar-value {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.bar-label {
+  font-size: 10px;
+  text-align: center;
+  color: var(--text-tertiary);
+  line-height: 1.3;
+}

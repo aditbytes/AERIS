@@ -1,0 +1,59 @@
+/* PlumeHudCard.css */
+.plume-hud {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 210px;
+  padding: 14px 16px;
+  background: rgba(26, 68, 51, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  z-index: 10;
+  color: white;
+  box-shadow: var(--shadow-float);
+}
+
+.hud-headline {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.4;
+  margin-bottom: 12px;
+}
+
+.hud-eta {
+  font-weight: 800;
+  color: white;
+  font-size: 14px;
+}
+
+.hud-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.hud-metric {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hud-metric-icon {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.hud-metric-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+  margin-bottom: 1px;
+}
+
+.hud-metric-value {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: white;
+}

@@ -1,0 +1,256 @@
+.population-risk-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 24px;
+  overflow-y: auto;
+  background: #f7f9f7;
+  color: #1a2a1e;
+}
+
+.population-risk-view .view-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  background: #ffffff;
+  padding: 18px 24px;
+  border-radius: 12px;
+  border: 1px solid rgba(22, 78, 53, 0.12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.pop-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.pop-kpi-card {
+  background: #ffffff;
+  border: 1px solid rgba(22, 78, 53, 0.1);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.cohorts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.cohort-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  border: 1px solid rgba(22, 78, 53, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.cohort-card.pediatric {
+  border-left: 5px solid #2563eb;
+}
+
+.cohort-card.clinical {
+  border-left: 5px solid #dc2626;
+}
+
+.cohort-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #f0f7f3;
+  color: #164e35;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cohort-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cohort-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f2d1e;
+}
+
+.cohort-stat {
+  font-size: 16px;
+  font-weight: 800;
+  color: #164e35;
+  margin: 2px 0;
+}
+
+.cohort-desc {
+  font-size: 12px;
+  color: #5d7566;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.pop-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #ffffff;
+  padding: 12px 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(22, 78, 53, 0.1);
+}
+
+.filter-pills {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.type-buttons {
+  display: flex;
+  background: #f0f4f1;
+  padding: 3px;
+  border-radius: 8px;
+  gap: 4px;
+}
+
+.pill-btn {
+  background: transparent;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b6354;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pill-btn.active {
+  background: #164e35;
+  color: white;
+}
+
+.risk-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f0f4f1;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid #ccd8cf;
+  font-size: 12px;
+}
+
+.risk-select-wrap select {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: #164e35;
+  cursor: pointer;
+}
+
+.facilities-table-panel {
+  background: #ffffff;
+  border: 1px solid rgba(22, 78, 53, 0.1);
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.table-header-meta {
+  margin-bottom: 12px;
+}
+
+.results-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: #4b6354;
+}
+
+.facilities-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.facilities-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background: #f0f4f1;
+  color: #2e4d3b;
+  font-weight: 700;
+  border-bottom: 1px solid #d5ded7;
+}
+
+.facilities-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #eef2ef;
+  color: #374151;
+}
+
+.rank-badge {
+  font-weight: 700;
+  color: #6b7280;
+}
+
+.fac-name-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.fac-coords {
+  font-family: monospace;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.type-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.type-tag.school {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.type-tag.hospital {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.eta-tag {
+  font-weight: 700;
+  color: #b45309;
+}
+
+.delta-tag {
+  font-weight: 700;
+  color: #dc2626;
+}
+
+@media (max-width: 1100px) {
+  .pop-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .cohorts-grid {
+    grid-template-columns: 1fr;
+  }
+}

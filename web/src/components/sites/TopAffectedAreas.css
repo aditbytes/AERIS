@@ -1,0 +1,137 @@
+/* TopAffectedAreas.css */
+.top-areas {
+  height: 100%;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.top-areas .section-header {
+  margin-bottom: 4px;
+}
+
+.area-filter-chips {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 1.5px 3px;
+}
+
+.chip-btn {
+  background: transparent;
+  border: none;
+  border-radius: 9px;
+  padding: 1.5px 6px;
+  font-family: var(--font);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chip-btn:hover {
+  color: var(--brand-dark);
+}
+
+.chip-btn.active {
+  background: var(--brand-light);
+  color: var(--brand-dark);
+}
+
+.area-site-tag {
+  display: inline-block;
+  margin-left: 5px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  background: var(--surface-subtle);
+  padding: 1px 4px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+}
+
+.areas-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.areas-list {
+  list-style: none;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.area-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.area-item:hover { background: var(--brand-light); }
+.area-item:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 2px; }
+
+.area-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  background: var(--surface-subtle);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.area-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.area-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.area-loc {
+  font-size: 10px;
+  margin-top: 1px;
+}
+
+.area-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.area-right .badge {
+  padding: 2px 7px;
+  font-size: 10px;
+}
+
+.area-eta {
+  font-size: 9.5px;
+  white-space: nowrap;
+}
