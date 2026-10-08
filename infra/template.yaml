@@ -22,6 +22,10 @@ Parameters:
   BronzeRetentionDays:
     Type: Number
     Default: 14
+  AgentModelId:
+    Type: String
+    Default: anthropic.claude-opus-5-5
+    Description: Bedrock model or inference-profile id for the Strands action agent
 
 Resources:
   DataBucket:
@@ -108,10 +112,25 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: s3:GetObject
-                Resource: !Sub ${DataBucket.Arn}/bronze/*
+                Resource:
+                  - !Sub ${DataBucket.Arn}/bronze/*
+                  - !Sub ${DataBucket.Arn}/reference/*
+                  - !Sub ${DataBucket.Arn}/gold/*
+              # ListBucket makes a missing key a NoSuchKey (404) instead of AccessDenied
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt DataBucket.Arn
+              # Every gold/ file except actions.json, which only the agent writes
               - Effect: Allow
                 Action: s3:PutObject
-                Resource: !Sub ${DataBucket.Arn}/gold/*
+                Resource:
+                  - !Sub ${DataBucket.Arn}/gold/fires.json
+                  - !Sub ${DataBucket.Arn}/gold/aqi.json
+                  - !Sub ${DataBucket.Arn}/gold/wind.json
+                  - !Sub ${DataBucket.Arn}/gold/sites.geojson
+                  - !Sub ${DataBucket.Arn}/gold/sources.json
+                  - !Sub ${DataBucket.Arn}/gold/corridor.geojson
+                  - !Sub ${DataBucket.Arn}/gold/ranked_sites.json
 
   SageMakerRole:
     Type: AWS::IAM::Role
@@ -156,13 +175,16 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
-                Action: bedrock:InvokeModel
+                Action: [bedrock:InvokeModel, bedrock:InvokeModelWithResponseStream]
                 Resource:
                   - !Sub arn:${AWS::Partition}:bedrock:*::foundation-model/*
                   - !Sub arn:${AWS::Partition}:bedrock:*:${AWS::AccountId}:inference-profile/*
               - Effect: Allow
                 Action: s3:GetObject
                 Resource: !Sub ${DataBucket.Arn}/gold/*
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt DataBucket.Arn
               - Effect: Allow
                 Action: s3:PutObject
                 Resource: !Sub ${DataBucket.Arn}/gold/actions.json
@@ -186,6 +208,15 @@ Resources:
               - Effect: Allow
                 Action: s3:GetObject
                 Resource: !Sub ${DataBucket.Arn}/gold/*
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt DataBucket.Arn
+              - Effect: Allow
+                Action: [states:StartExecution, states:ListExecutions]
+                Resource: !Ref PipelineStateMachine
+              - Effect: Allow
+                Action: states:DescribeExecution
+                Resource: !Sub arn:${AWS::Partition}:states:${AWS::Region}:${AWS::AccountId}:execution:${PipelineStateMachine.Name}:*
 
   # --- Ingestion: fetch -> bronze/ ----------------------------------------
   FetchDlq:
@@ -352,6 +383,181 @@ Resources:
       EventInvokeConfig:
         MaximumRetryAttempts: 1
 
+  # --- Pipeline: bronze/ + reference/ -> gold/ ----------------------------
+  PublishFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      CodeUri: lambda/
+      Handler: pipeline.steps.publish_handler
+      Role: !GetAtt ModelRole.Arn
+      MemorySize: 512
+      Timeout: 120
+
+  DetectFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      CodeUri: lambda/
+      Handler: pipeline.steps.detect_handler
+      Role: !GetAtt ModelRole.Arn
+      MemorySize: 512
+      Timeout: 120
+
+  CorridorFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      CodeUri: lambda/
+      Handler: pipeline.steps.corridor_handler
+      Role: !GetAtt ModelRole.Arn
+      MemorySize: 1024
+      Timeout: 180
+
+  RankFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      CodeUri: lambda/
+      Handler: pipeline.steps.rank_handler
+      Role: !GetAtt ModelRole.Arn
+      MemorySize: 2048
+      Timeout: 300
+
+  AgentFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      CodeUri: lambda/
+      Handler: pipeline.steps.agent_handler
+      Role: !GetAtt AgentRole.Arn
+      MemorySize: 1024
+      # Strands agent runs take 30-60 s; leave room for Bedrock retries
+      Timeout: 300
+      Environment:
+        Variables:
+          AGENT_MODEL_PROVIDER: bedrock
+          AGENT_MODEL_ID: !Ref AgentModelId
+
+  PipelineStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: !Sub ${AWS::StackName}-pipeline
+      Type: STANDARD
+      Policies:
+        - LambdaInvokePolicy: {FunctionName: !Ref PublishFunction}
+        - LambdaInvokePolicy: {FunctionName: !Ref DetectFunction}
+        - LambdaInvokePolicy: {FunctionName: !Ref CorridorFunction}
+        - LambdaInvokePolicy: {FunctionName: !Ref RankFunction}
+        - LambdaInvokePolicy: {FunctionName: !Ref AgentFunction}
+      DefinitionSubstitutions:
+        PublishArn: !GetAtt PublishFunction.Arn
+        DetectArn: !GetAtt DetectFunction.Arn
+        CorridorArn: !GetAtt CorridorFunction.Arn
+        RankArn: !GetAtt RankFunction.Arn
+        AgentArn: !GetAtt AgentFunction.Arn
+      Definition:
+        Comment: AERIS refresh - publish -> detect -> corridor -> rank -> agent. A failed step stops the run; gold/ keeps the last real result.
+        StartAt: Publish
+        States:
+          Publish:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke
+            Parameters: {FunctionName: "${PublishArn}", Payload: {}}
+            ResultSelector: {"result.$": "$.Payload"}
+            ResultPath: $.publish
+            Retry:
+              - ErrorEquals: [Lambda.ServiceException, Lambda.AWSLambdaException, Lambda.SdkClientException, Lambda.TooManyRequestsException]
+                IntervalSeconds: 5
+                MaxAttempts: 3
+                BackoffRate: 2
+            Catch:
+              - ErrorEquals: [States.ALL]
+                ResultPath: $.error
+                Next: Failed
+            Next: Detect
+          Detect:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke
+            Parameters: {FunctionName: "${DetectArn}", Payload: {}}
+            ResultSelector: {"result.$": "$.Payload"}
+            ResultPath: $.detect
+            Retry:
+              - ErrorEquals: [Lambda.ServiceException, Lambda.AWSLambdaException, Lambda.SdkClientException, Lambda.TooManyRequestsException]
+                IntervalSeconds: 5
+                MaxAttempts: 3
+                BackoffRate: 2
+            Catch:
+              - ErrorEquals: [States.ALL]
+                ResultPath: $.error
+                Next: Failed
+            Next: Corridor
+          Corridor:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke
+            Parameters: {FunctionName: "${CorridorArn}", Payload: {}}
+            ResultSelector: {"result.$": "$.Payload"}
+            ResultPath: $.corridor
+            Retry:
+              - ErrorEquals: [Lambda.ServiceException, Lambda.AWSLambdaException, Lambda.SdkClientException, Lambda.TooManyRequestsException]
+                IntervalSeconds: 5
+                MaxAttempts: 3
+                BackoffRate: 2
+            Catch:
+              - ErrorEquals: [States.ALL]
+                ResultPath: $.error
+                Next: Failed
+            Next: Rank
+          Rank:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke
+            Parameters: {FunctionName: "${RankArn}", Payload: {}}
+            ResultSelector: {"result.$": "$.Payload"}
+            ResultPath: $.rank
+            Retry:
+              - ErrorEquals: [Lambda.ServiceException, Lambda.AWSLambdaException, Lambda.SdkClientException, Lambda.TooManyRequestsException]
+                IntervalSeconds: 5
+                MaxAttempts: 3
+                BackoffRate: 2
+            Catch:
+              - ErrorEquals: [States.ALL]
+                ResultPath: $.error
+                Next: Failed
+            Next: Agent
+          Agent:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke
+            Parameters: {FunctionName: "${AgentArn}", Payload: {}}
+            ResultSelector: {"result.$": "$.Payload"}
+            ResultPath: $.agent
+            Retry:
+              - ErrorEquals: [Lambda.ServiceException, Lambda.AWSLambdaException, Lambda.SdkClientException, Lambda.TooManyRequestsException]
+                IntervalSeconds: 5
+                MaxAttempts: 3
+                BackoffRate: 2
+            Catch:
+              - ErrorEquals: [States.ALL]
+                ResultPath: $.error
+                Next: Failed
+            Next: Done
+          Done:
+            Type: Succeed
+          Failed:
+            Type: Fail
+            Error: PipelineStepFailed
+            Cause: A pipeline step failed; gold/ still holds the last real result.
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            # FIRMS lands every 15 min; refresh the derived files every 30
+            ScheduleExpression: rate(30 minutes)
+
   # --- Cost guard ---------------------------------------------------------
   MonthlyBudget:
     Type: AWS::Budgets::Budget
@@ -372,6 +578,7 @@ Resources:
           Subscribers: [{SubscriptionType: EMAIL, Address: !Ref AlertEmail}]
 
 Outputs:
+  PipelineStateMachineArn: {Value: !Ref PipelineStateMachine}
   FetchDlqUrl: {Value: !Ref FetchDlq}
   FetchDlqArn: {Value: !GetAtt FetchDlq.Arn}
   DataBucketName: {Value: !Ref DataBucket}
