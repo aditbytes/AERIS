@@ -104,7 +104,10 @@ def get(
             continue
 
         if resp.status_code == 200:
-            logger.debug("[%s] 200 OK — %d bytes", source_name, len(resp.content))
+            if not stream:
+                logger.debug("[%s] 200 OK — %d bytes", source_name, len(resp.content))
+            else:
+                logger.debug("[%s] 200 OK — stream started", source_name)
             return resp
 
         if resp.status_code in (429, 503) and attempt < max_retries:

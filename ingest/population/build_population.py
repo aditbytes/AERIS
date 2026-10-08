@@ -5,11 +5,11 @@ WorldPop population-grid builder.
 
 Data source:
   WorldPop Global High Resolution Population Denominators Project
-  URL: https://data.worldpop.org/GIS/Population/Global_2000_2020/2020/0_Mosaicked/ppp_2020_1km_Aggregated.tif
+  URL: https://worldpop-public-data.soton.ac.uk/GIS/Population/Global_2000_2020_1km/2020/IND/ind_ppp_2020_1km_Aggregated.tif
   DOI: 10.5258/SOTON/WP00647
   Citation: WorldPop (www.worldpop.org) and CIESIN, Columbia University (2018).
   License: Creative Commons Attribution 4.0 International (CC BY 4.0)
-  Description: Estimated total number of people per grid-cell, 2020 global mosaic.
+  Description: Estimated total number of people per grid-cell, 2020 India mosaic.
                Resolution: 30 arc-seconds (~1 km at equator). WGS84.
                Units: number of people per pixel.
 
@@ -76,9 +76,9 @@ except ImportError:
 # Constants
 # ---------------------------------------------------------------------------
 
-WORLDPOP_URL = (
-    "https://data.worldpop.org/GIS/Population/"
-    "Global_2000_2020/2020/0_Mosaicked/ppp_2020_1km_Aggregated.tif"
+WORLDPOP_URL = os.environ.get(
+    "WORLDPOP_URL",
+    "https://worldpop-public-data.soton.ac.uk/GIS/Population/Global_2000_2020_1km/2020/IND/ind_ppp_2020_1km_Aggregated.tif"
 )
 WORLDPOP_DOI = "10.5258/SOTON/WP00647"
 WORLDPOP_YEAR = 2020
@@ -96,7 +96,7 @@ DEFAULT_BBOX: list[float] = [73.5, 28.0, 77.5, 32.5]
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]  # AERIS/ingest/population/ → AERIS/ingest/ → AERIS/
 _DATA_RAW = _REPO_ROOT / "data" / "raw"
-_TIFF_NAME = "ppp_2020_1km_Aggregated.tif"
+_TIFF_NAME = WORLDPOP_URL.split("/")[-1]
 
 
 # ---------------------------------------------------------------------------
@@ -112,7 +112,6 @@ def _download_worldpop(dest: Path) -> None:
     """
     logger.info("[WorldPop] Downloading %s → %s", WORLDPOP_URL, dest)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    raise RuntimeError("Upstream download timed out due to 845MB size constraint in sandbox")
 
     resp = http_get(
         WORLDPOP_URL,
