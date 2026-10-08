@@ -310,6 +310,8 @@ Resources:
       CodeUri: lambda/
       Handler: ingest.firms.handler.lambda_handler
       Role: !GetAtt FirmsRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref FirmsFunctionLogs
       MemorySize: 256
       Timeout: 120
       DeadLetterQueue:
@@ -333,6 +335,8 @@ Resources:
       CodeUri: lambda/
       Handler: ingest.aqi.handler.lambda_handler
       Role: !GetAtt AqiRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref AqiFunctionLogs
       MemorySize: 256
       Timeout: 300
       DeadLetterQueue:
@@ -354,6 +358,8 @@ Resources:
       CodeUri: lambda/
       Handler: ingest.weather.handler.lambda_handler
       Role: !GetAtt WeatherRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref WeatherFunctionLogs
       MemorySize: 512
       Timeout: 300
       DeadLetterQueue:
@@ -375,6 +381,8 @@ Resources:
       CodeUri: lambda/
       Handler: ingest.sites.handler.lambda_handler
       Role: !GetAtt FetcherRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref SitesFunctionLogs
       MemorySize: 256
       Timeout: 300
       DeadLetterQueue:
@@ -392,6 +400,8 @@ Resources:
       CodeUri: lambda/
       Handler: pipeline.steps.publish_handler
       Role: !GetAtt ModelRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref PublishFunctionLogs
       MemorySize: 512
       Timeout: 120
 
@@ -403,6 +413,8 @@ Resources:
       CodeUri: lambda/
       Handler: pipeline.steps.detect_handler
       Role: !GetAtt ModelRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref DetectFunctionLogs
       MemorySize: 512
       Timeout: 120
 
@@ -414,6 +426,8 @@ Resources:
       CodeUri: lambda/
       Handler: pipeline.steps.corridor_handler
       Role: !GetAtt ModelRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref CorridorFunctionLogs
       MemorySize: 1024
       Timeout: 180
 
@@ -425,6 +439,8 @@ Resources:
       CodeUri: lambda/
       Handler: pipeline.steps.rank_handler
       Role: !GetAtt ModelRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref RankFunctionLogs
       MemorySize: 2048
       Timeout: 300
 
@@ -436,6 +452,8 @@ Resources:
       CodeUri: lambda/
       Handler: pipeline.steps.agent_handler
       Role: !GetAtt AgentRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref AgentFunctionLogs
       MemorySize: 1024
       # Strands agent runs take 30-60 s; leave room for Bedrock retries
       Timeout: 300
@@ -585,6 +603,8 @@ Resources:
       CodeUri: lambda/
       Handler: api.handlers.app.lambda_handler
       Role: !GetAtt ApiRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref ApiFunctionLogs
       MemorySize: 512
       Timeout: 15
       Environment:
@@ -662,6 +682,67 @@ Resources:
             Condition:
               StringEquals:
                 AWS:SourceArn: !Sub arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${WebDistribution}
+
+  # --- Logs: one group per function, 7-day retention ----------------------
+  FirmsFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aeris/${AWS::StackName}/FirmsFunction
+      RetentionInDays: 7
+
+  AqiFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aeris/${AWS::StackName}/AqiFunction
+      RetentionInDays: 7
+
+  WeatherFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aeris/${AWS::StackName}/WeatherFunction
+      RetentionInDays: 7
+
+  SitesFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aeris/${AWS::StackName}/SitesFunction
+      RetentionInDays: 7
+
+  PublishFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aeris/${AWS::StackName}/PublishFunction
+      RetentionInDays: 7
+
+  DetectFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aeris/${AWS::StackName}/DetectFunction
+      RetentionInDays: 7
+
+  CorridorFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aeris/${AWS::StackName}/CorridorFunction
+      RetentionInDays: 7
+
+  RankFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aeris/${AWS::StackName}/RankFunction
+      RetentionInDays: 7
+
+  AgentFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aeris/${AWS::StackName}/AgentFunction
+      RetentionInDays: 7
+
+  ApiFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aeris/${AWS::StackName}/ApiFunction
+      RetentionInDays: 7
 
   # --- Cost guard ---------------------------------------------------------
   MonthlyBudget:
