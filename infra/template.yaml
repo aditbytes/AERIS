@@ -459,8 +459,8 @@ Resources:
       LoggingConfig:
         LogGroup: !Ref AgentFunctionLogs
       MemorySize: 1024
-      # Strands agent runs take 30-60 s; leave room for Bedrock retries
-      Timeout: 300
+      # Strands runs take 30-60 s per model; room for the Claude -> Nova chain plus the rules fallback
+      Timeout: 600
       Environment:
         Variables:
           AGENT_MODEL_PROVIDER: bedrock
