@@ -28,7 +28,7 @@ Parameters:
     Description: Bedrock model or inference-profile id for the Strands action agent
   AgentFallbackModelIds:
     Type: String
-    Default: apac.amazon.nova-pro-v1:0,amazon.nova-pro-v1:0,apac.amazon.nova-lite-v1:0,amazon.nova-lite-v1:0
+    Default: apac.amazon.nova-pro-v1:0,apac.amazon.nova-lite-v1:0,apac.amazon.nova-micro-v1:0
     Description: Comma-separated Bedrock ids tried in order if AgentModelId fails (Amazon Nova needs no Marketplace subscription)
 
 Resources:

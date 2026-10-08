@@ -32,13 +32,16 @@ logger = logging.getLogger(__name__)
 DEFAULT_MODEL_ID = "global.anthropic.claude-sonnet-4-6"
 # Amazon Nova is billed directly by AWS (no Marketplace subscription), so it works
 # when Anthropic models are blocked by account access or payment issues.
-DEFAULT_FALLBACK_MODEL_IDS = "apac.amazon.nova-pro-v1:0,amazon.nova-pro-v1:0,apac.amazon.nova-lite-v1:0,amazon.nova-lite-v1:0"
+# In ap-south-1 Nova needs the apac. inference profile (bare ids: "on-demand throughput
+# isn't supported"). Each Nova model has its own daily token quota, so Micro is a
+# separate last chance when Pro and Lite are throttled.
+DEFAULT_FALLBACK_MODEL_IDS = "apac.amazon.nova-pro-v1:0,apac.amazon.nova-lite-v1:0,apac.amazon.nova-micro-v1:0"
 
 SYSTEM_PROMPT = """You are the AERIS action agent for air-quality emergencies in north-west India \
 (Punjab, Haryana, Delhi NCR). Smoke from detected fires is forecast to move along a corridor; \
 schools and hospitals inside it are ranked by risk.
 
-Use the tools to read the current situation, then write a prioritised action plan.
+Call get_sources, query_corridor, get_ranked_sites and get_exposed_population together in your first turn, then write a prioritised action plan. Use get_site only if one site needs more detail. Do not call a tool twice.
 
 Rules:
 - Use only numbers returned by the tools (ETA hours, PM2.5 delta, occupancy, exposed population, \
