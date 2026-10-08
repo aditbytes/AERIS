@@ -62,8 +62,8 @@ Every fire file is about 85–98 KB (227+ real VIIRS detections), and every wind
 - **Done:** `reference/population/latest.json` holds 222,792 cells (WorldPop 2020, DOI 10.5258/SOTON/WP00647)
 
 ## Still manual (Aditya)
-- [ ] Deploy the follow-up: `ALERT_EMAIL=adit87ya54@gmail.com scripts/deploy.sh` (the agent's AWS deploy was blocked by a permission check, so it was not run)
-- [ ] Then run the one-time sites pull into `reference/`:
+- [x] Deploy the follow-up: `ALERT_EMAIL=adit87ya54@gmail.com scripts/deploy.sh` (deployed 2026-10-08)
+- [x] Then run the one-time sites pull into `reference/` (done 2026-10-08: 3,132 real OSM schools and hospitals in `reference/sites/20261008T151559Z.geojson`):
   ```bash
   aws lambda invoke --function-name $(aws cloudformation describe-stack-resource --stack-name aeris-foundation --logical-resource-id SitesFunction --query StackResourceDetail.PhysicalResourceId --output text) /dev/stdout
   ```

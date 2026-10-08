@@ -4,11 +4,11 @@
 
 Date: 2026-10-08 · Branch: `aditya_8oct_phases_2_to_4` · Stack: `aeris-foundation`, region `ap-south-1`
 
-## Status: built and verified locally — deploy, recording and submission are manual
+## Status: deployed, smoke test green on AWS — Bedrock billing, recording and submission open
 
 | Exit criterion | Status |
 |----------------|--------|
-| Smoke test green | **Passes against the local API** (same Lambda handler on real snapshots). Run it again on AWS after deploy |
+| Smoke test green | **Passes on the live stack** (2026-10-08, two runs: `run f3e3cdf4…`, `run 3275295c…`). Also passes against the local API |
 | A forced error triggers an alarm email | Alarms are in the template. After deploy, the 2 messages already in the DLQ will trip `FetchDlqDepthAlarm`, which is a ready-made test. **Confirm the SNS subscription email first** |
 | A simulated outage gives a stale banner, not fake output | Done: API `stale` flags, a UI banner, and the hard-coded fallbacks removed. Checked in the browser |
 | Integration and PR review | Done for the teammates' code on `main` (fixes listed in the Phase 3 report) |
@@ -76,7 +76,7 @@ Date: 2026-10-08 · Branch: `aditya_8oct_phases_2_to_4` · Stack: `aeris-foundat
 - Phase 1 found about $4.23 of older spend, mostly EC2/VPC from before AERIS. Run `cost_check.sh` to confirm none of it is still running
 
 ## Manual steps (Aditya), in order
-1. [ ] Deploy:
+1. [x] Deploy (done 2026-10-08):
    ```bash
    ALERT_EMAIL=adit87ya54@gmail.com scripts/deploy.sh
    ```
@@ -84,10 +84,10 @@ Date: 2026-10-08 · Branch: `aditya_8oct_phases_2_to_4` · Stack: `aeris-foundat
    scripts/deploy_web.sh
    ```
 2. [ ] Confirm **two** subscription emails: the AWS Budgets one (still pending from Phase 1) and the new SNS `AlertTopic` one
-3. [ ] Enable Bedrock model access and check the model ID (Phase 3 report)
-4. [ ] Invoke `SitesFunction` once (Phase 2 report)
-5. [ ] Smoke test: `python3 scripts/smoke_test.py`. Expect `SMOKE TEST PASSED` and `agent generator: bedrock:…`
-6. [ ] Alarm test: the DLQ already holds 2 messages, so expect a `FetchDlqDepthAlarm` email within about 5 min of deploy. Then purge the queue:
+3. [ ] Fix the Bedrock payment method: Anthropic calls fail with `INVALID_PAYMENT_INSTRUMENT` (Phase 3 report, "Bedrock access — findings")
+4. [x] Invoke `SitesFunction` once (done: 3,132 sites)
+5. [x] Smoke test: `python3 scripts/smoke_test.py` printed `SMOKE TEST PASSED`. It still shows `agent generator: rules` until step 3 is done
+6. [ ] Alarm test (DLQ purged on 2026-10-08; check whether the `FetchDlqDepthAlarm` email arrived first): the DLQ already holds 2 messages, so expect a `FetchDlqDepthAlarm` email within about 5 min of deploy. Then purge the queue:
    ```bash
    aws sqs purge-queue --queue-url $(aws cloudformation describe-stacks --stack-name aeris-foundation --query "Stacks[0].Outputs[?OutputKey=='FetchDlqUrl'].OutputValue" --output text)
    ```
@@ -96,5 +96,5 @@ Date: 2026-10-08 · Branch: `aditya_8oct_phases_2_to_4` · Stack: `aeris-foundat
 9. [ ] After judging (agree the date with the team): `scripts/teardown.sh`, then `scripts/cost_check.sh` again
 10. [ ] Security leftovers from Phase 1: root MFA, delete the root access key, MFA on `aeris-admin`
 
-## Why the AWS steps are manual
-This session's permission check blocked the agent from running `sam deploy`, and later from read-only AWS CLI calls too. The one AWS write that went through was the population upload to `reference/` (Phase 2). Everything else was built and checked locally: unit tests, `sam validate --lint`, `sam build`, the web build, and a smoke test against a local API.
+## How it was deployed
+The agent's own `sam deploy` was blocked by a permission check, so Aditya ran `scripts/deploy.sh`, `scripts/deploy_web.sh` and `scripts/smoke_test.py` from a local terminal on 2026-10-08. All were green on the first try, apart from the Bedrock billing block.
