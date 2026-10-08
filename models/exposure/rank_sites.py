@@ -54,14 +54,12 @@ def vulnerability_weight(site_type: str, occupancy: int | None) -> float:
     """
     Compute vulnerability multiplier for a site.
 
-    hospitals ×1.5, schools ×1.3, scaled by log(occupancy).
-    Occupancy defaults to 150 for hospitals and 800 for schools
-    only for the scoring weight (not stored in the output).
+    hospitals ×1.5, schools ×1.3, scaled by log(occupancy) if occupancy is known.
     """
-    base_occ = 150 if site_type == "hospital" else 800
-    occ = occupancy if (occupancy is not None and occupancy > 0) else base_occ
     type_factor = 1.5 if site_type == "hospital" else 1.3
-    return type_factor * math.log1p(occ)
+    if occupancy is not None and occupancy > 0:
+        return type_factor * math.log1p(occupancy)
+    return type_factor
 
 
 def urgency_factor(eta_hours: float) -> float:
@@ -206,36 +204,39 @@ def rank_sites(
 
     # Exposed population: sum cells inside bands with risk >= threshold
     pop_cells = population.get("cells", [])
-    exposed_pop = 0
 
-    if has_shapely:
-        band_shapes_threshold = [
-            band_shapes[i]
-            for i, f in enumerate(band_features)
-            if f["properties"].get("risk", 0.0) >= risk_threshold
-        ]
-        for cell in pop_cells:
-            pt = Point(cell["lon"], cell["lat"])
-            for bs in band_shapes_threshold:
-                if bs.contains(pt):
-                    exposed_pop += cell["pop"]
-                    break
-    else:
-        threshold_rings = [
-            band_rings[i]
-            for i, f in enumerate(band_features)
-            if band_rings[i] and f["properties"].get("risk", 0.0) >= risk_threshold
-        ]
-        for cell in pop_cells:
-            c_lon, c_lat = cell["lon"], cell["lat"]
-            for ring in threshold_rings:
-                if point_in_polygon(c_lon, c_lat, ring):
-                    exposed_pop += cell["pop"]
-                    break
+    # Calculate exposed population by varying the threshold
+    def _calc_pop(thresh: float) -> int:
+        pop_sum = 0
+        if has_shapely:
+            b_shapes = [
+                band_shapes[i] for i, f in enumerate(band_features)
+                if f["properties"].get("risk", 0.0) >= thresh
+            ]
+            for cell in pop_cells:
+                pt = Point(cell["lon"], cell["lat"])
+                for bs in b_shapes:
+                    if bs.contains(pt):
+                        pop_sum += cell["pop"]
+                        break
+        else:
+            t_rings = [
+                band_rings[i] for i, f in enumerate(band_features)
+                if band_rings[i] and f["properties"].get("risk", 0.0) >= thresh
+            ]
+            for cell in pop_cells:
+                c_lon, c_lat = cell["lon"], cell["lat"]
+                for ring in t_rings:
+                    if point_in_polygon(c_lon, c_lat, ring):
+                        pop_sum += cell["pop"]
+                        break
+        return pop_sum
 
-    # ±25% allowance for population-data error
-    low = int(exposed_pop * 0.75)
-    high = int(exposed_pop * 1.25)
+    exposed_pop = _calc_pop(risk_threshold)
+    # low bound: higher threshold + 25% penalty
+    low = int(_calc_pop(risk_threshold + 0.1) * 0.75)
+    # high bound: lower threshold + 25% buffer
+    high = int(_calc_pop(max(0.0, risk_threshold - 0.1)) * 1.25)
 
     generated_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     return {
