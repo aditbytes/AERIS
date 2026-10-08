@@ -16,7 +16,7 @@ import { Layers, Maximize2 } from 'lucide-react'
 import { useAeris } from '@/services/dataContext'
 import { getRiskLevel, riskLabel, type CorridorBandProperties } from '@/types/schemas'
 import { createThermalMarkerElement, createThermalPopupHtml } from './thermalMarker'
-import { getStyleForMode, setupMapLayers, applyProjectionAndPitch } from './mapStyles'
+import { getStyleForMode, setupMapLayers, applyProjectionAndPitch, isValidSubcontinentCoord } from './mapStyles'
 import TimeControls from './TimeControls'
 import './MapContainer.css'
 
@@ -66,10 +66,11 @@ export default function MapContainer() {
         style: getStyleForMode(basemapMode),
         center: [76.5, 30.0],
         zoom: 6.8,
-        minZoom: 2.2,   // Allows smooth zooming out to see full 3D globe / continent
+        minZoom: 3.8,   // Constrain bounds to South Asia / Indian subcontinent
         maxZoom: 18,    // High resolution facility inspection
-        pitch: basemapMode === 'globe' ? 42 : 0,
-        bearing: basemapMode === 'globe' ? -8 : 0,
+        maxBounds: [[58.0, 5.0], [100.0, 39.0]],
+        pitch: basemapMode === 'globe' ? 32 : 0,
+        bearing: basemapMode === 'globe' ? -6 : 0,
         attributionControl: false,
       })
 
@@ -86,17 +87,6 @@ export default function MapContainer() {
       map.on('load', () => {
         setupMapLayers(map, basemapMode)
         applyProjectionAndPitch(map, basemapMode)
-
-        // Official Territory labels
-        const jkEl = document.createElement('div')
-        jkEl.className = 'map-soi-label'
-        jkEl.innerText = 'Jammu & Kashmir (India)'
-        new Marker({ element: jkEl, anchor: 'center' }).setLngLat([75.3, 33.7]).addTo(map)
-
-        const ladakhEl = document.createElement('div')
-        ladakhEl.className = 'map-soi-label'
-        ladakhEl.innerText = 'Ladakh (India)'
-        new Marker({ element: ladakhEl, anchor: 'center' }).setLngLat([77.8, 34.2]).addTo(map)
       })
     } catch (err) {
       console.warn('[AERIS] MapLibre constructor failed, using SVG vector canvas:', err)
@@ -183,9 +173,10 @@ export default function MapContainer() {
     markersRef.current.forEach(m => m.remove())
     markersRef.current = []
 
-    // 1. Thermal Fire Sources (Filtered by Territory Scope)
+    // 1. Thermal Fire Sources (Filtered by Territory Scope and Validated Bounds)
     if (sources) {
       const activeSources = sources.sources.filter(src => {
+        if (!isValidSubcontinentCoord(src.lat, src.lon)) return false
         if (scopeFilter === 'india') return src.territory === 'india'
         return true
       })
@@ -216,34 +207,37 @@ export default function MapContainer() {
 
     // 2. Sensitive Receptor Sites (Schools & Hospitals)
     if (rankedSites) {
-      rankedSites.sites.slice(0, 8).forEach(site => {
-        const isSchool = site.type === 'school'
-        const riskLvl = getRiskLevel(site.risk_score)
-        const label = riskLabel(riskLvl)
-        const el = document.createElement('div')
-        el.className = `dashboard-site-marker site-${site.type}`
-        el.innerHTML = `
-          <span class="d-site-ico">${isSchool ? '🏫' : '🏥'}</span>
-        `
-        el.title = `${site.name} (${label} Risk)`
+      rankedSites.sites
+        .filter(site => isValidSubcontinentCoord(site.lat, site.lon))
+        .slice(0, 8)
+        .forEach(site => {
+          const isSchool = site.type === 'school'
+          const riskLvl = getRiskLevel(site.risk_score)
+          const label = riskLabel(riskLvl)
+          const el = document.createElement('div')
+          el.className = `dashboard-site-marker site-${site.type}`
+          el.innerHTML = `
+            <span class="d-site-ico">${isSchool ? '🏫' : '🏥'}</span>
+          `
+          el.title = `${site.name} (${label} Risk)`
 
-        const marker = new Marker({ element: el, anchor: 'center' })
-          .setLngLat([site.lon, site.lat])
-          .setPopup(
-            new Popup({ offset: 16, closeButton: false, className: 'aeris-popup' })
-              .setHTML(`
-                <div class="popup-content">
-                  <strong>${site.name}</strong>
-                  <div>${isSchool ? '🏫 School' : '🏥 Hospital'} • <span style="color:#C92A2A;font-weight:700">${label} Risk</span></div>
-                  <div>⏱️ Plume Arrival ETA: ~${site.eta_hours.toFixed(1)}h</div>
-                  <div>💨 PM2.5 Impact: +${site.pm25_delta_ugm3.toFixed(0)} µg/m³</div>
-                </div>
-              `)
-          )
-          .addTo(map)
+          const marker = new Marker({ element: el, anchor: 'center' })
+            .setLngLat([site.lon, site.lat])
+            .setPopup(
+              new Popup({ offset: 16, closeButton: false, className: 'aeris-popup' })
+                .setHTML(`
+                  <div class="popup-content">
+                    <strong>${site.name}</strong>
+                    <div>${isSchool ? '🏫 School' : '🏥 Hospital'} • <span style="color:#C92A2A;font-weight:700">${label} Risk</span></div>
+                    <div>⏱️ Plume Arrival ETA: ~${site.eta_hours.toFixed(1)}h</div>
+                    <div>💨 PM2.5 Impact: +${site.pm25_delta_ugm3.toFixed(0)} µg/m³</div>
+                  </div>
+                `)
+            )
+            .addTo(map)
 
-        markersRef.current.push(marker)
-      })
+          markersRef.current.push(marker)
+        })
     }
   }, [sources, rankedSites, scopeFilter, webGlSupported])
 
@@ -253,7 +247,7 @@ export default function MapContainer() {
     if (!map || !selectedSiteId || !rankedSites || !webGlSupported) return
 
     const site = rankedSites.sites.find(s => s.site_id === selectedSiteId)
-    if (!site) return
+    if (!site || !isValidSubcontinentCoord(site.lat, site.lon)) return
 
     map.flyTo({
       center: [site.lon, site.lat],
@@ -268,6 +262,7 @@ export default function MapContainer() {
   useEffect(() => {
     const map = mapRef.current
     if (!map || !flyToLocation || !webGlSupported) return
+    if (!isValidSubcontinentCoord(flyToLocation.lat, flyToLocation.lon)) return
 
     map.flyTo({
       center: [flyToLocation.lon, flyToLocation.lat],
@@ -305,7 +300,7 @@ export default function MapContainer() {
             </button>
             <button
               className="map-header-chip"
-              onClick={() => mapRef.current?.flyTo({ center: [78.9, 23.5], zoom: 4.2, speed: 1.2 })}
+              onClick={() => mapRef.current?.flyTo({ center: [78.9, 22.8], zoom: 4.4, speed: 1.2 })}
               title="Fit Entire Sovereign India (Survey of India Boundary with PoK/Ladakh)"
               type="button"
             >

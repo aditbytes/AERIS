@@ -1056,3 +1056,149 @@
   margin-top: 2px;
 }
 
+/* ── AQI Cluster Marker ─────────────────────────────────────────────────── */
+.explorer-aqi-cluster-marker {
+  min-width: 32px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 12px;
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1.5px solid white;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.30);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  white-space: nowrap;
+}
+
+.explorer-aqi-cluster-marker:hover {
+  transform: scale(1.22);
+  z-index: 60;
+}
+
+.cluster-subtag {
+  background: rgba(0, 0, 0, 0.32);
+  border-radius: 8px;
+  padding: 1px 4px;
+  font-size: 8.5px;
+  font-weight: 700;
+}
+
+/* ── Floating Geospatial Intelligence Legend ────────────────────────────── */
+.map-floating-legend {
+  position: absolute;
+  bottom: 24px;
+  left: 20px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(22, 115, 79, 0.20);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.10);
+  font-family: var(--font);
+  font-size: 10px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  width: 230px;
+  pointer-events: auto;
+  transition: all 0.2s ease;
+}
+
+.legend-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.legend-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 10.5px;
+  color: var(--text-primary);
+}
+
+.legend-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22734F;
+}
+
+.legend-toggle-btn {
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.legend-body {
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.legend-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.legend-group-title {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  letter-spacing: 0.4px;
+}
+
+.legend-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9.5px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.legend-swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legend-swatch.severe { background: #DC2626; border-radius: 50%; }
+.legend-swatch.high { background: #EA580C; border-radius: 50%; }
+.legend-swatch.moderate { background: #D97706; border-radius: 50%; }
+
+.legend-swatch.plume-acute { background: rgba(239, 68, 68, 0.85); }
+.legend-swatch.plume-mid { background: rgba(249, 115, 22, 0.70); }
+.legend-swatch.plume-receptor { background: rgba(245, 158, 11, 0.50); }
+
+.legend-swatch.aqi-severe { background: #7F1D1D; border-radius: 50%; }
+.legend-swatch.aqi-poor { background: #C2410C; border-radius: 50%; }
+.legend-swatch.aqi-mod { background: #B45309; border-radius: 50%; }
+
+

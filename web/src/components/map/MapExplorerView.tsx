@@ -32,7 +32,7 @@ import {
 import { useAeris, type TimeHorizon } from '@/services/dataContext'
 import { getRiskLevel, riskLabel, type CorridorBandProperties, type RankedSite } from '@/types/schemas'
 import { createThermalMarkerElement } from './thermalMarker'
-import { getStyleForMode, setupMapLayers, applyProjectionAndPitch } from './mapStyles'
+import { getStyleForMode, setupMapLayers, applyProjectionAndPitch, isValidSubcontinentCoord } from './mapStyles'
 import './MapExplorerView.css'
 
 try {
@@ -43,11 +43,11 @@ try {
 
 // Preset camera bookmarks
 const CAMERA_PRESETS = [
-  { id: 'india',    name: '🇮🇳 Full India (SOI)',  center: [78.9, 23.5] as [number, number], zoom: 4.2 },
-  { id: 'corridor', name: '🎯 Smoke Corridor',    center: [76.8, 30.1] as [number, number], zoom: 6.8 },
-  { id: 'punjab',   name: '🔥 Punjab Hotspots',   center: [75.4, 31.0] as [number, number], zoom: 8.4 },
+  { id: 'corridor', name: '🎯 Smoke Corridor',    center: [76.5, 30.0] as [number, number], zoom: 6.8 },
+  { id: 'punjab',   name: '🔥 Punjab Hotspots',   center: [75.2, 31.2] as [number, number], zoom: 8.4 },
   { id: 'delhi',    name: '📍 Delhi NCR Receptors',center: [77.2, 28.6] as [number, number], zoom: 9.8 },
   { id: 'kashmir',  name: '🏔️ J&K & Ladakh (SOI)',center: [76.0, 34.2] as [number, number], zoom: 6.4 },
+  { id: 'india',    name: '🇮🇳 Full India (SOI)',  center: [78.9, 22.8] as [number, number], zoom: 4.4 },
 ]
 
 interface InspectorData {
@@ -81,6 +81,7 @@ export default function MapExplorerView() {
     interventionScenario,
     basemapMode,
     setBasemapMode,
+    flyToLocation,
   } = useAeris()
 
   const [webGlSupported, setWebGlSupported] = useState(true)
@@ -89,6 +90,7 @@ export default function MapExplorerView() {
   const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(false)
   const [isRegionsOpen, setIsRegionsOpen]   = useState(false)
   const [isFullscreen, setIsFullscreen]     = useState(false)
+  const [showLegend, setShowLegend]         = useState(true)
 
   // Layer Visibility & Territory Scope
   const [showFires, setShowFires]             = useState(true)
@@ -119,12 +121,13 @@ export default function MapExplorerView() {
       const map = new Map({
         container: mapContainerRef.current,
         style: getStyleForMode(basemapMode),
-        center: [76.8, 30.1],
+        center: [76.5, 30.0],
         zoom: 6.8,
-        minZoom: 2.2,   // Smoothly zoom out to full 3D globe / subcontinent
+        minZoom: 3.8,   // Constrained bounds to South Asia / Indian subcontinent
         maxZoom: 18,    // High resolution facility & plume inspection
-        pitch: basemapMode === 'globe' ? 42 : 0,
-        bearing: basemapMode === 'globe' ? -8 : 0,
+        maxBounds: [[58.0, 5.0], [100.0, 39.0]],
+        pitch: basemapMode === 'globe' ? 32 : 0,
+        bearing: basemapMode === 'globe' ? -6 : 0,
         attributionControl: false,
       })
 
@@ -141,17 +144,6 @@ export default function MapExplorerView() {
       map.on('load', () => {
         setupMapLayers(map, basemapMode)
         applyProjectionAndPitch(map, basemapMode)
-
-        // Sovereign Territory Badges
-        const jkEl = document.createElement('div')
-        jkEl.className = 'soi-territory-tag'
-        jkEl.innerText = 'Jammu & Kashmir (India)'
-        new Marker({ element: jkEl, anchor: 'center' }).setLngLat([75.3, 33.7]).addTo(map)
-
-        const ladakhEl = document.createElement('div')
-        ladakhEl.className = 'soi-territory-tag'
-        ladakhEl.innerText = 'Ladakh (India)'
-        new Marker({ element: ladakhEl, anchor: 'center' }).setLngLat([77.8, 34.2]).addTo(map)
       })
     } catch (err) {
       console.warn('[AERIS MapExplorer] Constructor failed:', err)
@@ -164,6 +156,20 @@ export default function MapExplorerView() {
       mapInitRef.current = false
     }
   }, [webGlSupported])
+
+  // ── 1c. Fly to location searched in global header ─────────────────────────
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !flyToLocation || !webGlSupported) return
+    if (!isValidSubcontinentCoord(flyToLocation.lat, flyToLocation.lon)) return
+
+    map.flyTo({
+      center: [flyToLocation.lon, flyToLocation.lat],
+      zoom: flyToLocation.zoom || 10.5,
+      speed: 1.3,
+      curve: 1.4,
+    })
+  }, [flyToLocation, webGlSupported])
 
   // ── 1b. Dynamically switch basemap style & 3D globe projection ─────────────
   useEffect(() => {
@@ -271,6 +277,7 @@ export default function MapExplorerView() {
     // 1. Thermal Fire Sources
     if (showFires && sources) {
       const filteredSources = sources.sources.filter(src => {
+        if (!isValidSubcontinentCoord(src.lat, src.lon)) return false
         if (fireScopeFilter === 'india') return src.territory === 'india'
         if (fireScopeFilter === 'transboundary') return src.territory === 'transboundary'
         return true
@@ -323,56 +330,99 @@ export default function MapExplorerView() {
 
     // 2. Sensitive Receptor Facilities (Schools & Hospitals)
     if (rankedSites) {
-      rankedSites.sites.slice(0, 16).forEach((site: RankedSite) => {
-        const isSchool = site.type === 'school'
-        if (isSchool && !showSchools) return
-        if (!isSchool && !showHospitals) return
+      rankedSites.sites
+        .filter(site => isValidSubcontinentCoord(site.lat, site.lon))
+        .slice(0, 12)
+        .forEach((site: RankedSite) => {
+          const isSchool = site.type === 'school'
+          if (isSchool && !showSchools) return
+          if (!isSchool && !showHospitals) return
 
-        const riskLvl = getRiskLevel(site.risk_score)
-        const riskText = riskLabel(riskLvl)
-        const el = document.createElement('div')
-        el.className = `explorer-site-marker site-${site.type} risk-${riskLvl}`
-        el.innerHTML = `
-          <span class="site-icon">${isSchool ? '🏫' : '🏥'}</span>
-          <span class="site-risk-tag">${riskText}</span>
-        `
-        el.title = `${site.name} (${riskText} Risk)`
+          const riskLvl = getRiskLevel(site.risk_score)
+          const riskText = riskLabel(riskLvl)
+          const el = document.createElement('div')
+          el.className = `explorer-site-marker site-${site.type} risk-${riskLvl}`
+          el.innerHTML = `
+            <span class="site-icon">${isSchool ? '🏫' : '🏥'}</span>
+            <span class="site-risk-tag">${riskText}</span>
+          `
+          el.title = `${site.name} (${riskText} Risk)`
 
-        el.addEventListener('click', (e) => {
-          e.stopPropagation()
-          setSelectedSiteId(site.site_id)
-          setSelectedFeature({
-            type: site.type === 'school' ? 'school' : 'hospital',
-            title: site.name,
-            subtitle: `${site.type === 'school' ? 'Educational Facility' : 'Healthcare Facility'} • Receptor Zone`,
-            coords: [site.lon, site.lat],
-            metrics: [
-              { label: 'Risk Priority', value: riskText },
-              { label: 'Plume Arrival ETA', value: `~ ${site.eta_hours.toFixed(1)}h` },
-              { label: 'Risk Score', value: `${(site.risk_score * 100).toFixed(0)}%` },
-              { label: 'Forecast Peak PM2.5', value: `+${site.pm25_delta_ugm3.toFixed(0)} µg/m³` },
-            ],
-            actionText: isSchool
-              ? 'Transition morning assembly indoors, verify HVAC filtration, distribute certified N95 masks.'
-              : 'Alert respiratory ER staff, prepare nebulizer reserves, activate air filtration backups.',
-            siteId: site.site_id,
+          el.addEventListener('click', (e) => {
+            e.stopPropagation()
+            setSelectedSiteId(site.site_id)
+            setSelectedFeature({
+              type: site.type === 'school' ? 'school' : 'hospital',
+              title: site.name,
+              subtitle: `${site.type === 'school' ? 'Educational Facility' : 'Healthcare Facility'} • Receptor Zone`,
+              coords: [site.lon, site.lat],
+              metrics: [
+                { label: 'Risk Priority', value: riskText },
+                { label: 'Plume Arrival ETA', value: `~ ${site.eta_hours.toFixed(1)}h` },
+                { label: 'Risk Score', value: `${(site.risk_score * 100).toFixed(0)}%` },
+                { label: 'Forecast Peak PM2.5', value: `+${site.pm25_delta_ugm3.toFixed(0)} µg/m³` },
+              ],
+              actionText: isSchool
+                ? 'Transition morning assembly indoors, verify HVAC filtration, distribute certified N95 masks.'
+                : 'Alert respiratory ER staff, prepare nebulizer reserves, activate air filtration backups.',
+              siteId: site.site_id,
+            })
           })
+
+          const marker = new Marker({ element: el, anchor: 'bottom' })
+            .setLngLat([site.lon, site.lat])
+            .addTo(map)
+
+          markersRef.current.push(marker)
         })
-
-        const marker = new Marker({ element: el, anchor: 'bottom' })
-          .setLngLat([site.lon, site.lat])
-          .addTo(map)
-
-        markersRef.current.push(marker)
-      })
     }
 
-    // 3. Live AQI Monitoring Stations
-    if (showStations && aqi) {
-      aqi.stations.slice(0, 20).forEach(stn => {
-        if (!stn.lat || !stn.lon || stn.aqi == null) return
+    // 3. Live AQI Monitoring Stations (Sanitized & Clustered by Proximity)
+    if (showStations && aqi?.stations) {
+      type ValidStation = (typeof aqi.stations)[number] & { aqi: number }
+      const validStations = aqi.stations.filter(
+        (stn): stn is ValidStation =>
+          isValidSubcontinentCoord(stn.lat, stn.lon) && typeof stn.aqi === 'number'
+      )
 
-        const aqiVal = stn.aqi
+      interface StationCluster {
+        id: string
+        lat: number
+        lon: number
+        peakAqi: number
+        count: number
+        name: string
+        stations: ValidStation[]
+      }
+
+      const clusters: StationCluster[] = []
+      validStations.forEach(stn => {
+        // Find existing cluster within ~0.07° (~7.5 km)
+        const match = clusters.find(
+          c => Math.hypot(c.lat - stn.lat, c.lon - stn.lon) < 0.07
+        )
+        if (match) {
+          match.count += 1
+          match.stations.push(stn)
+          if (stn.aqi > match.peakAqi) {
+            match.peakAqi = stn.aqi
+            match.name = stn.name
+          }
+        } else {
+          clusters.push({
+            id: stn.id,
+            lat: stn.lat,
+            lon: stn.lon,
+            peakAqi: stn.aqi,
+            count: 1,
+            name: stn.name,
+            stations: [stn],
+          })
+        }
+      })
+
+      clusters.forEach(cluster => {
+        const aqiVal = cluster.peakAqi
         const color = aqiVal > 400 ? '#7F1D1D'
           : aqiVal > 300 ? '#991B1B'
           : aqiVal > 200 ? '#C2410C'
@@ -380,30 +430,37 @@ export default function MapExplorerView() {
           : '#15803D'
 
         const el = document.createElement('div')
-        el.className = 'explorer-aqi-station-marker'
-        el.style.backgroundColor = color
-        el.innerHTML = `<span>${aqiVal}</span>`
-        el.title = `${stn.name || 'Station'}: AQI ${aqiVal}`
+        if (cluster.count > 1) {
+          el.className = 'explorer-aqi-cluster-marker'
+          el.style.backgroundColor = color
+          el.innerHTML = `<span>${aqiVal}</span><span class="cluster-subtag">+${cluster.count - 1}</span>`
+          el.title = `${cluster.name} (${cluster.count} sensors): Peak AQI ${aqiVal}`
+        } else {
+          el.className = 'explorer-aqi-station-marker'
+          el.style.backgroundColor = color
+          el.innerHTML = `<span>${aqiVal}</span>`
+          el.title = `${cluster.name}: AQI ${aqiVal}`
+        }
 
         el.addEventListener('click', (e) => {
           e.stopPropagation()
           setSelectedFeature({
             type: 'station',
-            title: stn.name || 'Ground Monitoring Station',
-            subtitle: `Live CPCB / AirNow Ground Sensor`,
-            coords: [stn.lon, stn.lat],
+            title: cluster.count > 1 ? `${cluster.name} (+${cluster.count - 1} nearby sensors)` : cluster.name,
+            subtitle: `Live Ground Station Cluster (${cluster.count} sensor${cluster.count > 1 ? 's' : ''})`,
+            coords: [cluster.lon, cluster.lat],
             metrics: [
-              { label: 'Observed AQI', value: `${aqiVal}` },
-              { label: 'Status', value: aqiVal > 300 ? 'Severe / Hazardous' : aqiVal > 200 ? 'Very Poor' : 'Moderate' },
-              { label: 'Latitude', value: stn.lat.toFixed(4) },
-              { label: 'Longitude', value: stn.lon.toFixed(4) },
+              { label: 'Peak Observed AQI', value: `${aqiVal}` },
+              { label: 'Airshed Status', value: aqiVal > 300 ? 'Severe / Hazardous' : aqiVal > 200 ? 'Very Poor' : 'Moderate' },
+              { label: 'Monitored Sensors', value: `${cluster.count} active sensor${cluster.count > 1 ? 's' : ''}` },
+              { label: 'Cluster Center', value: `${cluster.lat.toFixed(3)}°N, ${cluster.lon.toFixed(3)}°E` },
             ],
-            actionText: 'Station verifying transboundary plume arrival into receptor atmospheric basin.',
+            actionText: 'Ground telemetry verifying continuous particulate concentration and transboundary advection.',
           })
         })
 
         const marker = new Marker({ element: el, anchor: 'center' })
-          .setLngLat([stn.lon, stn.lat])
+          .setLngLat([cluster.lon, cluster.lat])
           .addTo(map)
 
         markersRef.current.push(marker)
@@ -867,6 +924,54 @@ export default function MapExplorerView() {
             )}
           </div>
         )}
+
+        {/* ── Left Bottom Floating Geospatial Intelligence Legend ─────────── */}
+        <div className="map-floating-legend" onClick={(e) => e.stopPropagation()}>
+          <div className="legend-head" onClick={() => setShowLegend(!showLegend)}>
+            <div className="legend-title">
+              <span className="legend-badge-dot" />
+              <span>Map Intelligence Legend</span>
+            </div>
+            <button
+              className="legend-toggle-btn"
+              type="button"
+              title={showLegend ? "Collapse legend" : "Expand legend"}
+            >
+              {showLegend ? '−' : '+'}
+            </button>
+          </div>
+
+          {showLegend && (
+            <div className="legend-body">
+              <div className="legend-group">
+                <span className="legend-group-title">🔥 Fire Intensity (FRP)</span>
+                <div className="legend-items">
+                  <div className="legend-item"><span className="legend-swatch severe" /><span>Severe (&gt;200 MW)</span></div>
+                  <div className="legend-item"><span className="legend-swatch high" /><span>High (50–200 MW)</span></div>
+                  <div className="legend-item"><span className="legend-swatch moderate" /><span>Moderate (&lt;50 MW)</span></div>
+                </div>
+              </div>
+
+              <div className="legend-group">
+                <span className="legend-group-title">💨 Smoke Plume (ETA)</span>
+                <div className="legend-items">
+                  <div className="legend-item"><span className="legend-swatch plume-acute" /><span>0–1h Acute Core</span></div>
+                  <div className="legend-item"><span className="legend-swatch plume-mid" /><span>1–2h Advecting Swath</span></div>
+                  <div className="legend-item"><span className="legend-swatch plume-receptor" /><span>2–3h Receptor Influx</span></div>
+                </div>
+              </div>
+
+              <div className="legend-group">
+                <span className="legend-group-title">📡 Monitoring Stations (AQI)</span>
+                <div className="legend-items">
+                  <div className="legend-item"><span className="legend-swatch aqi-severe" /><span>Hazardous (&gt;300)</span></div>
+                  <div className="legend-item"><span className="legend-swatch aqi-poor" /><span>Very Poor (200–300)</span></div>
+                  <div className="legend-item"><span className="legend-swatch aqi-mod" /><span>Moderate (&lt;200)</span></div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* ── Right Bottom Zoom & Camera Navigation Control ────────────────── */}
         <div className="explorer-nav-dock" onClick={(e) => e.stopPropagation()}>

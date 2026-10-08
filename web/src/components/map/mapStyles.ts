@@ -18,6 +18,15 @@ export const SATELLITE_STYLE: any = {
       maxzoom: 19,
       attribution: 'Esri, Maxar, Earthstar Geographics',
     },
+    'esri-reference': {
+      type: 'raster',
+      tiles: [
+        'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+      ],
+      tileSize: 256,
+      maxzoom: 19,
+      attribution: 'Esri, OpenStreetMap',
+    },
   },
   layers: [
     {
@@ -26,6 +35,16 @@ export const SATELLITE_STYLE: any = {
       source: 'esri-satellite',
       minzoom: 0,
       maxzoom: 19,
+    },
+    {
+      id: 'satellite-reference-labels',
+      type: 'raster',
+      source: 'esri-reference',
+      minzoom: 0,
+      maxzoom: 19,
+      paint: {
+        'raster-opacity': 0.95,
+      },
     },
   ],
 }
@@ -40,32 +59,48 @@ export function getStyleForMode(mode: BasemapMode): any {
 }
 
 /**
- * Configure MapLibre projection (3D Globe vs Mercator) and camera pitch
+ * Validates that coordinates fall squarely within the Indian subcontinent airshed.
+ * Prevents invalid, null, or out-of-bounds coordinates (like 0,0) from marking in the ocean.
+ */
+export function isValidSubcontinentCoord(lat: number, lon: number): boolean {
+  return (
+    typeof lat === 'number' &&
+    typeof lon === 'number' &&
+    !isNaN(lat) &&
+    !isNaN(lon) &&
+    lat >= 6.0 &&
+    lat <= 38.0 &&
+    lon >= 65.0 &&
+    lon <= 98.0
+  )
+}
+
+/**
+ * Configure Map camera pitch and bearing.
+ * Uses Mercator projection consistently to guarantee DOM markers remain 100% geographically pinned
+ * to their exact coordinates without spherical distortion drifting into the ocean.
  */
 export function applyProjectionAndPitch(map: Map, mode: BasemapMode) {
   try {
+    if (typeof (map as any).setProjection === 'function') {
+      ;(map as any).setProjection({ type: 'mercator' })
+    }
     if (mode === 'globe') {
-      // MapLibre v5+ Globe projection
-      if (typeof (map as any).setProjection === 'function') {
-        ;(map as any).setProjection({ type: 'globe' })
-      }
+      // Tactical 2.5D perspective
       map.easeTo({
-        pitch: 42,
-        bearing: -8,
-        duration: 900,
+        pitch: 32,
+        bearing: -6,
+        duration: 700,
       })
     } else {
-      if (typeof (map as any).setProjection === 'function') {
-        ;(map as any).setProjection({ type: 'mercator' })
-      }
       map.easeTo({
         pitch: 0,
         bearing: 0,
-        duration: 600,
+        duration: 500,
       })
     }
   } catch (err) {
-    console.warn('[AERIS MapStyles] Projection switch note:', err)
+    console.warn('[AERIS MapStyles] Projection note:', err)
   }
 }
 
