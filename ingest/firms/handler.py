@@ -20,7 +20,7 @@ import logging
 import sys
 from typing import Any
 
-from ingest.common import storage
+from ingest.common import secrets, storage
 from ingest.firms.fetch_fires import DEFAULT_BBOX, DEFAULT_DAY_RANGE, DEFAULT_SOURCES, fetch_fires
 
 logging.basicConfig(
@@ -40,18 +40,24 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
       day_range  : int
       sources    : list[str]
 
-    Returns the fires.json contract object.
-    On failure, raises — Lambda will record the error and EventBridge retries.
+    Writes the fires.json contract object to bronze/fires/ and returns a summary.
+    On failure, raises — nothing is written, existing data is untouched, and
+    Lambda retries then sends the event to the dead-letter queue.
     """
     bbox = event.get("bbox", DEFAULT_BBOX)
     day_range = int(event.get("day_range", DEFAULT_DAY_RANGE))
     sources = event.get("sources", DEFAULT_SOURCES)
 
     logger.info("lambda_handler: bbox=%s day_range=%d sources=%s", bbox, day_range, sources)
-    result = fetch_fires(bbox=bbox, day_range=day_range, sources=sources)
-    storage.write_json("fires", result)
-    logger.info("lambda_handler: wrote fires.json with %d detections", len(result["fires"]))
-    return result
+    result = fetch_fires(
+        bbox=bbox,
+        day_range=day_range,
+        sources=sources,
+        key=secrets.get_secret("FIRMS_MAP_KEY"),
+    )
+    location = storage.write_bronze("fires", result)
+    logger.info("lambda_handler: wrote %s with %d detections", location, len(result["fires"]))
+    return {"location": location, "count": len(result["fires"])}
 
 
 def _cli() -> None:

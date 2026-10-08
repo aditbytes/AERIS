@@ -14,7 +14,7 @@ import argparse
 import logging
 from typing import Any
 
-from ingest.common import storage
+from ingest.common import secrets, storage
 from ingest.aqi.fetch_aqi import DEFAULT_BBOX, fetch_aqi
 
 logging.basicConfig(
@@ -29,10 +29,16 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """AWS Lambda entry point."""
     bbox = event.get("bbox", DEFAULT_BBOX)
     logger.info("lambda_handler: bbox=%s", bbox)
-    result = fetch_aqi(bbox=bbox)
-    storage.write_json("aqi", result)
-    logger.info("lambda_handler: wrote aqi.json with %d stations", len(result["stations"]))
-    return result
+    result = fetch_aqi(
+        bbox=bbox,
+        openaq_key=secrets.get_secret("OPENAQ_API_KEY"),
+        cpcb_key=secrets.get_secret("DATA_GOV_IN_KEY"),
+    )
+    if not result["stations"]:
+        raise RuntimeError("No AQI stations returned; keeping existing data")
+    location = storage.write_bronze("aqi", result)
+    logger.info("lambda_handler: wrote %s with %d stations", location, len(result["stations"]))
+    return {"location": location, "count": len(result["stations"])}
 
 
 def _cli() -> None:
