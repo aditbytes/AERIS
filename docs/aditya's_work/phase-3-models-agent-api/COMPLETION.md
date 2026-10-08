@@ -4,9 +4,18 @@
 
 Date: 2026-10-08 · Branch: `aditya_8oct_phases_2_to_4` · Stack: `aeris-foundation`, region `ap-south-1`
 
-## Status: code, IaC and local verification done — **not yet deployed**
+## Status: deployed and live — Bedrock agent blocked on billing
 
-Everything below is committed, tested and built (`sam validate --lint` and `sam build` both pass). The deploy itself was **not run**: a permission check stopped the agent from applying CloudFormation changes. Run the two commands in "Deploy" below to go live.
+Deployed on 2026-10-08. The smoke test passes against the live stack:
+
+| | |
+|---|---|
+| Website | https://d2iyso2niquge7.cloudfront.net |
+| API | https://gw9ljy2d43.execute-api.ap-south-1.amazonaws.com |
+| State machine | `aeris-foundation-pipeline` (runs every 30 min) |
+| Agent model | `global.anthropic.claude-sonnet-4-6` (stack parameter `AgentModelId`) |
+
+**Open:** `actions.json` is currently written by the **rules** generator, not Bedrock. Bedrock refuses Anthropic models on this account with `Model access is denied due to INVALID_PAYMENT_INSTRUMENT`. Anthropic models are billed through AWS Marketplace, which needs a valid default payment method. See "Bedrock access — findings" below.
 
 | Exit criterion | Status |
 |----------------|--------|
@@ -94,11 +103,25 @@ One module, one handler per step. Each step reads real inputs through `storage` 
 - Full test suite: **153 passed** (was 129)
 
 ## Still manual (Aditya)
-- [ ] Run `scripts/deploy.sh`, then `scripts/deploy_web.sh` (above)
+- [x] Run `scripts/deploy.sh`, then `scripts/deploy_web.sh` (done 2026-10-08)
 - [ ] **Bedrock model access:** in the Bedrock console (ap-south-1) → Model access, enable the Anthropic model and submit the one-time use-case form. Then check which ID works there:
   ```bash
   aws bedrock list-inference-profiles --region ap-south-1 --query "inferenceProfileSummaries[?contains(inferenceProfileId,'anthropic')].inferenceProfileId"
   ```
   If the default `anthropic.claude-opus-5-5` is not invocable on demand in ap-south-1, redeploy with an inference-profile ID from that list: `AGENT_MODEL_ID=<id> ALERT_EMAIL=… scripts/deploy.sh`. Until then the plan is built by the rules generator, and `generator: "rules"` says so
-- [ ] Invoke `SitesFunction` once so `reference/sites/` exists (Phase 2 report). Until then, publish uses `bronze/sites/latest`, which expires on 2026-10-22
+- [x] Invoke `SitesFunction` once so `reference/sites/` exists (done: 3,132 sites)
 - [ ] Optional: Bedrock Guardrails (not added; the plan is already restricted to validated site IDs)
+
+## Bedrock access — findings (2026-10-08)
+Every Anthropic model ID was tested with `aws bedrock-runtime converse` in ap-south-1:
+
+| Model IDs | Result |
+|-----------|--------|
+| `anthropic.claude-opus-5-5`, `sonnet-5-5`, `opus-5`, `sonnet-5`, `opus-4-8`, `haiku-5-5` (bare and `global.`) | `AccessDenied`: not available for this account |
+| `apac.` variants of all of the above | `ValidationException`: that inference profile does not exist |
+| `anthropic.claude-sonnet-4-6` (bare) | On-demand invocation not supported; needs an inference profile |
+| `global.anthropic.claude-sonnet-4-6`, `global.anthropic.claude-sonnet-4-5-20250929-v1:0` | **`Model access is denied due to INVALID_PAYMENT_INSTRUMENT`** |
+
+**Fix:** in Billing and Cost Management → Payment preferences, add a Visa or Mastercard credit card with international payments enabled and set it as the default. Then rerun `python3 scripts/smoke_test.py`; no redeploy is needed. `agent generator:` should then show `bedrock:global.anthropic.claude-sonnet-4-6`.
+
+**Alternative that avoids Marketplace billing:** Amazon Nova models also run through the Strands Agents SDK. Test an ID with `converse`, then `AGENT_MODEL_ID=<nova id> ALERT_EMAIL=… scripts/deploy.sh`.
