@@ -8,7 +8,7 @@
  */
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { getActions, getAqi, getCorridor, getRankedSites, getSources, getWind } from './api'
+import { getActions, getAqi, getCorridor, getRankedSites, getSources, getStaleFeeds, getWind, type Freshness } from './api'
 import type { ActionsFile, AqiFile, CorridorGeoJSON, RankedSite, RankedSitesFile, SourcesFile, WindFile } from '@/types/schemas'
 
 export type TimeHorizon = 0 | 2 | 4 | 8 | 24
@@ -43,6 +43,7 @@ export interface AerisState extends TimeContextState {
   // Status
   loading: boolean
   error:   string | null
+  staleFeeds: Freshness[]   // feeds the API flagged stale (last real result shown)
 
   // Derived convenience
   exposedPopulation:       number | null
@@ -77,6 +78,7 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
   const [aqi,         setAqi]         = useState<AqiFile | null>(null)
   const [wind,        setWind]        = useState<WindFile | null>(null)
   const [loading,     setLoading]     = useState(true)
+  const [staleFeeds,  setStaleFeeds]  = useState<Freshness[]>([])
   const [error,       setError]       = useState<string | null>(null)
 
   const [timeHorizon,          setTimeHorizon]          = useState<TimeHorizon>(2)
@@ -170,6 +172,7 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
       setActions(a)
       setAqi(q)
       setWind(w)
+      setStaleFeeds(getStaleFeeds())
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error loading AERIS data.')
     } finally {
@@ -230,7 +233,7 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
     timeHorizon, selectedSiteId, showActionsModal,
     activeTab, searchTerm, flyToLocation, interventionScenario,
     basemapMode, setBasemapMode,
-    loading, error,
+    loading, error, staleFeeds,
     exposedPopulation, activeExposedPopulation, avertedExposures, etaHours, avgAqi,
     isSidebarCollapsed, toggleSidebar, setSidebarCollapsed,
     setTimeHorizon, setSelectedSiteId, setShowActionsModal,
@@ -241,7 +244,7 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
     timeHorizon, selectedSiteId, showActionsModal,
     activeTab, searchTerm, flyToLocation, interventionScenario,
     basemapMode, setBasemapMode,
-    loading, error,
+    loading, error, staleFeeds,
     exposedPopulation, activeExposedPopulation, avertedExposures, etaHours, avgAqi,
     isSidebarCollapsed, toggleSidebar, setSidebarCollapsed,
     setSelectedSiteId, setShowActionsModal,
