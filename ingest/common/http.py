@@ -13,6 +13,7 @@ Rules:
 from __future__ import annotations
 
 import logging
+import re
 import time
 from typing import Any
 
@@ -35,6 +36,15 @@ class UpstreamError(RuntimeError):
         self.source = source
         self.status_code = status_code
         super().__init__(f"[{source}] HTTP {status_code}: {message}")
+
+
+_QUERY_SECRET = re.compile(r"(?i)((?:api[_-]?key|key|token|secret)=)[^&\s'\")]+")
+_LONG_TOKEN = re.compile(r"[A-Za-z0-9]{32,}")
+
+
+def scrub(text: object) -> str:
+    """Redact API keys from text (query-string secrets and long tokens, e.g. FIRMS' path key)."""
+    return _LONG_TOKEN.sub("***", _QUERY_SECRET.sub(r"\1***", str(text)))
 
 
 def _safe_url(url: str) -> str:
@@ -80,7 +90,7 @@ def get(
         except (ConnectionError, Timeout, ReadTimeout) as exc:
             if attempt >= max_retries:
                 raise UpstreamError(
-                    source_name, None, f"Connection error after {attempt} attempts: {exc}"
+                    source_name, None, f"Connection error after {attempt} attempts: {scrub(exc)}"
                 ) from exc
             wait = backoff * (2 ** (attempt - 1))
             logger.warning(
@@ -88,7 +98,7 @@ def get(
                 source_name,
                 attempt,
                 wait,
-                exc,
+                scrub(exc),
             )
             time.sleep(wait)
             continue
@@ -123,7 +133,7 @@ def get(
             continue
 
         # Non-retriable error
-        raise UpstreamError(source_name, resp.status_code, resp.text[:200])
+        raise UpstreamError(source_name, resp.status_code, scrub(resp.text[:200]))
 
 
 def post(
@@ -157,7 +167,7 @@ def post(
         except (ConnectionError, Timeout, ReadTimeout) as exc:
             if attempt >= max_retries:
                 raise UpstreamError(
-                    source_name, None, f"Connection error after {attempt} attempts: {exc}"
+                    source_name, None, f"Connection error after {attempt} attempts: {scrub(exc)}"
                 ) from exc
             wait = backoff * (2 ** (attempt - 1))
             logger.warning(
@@ -165,7 +175,7 @@ def post(
                 source_name,
                 attempt,
                 wait,
-                exc,
+                scrub(exc),
             )
             time.sleep(wait)
             continue
@@ -198,4 +208,4 @@ def post(
             time.sleep(wait)
             continue
 
-        raise UpstreamError(source_name, resp.status_code, resp.text[:200])
+        raise UpstreamError(source_name, resp.status_code, scrub(resp.text[:200]))

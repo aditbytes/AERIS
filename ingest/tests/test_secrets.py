@@ -59,3 +59,16 @@ def test_lambda_failure_raises_without_leaking(monkeypatch):
     _fake_boto3(monkeypatch, Client())
     with pytest.raises(secrets.SecretError):
         secrets.get_secret("FIRMS_MAP_KEY")
+
+
+def test_scrub_redacts_keys_in_urls():
+    from ingest.common.http import scrub
+
+    msg = (
+        "Max retries exceeded with url: /resource/3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69"
+        "?api-key=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&format=json "
+        "and /api/area/csv/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/VIIRS_SNPP_NRT/1,2,3,4/1"
+    )
+    out = scrub(msg)
+    assert "a" * 56 not in out and "b" * 32 not in out
+    assert "format=json" in out and "3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69" in out
