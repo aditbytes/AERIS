@@ -289,6 +289,8 @@ Resources:
           Type: ScheduleV2
           Properties:
             ScheduleExpression: rate(15 minutes)
+            # 48 h window so bronze/fires/latest is not empty before the day's first satellite pass (UTC date rollover)
+            Input: '{"day_range": 2}'
 
   AqiFunction:
     Type: AWS::Serverless::Function
