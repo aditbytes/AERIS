@@ -22,6 +22,10 @@ Parameters:
   BronzeRetentionDays:
     Type: Number
     Default: 14
+  AgentModelId:
+    Type: String
+    Default: anthropic.claude-opus-5-5
+    Description: Bedrock model or inference-profile id for the Strands action agent
 
 Resources:
   DataBucket:
@@ -83,7 +87,9 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: s3:PutObject
-                Resource: !Sub ${DataBucket.Arn}/bronze/*
+                Resource:
+                  - !Sub ${DataBucket.Arn}/bronze/*
+                  - !Sub ${DataBucket.Arn}/reference/*
               - Effect: Allow
                 Action: sqs:SendMessage
                 Resource: !GetAtt FetchDlq.Arn
@@ -106,10 +112,25 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: s3:GetObject
-                Resource: !Sub ${DataBucket.Arn}/bronze/*
+                Resource:
+                  - !Sub ${DataBucket.Arn}/bronze/*
+                  - !Sub ${DataBucket.Arn}/reference/*
+                  - !Sub ${DataBucket.Arn}/gold/*
+              # ListBucket makes a missing key a NoSuchKey (404) instead of AccessDenied
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt DataBucket.Arn
+              # Every gold/ file except actions.json, which only the agent writes
               - Effect: Allow
                 Action: s3:PutObject
-                Resource: !Sub ${DataBucket.Arn}/gold/*
+                Resource:
+                  - !Sub ${DataBucket.Arn}/gold/fires.json
+                  - !Sub ${DataBucket.Arn}/gold/aqi.json
+                  - !Sub ${DataBucket.Arn}/gold/wind.json
+                  - !Sub ${DataBucket.Arn}/gold/sites.geojson
+                  - !Sub ${DataBucket.Arn}/gold/sources.json
+                  - !Sub ${DataBucket.Arn}/gold/corridor.geojson
+                  - !Sub ${DataBucket.Arn}/gold/ranked_sites.json
 
   SageMakerRole:
     Type: AWS::IAM::Role
@@ -154,13 +175,16 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
-                Action: bedrock:InvokeModel
+                Action: [bedrock:InvokeModel, bedrock:InvokeModelWithResponseStream]
                 Resource:
                   - !Sub arn:${AWS::Partition}:bedrock:*::foundation-model/*
                   - !Sub arn:${AWS::Partition}:bedrock:*:${AWS::AccountId}:inference-profile/*
               - Effect: Allow
                 Action: s3:GetObject
                 Resource: !Sub ${DataBucket.Arn}/gold/*
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt DataBucket.Arn
               - Effect: Allow
                 Action: s3:PutObject
                 Resource: !Sub ${DataBucket.Arn}/gold/actions.json
@@ -184,6 +208,15 @@ Resources:
               - Effect: Allow
                 Action: s3:GetObject
                 Resource: !Sub ${DataBucket.Arn}/gold/*
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt DataBucket.Arn
+              - Effect: Allow
+                Action: [states:StartExecution, states:ListExecutions]
+                Resource: !Ref PipelineStateMachine
+              - Effect: Allow
+                Action: states:DescribeExecution
+                Resource: !Sub arn:${AWS::Partition}:states:${AWS::Region}:${AWS::AccountId}:execution:${PipelineStateMachine.Name}:*
 
   # --- Ingestion: fetch -> bronze/ ----------------------------------------
   FetchDlq:
@@ -277,6 +310,8 @@ Resources:
       CodeUri: lambda/
       Handler: ingest.firms.handler.lambda_handler
       Role: !GetAtt FirmsRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref FirmsFunctionLogs
       MemorySize: 256
       Timeout: 120
       DeadLetterQueue:
@@ -300,6 +335,8 @@ Resources:
       CodeUri: lambda/
       Handler: ingest.aqi.handler.lambda_handler
       Role: !GetAtt AqiRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref AqiFunctionLogs
       MemorySize: 256
       Timeout: 300
       DeadLetterQueue:
@@ -321,6 +358,8 @@ Resources:
       CodeUri: lambda/
       Handler: ingest.weather.handler.lambda_handler
       Role: !GetAtt WeatherRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref WeatherFunctionLogs
       MemorySize: 512
       Timeout: 300
       DeadLetterQueue:
@@ -342,6 +381,8 @@ Resources:
       CodeUri: lambda/
       Handler: ingest.sites.handler.lambda_handler
       Role: !GetAtt FetcherRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref SitesFunctionLogs
       MemorySize: 256
       Timeout: 300
       DeadLetterQueue:
@@ -349,6 +390,420 @@ Resources:
         TargetArn: !GetAtt FetchDlq.Arn
       EventInvokeConfig:
         MaximumRetryAttempts: 1
+
+  # --- Pipeline: bronze/ + reference/ -> gold/ ----------------------------
+  PublishFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      CodeUri: lambda/
+      Handler: pipeline.steps.publish_handler
+      Role: !GetAtt ModelRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref PublishFunctionLogs
+      MemorySize: 512
+      Timeout: 120
+
+  DetectFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      CodeUri: lambda/
+      Handler: pipeline.steps.detect_handler
+      Role: !GetAtt ModelRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref DetectFunctionLogs
+      MemorySize: 512
+      Timeout: 120
+
+  CorridorFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      CodeUri: lambda/
+      Handler: pipeline.steps.corridor_handler
+      Role: !GetAtt ModelRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref CorridorFunctionLogs
+      MemorySize: 1024
+      Timeout: 180
+
+  RankFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      CodeUri: lambda/
+      Handler: pipeline.steps.rank_handler
+      Role: !GetAtt ModelRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref RankFunctionLogs
+      MemorySize: 2048
+      Timeout: 300
+
+  AgentFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      CodeUri: lambda/
+      Handler: pipeline.steps.agent_handler
+      Role: !GetAtt AgentRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref AgentFunctionLogs
+      MemorySize: 1024
+      # Strands agent runs take 30-60 s; leave room for Bedrock retries
+      Timeout: 300
+      Environment:
+        Variables:
+          AGENT_MODEL_PROVIDER: bedrock
+          AGENT_MODEL_ID: !Ref AgentModelId
+
+  PipelineStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: !Sub ${AWS::StackName}-pipeline
+      Type: STANDARD
+      Policies:
+        - LambdaInvokePolicy: {FunctionName: !Ref PublishFunction}
+        - LambdaInvokePolicy: {FunctionName: !Ref DetectFunction}
+        - LambdaInvokePolicy: {FunctionName: !Ref CorridorFunction}
+        - LambdaInvokePolicy: {FunctionName: !Ref RankFunction}
+        - LambdaInvokePolicy: {FunctionName: !Ref AgentFunction}
+      DefinitionSubstitutions:
+        PublishArn: !GetAtt PublishFunction.Arn
+        DetectArn: !GetAtt DetectFunction.Arn
+        CorridorArn: !GetAtt CorridorFunction.Arn
+        RankArn: !GetAtt RankFunction.Arn
+        AgentArn: !GetAtt AgentFunction.Arn
+      Definition:
+        Comment: AERIS refresh - publish -> detect -> corridor -> rank -> agent. A failed step stops the run; gold/ keeps the last real result.
+        StartAt: Publish
+        States:
+          Publish:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke
+            Parameters: {FunctionName: "${PublishArn}", Payload: {}}
+            ResultSelector: {"result.$": "$.Payload"}
+            ResultPath: $.publish
+            Retry:
+              - ErrorEquals: [Lambda.ServiceException, Lambda.AWSLambdaException, Lambda.SdkClientException, Lambda.TooManyRequestsException]
+                IntervalSeconds: 5
+                MaxAttempts: 3
+                BackoffRate: 2
+            Catch:
+              - ErrorEquals: [States.ALL]
+                ResultPath: $.error
+                Next: Failed
+            Next: Detect
+          Detect:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke
+            Parameters: {FunctionName: "${DetectArn}", Payload: {}}
+            ResultSelector: {"result.$": "$.Payload"}
+            ResultPath: $.detect
+            Retry:
+              - ErrorEquals: [Lambda.ServiceException, Lambda.AWSLambdaException, Lambda.SdkClientException, Lambda.TooManyRequestsException]
+                IntervalSeconds: 5
+                MaxAttempts: 3
+                BackoffRate: 2
+            Catch:
+              - ErrorEquals: [States.ALL]
+                ResultPath: $.error
+                Next: Failed
+            Next: Corridor
+          Corridor:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke
+            Parameters: {FunctionName: "${CorridorArn}", Payload: {}}
+            ResultSelector: {"result.$": "$.Payload"}
+            ResultPath: $.corridor
+            Retry:
+              - ErrorEquals: [Lambda.ServiceException, Lambda.AWSLambdaException, Lambda.SdkClientException, Lambda.TooManyRequestsException]
+                IntervalSeconds: 5
+                MaxAttempts: 3
+                BackoffRate: 2
+            Catch:
+              - ErrorEquals: [States.ALL]
+                ResultPath: $.error
+                Next: Failed
+            Next: Rank
+          Rank:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke
+            Parameters: {FunctionName: "${RankArn}", Payload: {}}
+            ResultSelector: {"result.$": "$.Payload"}
+            ResultPath: $.rank
+            Retry:
+              - ErrorEquals: [Lambda.ServiceException, Lambda.AWSLambdaException, Lambda.SdkClientException, Lambda.TooManyRequestsException]
+                IntervalSeconds: 5
+                MaxAttempts: 3
+                BackoffRate: 2
+            Catch:
+              - ErrorEquals: [States.ALL]
+                ResultPath: $.error
+                Next: Failed
+            Next: Agent
+          Agent:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke
+            Parameters: {FunctionName: "${AgentArn}", Payload: {}}
+            ResultSelector: {"result.$": "$.Payload"}
+            ResultPath: $.agent
+            Retry:
+              - ErrorEquals: [Lambda.ServiceException, Lambda.AWSLambdaException, Lambda.SdkClientException, Lambda.TooManyRequestsException]
+                IntervalSeconds: 5
+                MaxAttempts: 3
+                BackoffRate: 2
+            Catch:
+              - ErrorEquals: [States.ALL]
+                ResultPath: $.error
+                Next: Failed
+            Next: Done
+          Done:
+            Type: Succeed
+          Failed:
+            Type: Fail
+            Error: PipelineStepFailed
+            Cause: A pipeline step failed; gold/ still holds the last real result.
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            # FIRMS lands every 15 min; refresh the derived files every 30
+            ScheduleExpression: rate(30 minutes)
+
+  # --- API: gold/ -> API Gateway (HTTP API) --------------------------------
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins:
+          - !Sub https://${WebDistribution.DomainName}
+          - http://localhost:5173
+        AllowMethods: [GET, POST, OPTIONS]
+        AllowHeaders: [Content-Type]
+        MaxAge: 600
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 50
+        ThrottlingRateLimit: 20
+      RouteSettings:
+        "POST /run":
+          ThrottlingBurstLimit: 1
+          ThrottlingRateLimit: 1
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      CodeUri: lambda/
+      Handler: api.handlers.app.lambda_handler
+      Role: !GetAtt ApiRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref ApiFunctionLogs
+      MemorySize: 512
+      Timeout: 15
+      Environment:
+        Variables:
+          STATE_MACHINE_ARN: !Ref PipelineStateMachine
+      Events:
+        Health: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /health}}
+        Sources: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /sources}}
+        Corridor: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /corridor}}
+        Sites: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /sites}}
+        RankedSites: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /ranked-sites}}
+        SitesRanked: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /sites/ranked}}
+        Actions: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /actions}}
+        Stations: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /stations}}
+        Aqi: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /aqi}}
+        Wind: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /wind}}
+        Fires: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /fires}}
+        Summary: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: /summary}}
+        StartRun: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: POST, Path: /run}}
+        RunStatus: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: "/run/{run_id}"}}
+
+  # --- Website: CloudFront -> private web bucket (origin access control) ---
+  WebOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub ${AWS::StackName}-web-oac
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  WebDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: AERIS web
+        DefaultRootObject: index.html
+        HttpVersion: http2and3
+        # North America, Europe, Asia incl. India - cheaper than PriceClass_All
+        PriceClass: PriceClass_200
+        Origins:
+          - Id: web
+            DomainName: !GetAtt WebBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt WebOriginAccessControl.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        DefaultCacheBehavior:
+          TargetOriginId: web
+          ViewerProtocolPolicy: redirect-to-https
+          Compress: true
+          AllowedMethods: [GET, HEAD]
+          # Managed-CachingOptimized
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+        # Single-page app: unknown paths fall back to index.html
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+
+  WebBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: {Service: cloudfront.amazonaws.com}
+            Action: s3:GetObject
+            Resource: !Sub ${WebBucket.Arn}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${WebDistribution}
+
+  # --- Logs: one group per function, 7-day retention ----------------------
+  FirmsFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aeris/${AWS::StackName}/FirmsFunction
+      RetentionInDays: 7
+
+  AqiFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aeris/${AWS::StackName}/AqiFunction
+      RetentionInDays: 7
+
+  WeatherFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aeris/${AWS::StackName}/WeatherFunction
+      RetentionInDays: 7
+
+  SitesFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aeris/${AWS::StackName}/SitesFunction
+      RetentionInDays: 7
+
+  PublishFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aeris/${AWS::StackName}/PublishFunction
+      RetentionInDays: 7
+
+  DetectFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aeris/${AWS::StackName}/DetectFunction
+      RetentionInDays: 7
+
+  CorridorFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aeris/${AWS::StackName}/CorridorFunction
+      RetentionInDays: 7
+
+  RankFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aeris/${AWS::StackName}/RankFunction
+      RetentionInDays: 7
+
+  AgentFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aeris/${AWS::StackName}/AgentFunction
+      RetentionInDays: 7
+
+  ApiFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aeris/${AWS::StackName}/ApiFunction
+      RetentionInDays: 7
+
+  # --- Alarms -> email ----------------------------------------------------
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: AERIS alerts
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref AlertEmail
+
+  # No FunctionName dimension = all Lambdas in this account and region (all AERIS)
+  LambdaErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: An AERIS Lambda raised an error in the last 15 minutes
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Statistic: Sum
+      Period: 900
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlertTopic]
+      OKActions: [!Ref AlertTopic]
+
+  FetchDlqDepthAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: A fetch failed after retries and is waiting in the dead-letter queue
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt FetchDlq.QueueName
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlertTopic]
+      OKActions: [!Ref AlertTopic]
+
+  PipelineFailedAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: A pipeline run failed; gold/ is serving the last real result
+      Namespace: AWS/States
+      MetricName: ExecutionsFailed
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Ref PipelineStateMachine
+      Statistic: Sum
+      Period: 3600
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlertTopic]
+      OKActions: [!Ref AlertTopic]
 
   # --- Cost guard ---------------------------------------------------------
   MonthlyBudget:
@@ -370,6 +825,13 @@ Resources:
           Subscribers: [{SubscriptionType: EMAIL, Address: !Ref AlertEmail}]
 
 Outputs:
+  ApiUrl:
+    Description: API_BASE_URL for the web build
+    Value: !Sub https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com
+  WebUrl:
+    Value: !Sub https://${WebDistribution.DomainName}
+  WebDistributionId: {Value: !Ref WebDistribution}
+  PipelineStateMachineArn: {Value: !Ref PipelineStateMachine}
   FetchDlqUrl: {Value: !Ref FetchDlq}
   FetchDlqArn: {Value: !GetAtt FetchDlq.Arn}
   DataBucketName: {Value: !Ref DataBucket}

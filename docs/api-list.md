@@ -91,7 +91,9 @@ Base URL: the API Gateway invoke URL (set as `API_BASE_URL` in the UI). All resp
 | GET | `/run/{run_id}` | Run status: `running`, `succeeded`, `failed` | n/a |
 
 ### Response conventions
-- Every response includes `generated_at`. If the underlying data is older than its refresh interval, add `"stale": true` and keep the last real result; never substitute invented data
+- Every response includes `generated_at`. Data routes also carry `stale` (bool) and `age_seconds`: `stale` is true once the file is older than about three missed refreshes (fires 45 min; aqi, sources, corridor, ranked sites, actions 90 min; wind 3 h; sites never). The last real result is still returned; never substitute invented data
+- Aliases used by the web app: `/sites/ranked` = `/ranked-sites`, `/aqi` = `/stations`. Also `GET /wind` and `GET /fires`
+- `POST /run` returns `409 run_in_progress` while a run is executing (one run at a time)
 - Errors: `{"error": "<code>", "message": "<text>"}` with status `404` (no data yet), `502` (upstream source failed), `500` (internal)
 - `Cache-Control: max-age=60` on reads
 

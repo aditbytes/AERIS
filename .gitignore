@@ -20,3 +20,7 @@ docs/aditya's_work/aws_key/
 rootkey.csv
 *accessKeys.csv
 infra/lambda/ingest/
+infra/lambda/models/
+infra/lambda/agent/
+infra/lambda/pipeline/
+infra/lambda/api/

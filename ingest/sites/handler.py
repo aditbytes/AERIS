@@ -33,7 +33,7 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     n = len(result.get("features", []))
     if not n:
         raise RuntimeError("Overpass returned no sites; keeping existing data")
-    location = storage.write_bronze("sites", result, geojson=True)
+    location = storage.write_reference("sites", result, geojson=True)
     logger.info("lambda_handler: wrote %s with %d features", location, n)
     return {"location": location, "count": n}
 

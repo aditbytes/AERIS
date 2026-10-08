@@ -31,6 +31,35 @@ interface CacheEntry<T> {
 
 const validationCache = new Map<string, CacheEntry<unknown>>()
 
+/**
+ * Freshness reported by the live API (`stale`, `age_seconds` on every data route).
+ * Recorded before schema parsing because the schemas drop unknown keys.
+ * Snapshot mode has no such fields, so nothing is ever marked stale there.
+ */
+export interface Freshness {
+  label: string
+  stale: boolean
+  generatedAt: string | null
+  ageSeconds: number | null
+}
+
+const freshness = new Map<string, Freshness>()
+
+export function getStaleFeeds(): Freshness[] {
+  return [...freshness.values()].filter(f => f.stale)
+}
+
+function recordFreshness(label: string, json: unknown): void {
+  if (!json || typeof json !== 'object') return
+  const o = json as { stale?: unknown; generated_at?: unknown; age_seconds?: unknown }
+  freshness.set(label, {
+    label,
+    stale: o.stale === true,
+    generatedAt: typeof o.generated_at === 'string' ? o.generated_at : null,
+    ageSeconds: typeof o.age_seconds === 'number' ? o.age_seconds : null,
+  })
+}
+
 async function fetchAndValidate<T>(
   url: string,
   schema: { parse: (data: unknown) => T },
@@ -42,6 +71,7 @@ async function fetchAndValidate<T>(
   }
   const etag = res.headers.get('etag')
   const json = await res.json()
+  recordFreshness(label, json)
 
   // Compare generated_at before expensive schema re-parsing on refresh
   const incomingGenAt = (json && typeof json === 'object' && 'generated_at' in json && typeof (json as { generated_at: unknown }).generated_at === 'string')

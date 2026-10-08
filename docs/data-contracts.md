@@ -79,7 +79,7 @@ GeoJSON `FeatureCollection` of `Point`s.
 `emission_strength` is normalised 0–1.
 
 ## `corridor.geojson` (Pritam)
-`FeatureCollection` of `Polygon`s, one per source and time band, plus one `LineString` centreline per source.
+`FeatureCollection` of `Polygon`s, one per source and time band, plus one `LineString` centreline per source. Top-level members: `generated_at`, `forecast_start` (hour 0 of the advection) and `wind_generated_at` (the `wind.json` it used).
 ```json
 {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": ["..."]},
  "properties": {"kind": "band", "source_id": "src_001", "hour_from": 0, "hour_to": 2,
@@ -121,3 +121,4 @@ GeoJSON `FeatureCollection` of `Point`s.
   ]
 }
 ```
+`generator` records what wrote the plan: `bedrock:<model id>` (Strands agent on Amazon Bedrock) or `rules` (the deterministic plan built from the same data).

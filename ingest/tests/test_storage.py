@@ -104,3 +104,10 @@ def test_write_bronze_writes_stamped_and_latest(local):
     assert "bronze/thing/" in loc_posix
     assert storage.read_json("bronze/thing/latest") == STAMPED
     assert len(list((local / "bronze" / "thing").glob("*.json"))) == 2
+
+
+def test_write_reference_writes_stamped_and_latest(local):
+    loc = storage.write_reference("thing", STAMPED)
+    assert "reference/thing/" in loc.replace("\\", "/")
+    assert storage.read_json("reference/thing/latest") == STAMPED
+    assert len(list((local / "reference" / "thing").glob("*.json"))) == 2

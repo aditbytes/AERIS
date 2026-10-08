@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import logging
 import math
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -23,53 +23,64 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 _DATA_LIVE = _REPO_ROOT / "data" / "live"
 
 
-def find_nearest_wind(lat: float, lon: float, wind_data: dict[str, Any], hour_idx: int) -> tuple[float, float, float]:
+def _parse_time(t: str) -> datetime:
+    return datetime.fromisoformat(t.replace("Z", "+00:00"))
+
+
+def _hour_at(hours: list[dict[str, Any]], when: datetime) -> dict[str, Any]:
+    """Forecast hour closest to ``when`` (persistence beyond the forecast range)."""
+    return min(hours, key=lambda h: abs((_parse_time(h["t"]) - when).total_seconds()))
+
+
+def find_nearest_wind(lat: float, lon: float, wind_data: dict[str, Any], when: datetime) -> tuple[float, float, float]:
     """
-    Find wind (u_ms, v_ms, pblh_m) at (lat, lon) for a specific forecast hour index.
-    Uses inverse distance weighting across closest 4 grid points.
+    Find real forecast wind (u_ms, v_ms, pblh_m) at (lat, lon) at time ``when``.
+    Uses inverse distance weighting across the closest 4 grid points.
+    Raises ValueError if wind.json has no usable values; wind is never invented.
     """
-    points = wind_data.get("points", [])
+    points = [p for p in wind_data.get("points", []) if p.get("hours")]
     if not points:
-        return 2.0, -1.5, 400.0  # fallback to typical NW->SE breeze
+        raise ValueError("wind.json has no forecast points; cannot advect a corridor")
 
-    dists = []
-    for p in points:
-        d = haversine_km(lat, lon, p["lat"], p["lon"])
-        dists.append((d, p))
-
-    dists.sort(key=lambda x: x[0])
-    top_k = dists[:4]
+    dists = sorted(((haversine_km(lat, lon, p["lat"], p["lon"]), p) for p in points), key=lambda x: x[0])
 
     total_weight = 0.0
-    u_sum, v_sum, pblh_sum = 0.0, 0.0, 0.0
+    u_sum, v_sum, pblh_sum, pblh_weight = 0.0, 0.0, 0.0, 0.0
 
-    for d, p in top_k:
+    for d, p in dists[:4]:
+        h = _hour_at(p["hours"], when)
+        if h.get("u_ms") is None or h.get("v_ms") is None:
+            continue
         weight = 1.0 / max(d, 0.1)
-        hours = p.get("hours", [])
-        h = hours[min(hour_idx, len(hours) - 1)] if hours else {}
-        u_sum += weight * float(h.get("u_ms", 1.0))
-        v_sum += weight * float(h.get("v_ms", -1.0))
-        pblh_sum += weight * float(h.get("pblh_m", 350.0))
+        u_sum += weight * float(h["u_ms"])
+        v_sum += weight * float(h["v_ms"])
         total_weight += weight
+        if h.get("pblh_m") is not None:
+            pblh_sum += weight * float(h["pblh_m"])
+            pblh_weight += weight
 
-    u_val = abs(u_sum / total_weight) if total_weight > 0 else 2.4
-    v_val = -abs(v_sum / total_weight) if total_weight > 0 else -1.8
-    pblh_val = (pblh_sum / total_weight) if total_weight > 0 else 380.0
+    if total_weight == 0:
+        raise ValueError(f"No wind values near ({lat:.3f}, {lon:.3f}) at {when.isoformat()}")
 
-    return (u_val, v_val, pblh_val)
+    pblh_val = pblh_sum / pblh_weight if pblh_weight else float("nan")
+    return (u_sum / total_weight, v_sum / total_weight, pblh_val)
 
 
 def predict_corridor(
     sources_data: dict[str, Any],
     wind_data: dict[str, Any],
     forecast_hours: int = 24,
+    start: datetime | None = None,
 ) -> dict[str, Any]:
     """
     Predict advection corridor for each source and output GeoJSON FeatureCollection.
+    Hour 0 is ``start`` (default: now, UTC); each hour uses the forecast for that time.
     Produces:
       - 'band' Polygons for 0-2h, 2-4h, 4-8h, 8-24h
       - 'centerline' LineString with points_eta_hours
     """
+    if start is None:
+        start = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
     features: list[dict[str, Any]] = []
 
     # Bands definition: (hour_from, hour_to)
@@ -94,7 +105,7 @@ def predict_corridor(
             trajectory.append((hr, curr_lat, curr_lon, sigma_km))
 
             if hr < forecast_hours:
-                u, v, _ = find_nearest_wind(curr_lat, curr_lon, wind_data, hr)
+                u, v, _ = find_nearest_wind(curr_lat, curr_lon, wind_data, start + timedelta(hours=hr))
                 # Note: u is eastward (lon), v is northward (lat).
                 # Move in meters over 1 hour (3600 seconds)
                 dx_km = (u * 3600.0) / 1000.0
@@ -181,6 +192,9 @@ def predict_corridor(
 
     return {
         "type": "FeatureCollection",
+        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "forecast_start": start.isoformat().replace("+00:00", "Z"),
+        "wind_generated_at": wind_data.get("generated_at"),
         "features": features,
     }
 

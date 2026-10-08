@@ -1,77 +1,77 @@
 {
-  "generated_at": "2026-10-07T19:18:10.234908Z",
-  "summary": "Active stubble burning cluster detected with 215 fires (FRP: 676 MW) and 99% emission strength. Smoke corridor approaches NCR receptor communities in ~0.5 hours, exposing an estimated 570,938 residents (90% CI: 428,203 - 713,672). Immediate protective interventions mandated for Government Senior Secondary School and A.D.Sr.Sec.School before threshold exceedance.",
+  "generated_at": "2026-10-08T14:52:19.030589Z",
+  "summary": "Active stubble burning cluster detected with 215 fires (FRP: 676 MW) and 99% emission strength. Smoke corridor approaches NCR receptor communities in ~0.5 hours, exposing an estimated 7.1M residents (90% CI: 5,349,092 - 18,110,132). Immediate protective interventions mandated for Akash Hospital, Ballabgarh and Dayal Hospital, Faridabad before threshold exceedance.",
   "actions": [
     {
       "priority": 1,
-      "site_id": "s_1420",
-      "who": "Principal / Administrator, Government Senior Secondary School",
-      "action": "Transition morning assembly and all sports indoors; verify classroom air purification and distribute certified N95 masks",
-      "reason": "ETA 0.0h, forecast PM2.5 delta +15 \u00b5g/m\u00b3",
+      "site_id": "s_0446",
+      "who": "Medical Director, Akash Hospital, Ballabgarh",
+      "action": "Activate hospital HVAC HEPA filtration in ICU & pulmonary wards; seal triage entryways and stage supplemental oxygen supplies",
+      "reason": "ETA 0.0h, forecast PM2.5 delta +15 µg/m³",
       "deadline_hours": 0.5
     },
     {
       "priority": 2,
-      "site_id": "s_1807",
-      "who": "Principal / Administrator, A.D.Sr.Sec.School",
-      "action": "Transition morning assembly and all sports indoors; verify classroom air purification and distribute certified N95 masks",
-      "reason": "ETA 0.0h, forecast PM2.5 delta +15 \u00b5g/m\u00b3",
+      "site_id": "s_0476",
+      "who": "Medical Director, Dayal Hospital, Faridabad",
+      "action": "Activate hospital HVAC HEPA filtration in ICU & pulmonary wards; seal triage entryways and stage supplemental oxygen supplies",
+      "reason": "ETA 0.0h, forecast PM2.5 delta +15 µg/m³",
       "deadline_hours": 0.5
     },
     {
       "priority": 3,
-      "site_id": "s_2754",
+      "site_id": "s_1420",
       "who": "Principal / Administrator, Government Senior Secondary School",
       "action": "Transition morning assembly and all sports indoors; verify classroom air purification and distribute certified N95 masks",
-      "reason": "ETA 0.0h, forecast PM2.5 delta +15 \u00b5g/m\u00b3",
+      "reason": "ETA 0.0h, forecast PM2.5 delta +15 µg/m³",
       "deadline_hours": 0.5
     },
     {
       "priority": 4,
-      "site_id": "s_2755",
-      "who": "Principal / Administrator, Government Primary School",
+      "site_id": "s_2754",
+      "who": "Principal / Administrator, Government Senior Secondary School",
       "action": "Transition morning assembly and all sports indoors; verify classroom air purification and distribute certified N95 masks",
-      "reason": "ETA 0.0h, forecast PM2.5 delta +15 \u00b5g/m\u00b3",
+      "reason": "ETA 0.0h, forecast PM2.5 delta +15 µg/m³",
       "deadline_hours": 0.5
     },
     {
       "priority": 5,
-      "site_id": "s_0306",
-      "who": "Medical Director, Pulse Hospital, Faridabad",
-      "action": "Activate hospital HVAC HEPA filtration in ICU & pulmonary wards; seal triage entryways and stage supplemental oxygen supplies",
-      "reason": "ETA 0.0h, forecast PM2.5 delta +15 \u00b5g/m\u00b3",
+      "site_id": "s_2755",
+      "who": "Principal / Administrator, Government Primary School",
+      "action": "Transition morning assembly and all sports indoors; verify classroom air purification and distribute certified N95 masks",
+      "reason": "ETA 0.0h, forecast PM2.5 delta +15 µg/m³",
       "deadline_hours": 0.5
     },
     {
       "priority": 6,
-      "site_id": "s_0348",
-      "who": "Medical Director, Sharma Maternity and Eye Centre",
+      "site_id": "s_0054",
+      "who": "Medical Director, Civil Hospital",
       "action": "Activate hospital HVAC HEPA filtration in ICU & pulmonary wards; seal triage entryways and stage supplemental oxygen supplies",
-      "reason": "ETA 0.0h, forecast PM2.5 delta +15 \u00b5g/m\u00b3",
-      "deadline_hours": 0.5
+      "reason": "ETA 2.0h, forecast PM2.5 delta +15 µg/m³",
+      "deadline_hours": 1.5
     },
     {
       "priority": 7,
-      "site_id": "s_0446",
-      "who": "Medical Director, Akash Hospital, Ballabgarh",
+      "site_id": "s_0326",
+      "who": "Medical Director, Vardaan Hospital and Trauma Centre",
       "action": "Activate hospital HVAC HEPA filtration in ICU & pulmonary wards; seal triage entryways and stage supplemental oxygen supplies",
-      "reason": "ETA 0.0h, forecast PM2.5 delta +15 \u00b5g/m\u00b3",
-      "deadline_hours": 0.5
+      "reason": "ETA 2.0h, forecast PM2.5 delta +15 µg/m³",
+      "deadline_hours": 1.5
     },
     {
       "priority": 8,
-      "site_id": "s_0464",
-      "who": "Medical Director, Saraswati Medicare (Pvt) Ltd",
+      "site_id": "s_0906",
+      "who": "Medical Director, Civil Hospital Sohna",
       "action": "Activate hospital HVAC HEPA filtration in ICU & pulmonary wards; seal triage entryways and stage supplemental oxygen supplies",
-      "reason": "ETA 0.0h, forecast PM2.5 delta +15 \u00b5g/m\u00b3",
-      "deadline_hours": 0.5
+      "reason": "ETA 2.0h, forecast PM2.5 delta +15 µg/m³",
+      "deadline_hours": 1.5
     }
   ],
   "authority_actions": [
     {
       "who": "Commission for Air Quality Management (CAQM)",
       "action": "Invoke Graded Response Action Plan (GRAP Stage III) advisory across northern and western transit sectors",
-      "reason": "Corridor trajectory impacts ~570,938 residents with forecast PM2.5 delta exceedance"
+      "reason": "Corridor trajectory impacts ~7.1M residents with forecast PM2.5 delta exceedance"
     },
     {
       "who": "Delhi Pollution Control Committee (DPCC)",
@@ -81,7 +81,8 @@
     {
       "who": "Directorate of Education (DoE)",
       "action": "Issue mandatory circular for all outdoor school activities and assemblies to remain indoors until 12:00 PM",
-      "reason": "Top 50 schools located directly along the downwind dispersion path"
+      "reason": "230 ranked schools located inside the forecast corridor"
     }
-  ]
+  ],
+  "generator": "rules"
 }
