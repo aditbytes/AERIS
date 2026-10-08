@@ -356,9 +356,9 @@ export default function MapContainer() {
               <path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3V7z"/>
             </svg>
           </div>
-          <div>
+          <div className="map-title-texts">
             <div className="map-title">Pollution Movement Forecast</div>
-            <div className="map-subtitle">Predicted PM2.5 plume (Punjab → Haryana → Delhi NCR)</div>
+            <div className="map-subtitle" title="Predicted PM2.5 plume (Punjab → Haryana → Delhi NCR)">Predicted PM2.5 plume (Punjab → Haryana → Delhi NCR)</div>
           </div>
         </div>
 

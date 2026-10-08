@@ -13,13 +13,16 @@ export default function AgentWidget() {
   const { actions, sources, rankedSites, etaHours, setShowActionsModal } = useAeris()
   const [showFullBriefing, setShowFullBriefing] = useState(false)
 
-  // Compute stats from real contracts
+  // Scope-labelled stats from real contracts
   const totalFires = sources?.sources.reduce((acc, s) => acc + s.fire_count, 0) ?? 215
-  const totalFrp   = sources?.sources.reduce((acc, s) => acc + s.total_frp_mw, 0) ?? 676
+  const totalFrp   = sources?.sources.reduce((acc, s) => acc + s.total_frp_mw, 0) ?? 1278
   const expEst     = rankedSites?.exposed_population.estimate ?? 570_938
   const expLow     = rankedSites?.exposed_population.low ?? 428_203
   const expHigh    = rankedSites?.exposed_population.high ?? 713_672
-  const etaVal     = etaHours != null ? `${etaHours.toFixed(1)}h` : '0.5h'
+
+  // Format ETA: Never show negative or -0.0h
+  const isOverNow  = etaHours !== null && etaHours <= 0
+  const etaVal     = etaHours !== null ? (isOverNow ? 'Over receptors now' : `~${etaHours.toFixed(1)}h`) : '—'
 
   const topActions = actions?.actions.slice(0, 3) ?? []
 
@@ -44,23 +47,30 @@ export default function AgentWidget() {
       <div className="agent-headline-block">
         <h4 className="agent-headline">Stubble Plume Influx Approaching NCR</h4>
         <div className="agent-chips-grid">
-          <span className="agent-chip" title="Total active fire detections across airshed">
+          <span className="agent-chip" title="Total active fire detections across full airshed (all clusters)">
             <Flame size={11} color="#DC2626" />
+            <span style={{ opacity: 0.85, marginRight: '2px' }}>Airshed:</span>
             <strong>{totalFires}</strong> Fires
           </span>
-          <span className="agent-chip" title="Total Fire Radiative Power (MW)">
+          <span className="agent-chip" title="Total Fire Radiative Power across full airshed (all clusters)">
             <Zap size={11} color="#EA580C" />
+            <span style={{ opacity: 0.85, marginRight: '2px' }}>Airshed:</span>
             <strong>{Math.round(totalFrp)}</strong> MW FRP
           </span>
           <span className="agent-chip highlight" title="Plume front arrival countdown to receptor communities">
-            ⏱️ ETA <strong>~{etaVal}</strong>
+            ⏱️ {isOverNow ? (
+              <strong>Over receptors now</strong>
+            ) : (
+              <>ETA <strong>{etaVal}</strong></>
+            )}
           </span>
           <span
             className="agent-chip pop"
             title={`Exposed population estimate: ${expEst.toLocaleString()} (90% Confidence Interval: ${expLow.toLocaleString()} – ${expHigh.toLocaleString()})`}
           >
             <Users size={11} color="#C92A2A" />
-            <strong>{formatPopK(expEst)}</strong> ({formatPopK(expLow)}–{formatPopK(expHigh)} CI)
+            <span style={{ opacity: 0.85, marginRight: '2px' }}>Exposed:</span>
+            <strong>{formatPopK(expEst)}</strong>
           </span>
         </div>
       </div>

@@ -1,101 +1,636 @@
-/* MetricGrid.css */
+/* =========================================================
+   AERIS — MetricGrid.css
+   Decision Cards Row: WHEN, WHO, WHERE/WHY, AQI
+   ========================================================= */
+
 .metric-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
   flex-shrink: 0;
+  width: 100%;
 }
 
-.metric-card {
+/* Base Decision Card */
+.metric-card.decision-card {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  cursor: default;
-  transition: transform 0.2s, box-shadow 0.2s;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px 12px;
+  min-height: 120px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.metric-card:hover {
-  transform: translateY(-2px);
+.metric-card.decision-card:hover {
   box-shadow: var(--shadow-float);
+  border-color: rgba(34, 115, 79, 0.2);
 }
 
-.metric-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
+.metric-card.clickable-kpi-card {
+  cursor: pointer;
+}
+
+.metric-card.clickable-kpi-card:hover {
+  transform: translateY(-1.5px);
+}
+
+.metric-card.clickable-kpi-card:focus-visible,
+.highest-risk-site-btn:focus-visible,
+.arrival-strip-segment:focus-visible,
+.kpi-info-btn:focus-visible {
+  outline: 2px solid var(--brand-primary) !important;
+  outline-offset: 2px;
+}
+
+/* ── Card Header ─────────────────────────────────────────── */
+.decision-card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.decision-card-title-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  justify-content: space-between;
+  gap: 6px;
 }
 
+.decision-card-q {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--brand-primary);
+  text-transform: uppercase;
+}
 
+.decision-head-badges {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 
-.metric-body {
-  flex: 1;
-  min-width: 0;
+.kpi-amber-tag {
+  font-size: 9px;
+  font-weight: 700;
+  color: #92400E;
+  background: #FEF3C7;
+  border: 1px solid #FDE68A;
+  padding: 1px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.kpi-info-btn {
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 1px 4px;
+  border-radius: 4px;
+  transition: color 0.15s ease, background 0.15s ease;
+  line-height: 1;
+}
+
+.kpi-info-btn:hover {
+  color: var(--brand-dark);
+  background: var(--brand-light);
 }
 
 .metric-label {
   display: block;
-  font-size: 11px;
-  color: var(--text-tertiary);
-  font-weight: 500;
-  margin-bottom: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  line-height: 1.25;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.scenario-name-highlight {
+  color: var(--brand-primary);
+  font-weight: 700;
+}
+
+.card-sub-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.jump-hint {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--brand-primary);
+  white-space: nowrap;
+}
+
+/* ── Primary Readout ─────────────────────────────────────── */
+.decision-primary-block {
+  margin: 3px 0 2px;
 }
 
 .metric-value-row {
   display: flex;
   align-items: baseline;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .metric-value {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 800;
   color: var(--text-primary);
   line-height: 1;
-  letter-spacing: -1px;
+  letter-spacing: -0.5px;
 }
 
-.metric-chart {
+.exposed-residents-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+/* Urgent banner (e.g. Plume over N receptors now) */
+.impact-urgent-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #FFF1F2;
+  border: 1px solid #FECDD3;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.urgent-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #E11D48;
+  box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.25);
+  animation: pulse-ring 1.5s infinite;
+}
+
+.urgent-text {
+  font-size: 12px;
+  font-weight: 700;
+  color: #9F1239;
+}
+
+/* ── Secondary Details ───────────────────────────────────── */
+.decision-secondary-row {
+  margin-bottom: 4px;
+  min-height: 16px;
   display: flex;
-  align-items: flex-end;
-  flex-shrink: 0;
+  align-items: center;
 }
 
-/* AQI Card overrides */
+.secondary-detail {
+  font-size: 10.5px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  width: 100%;
+}
+
+.sec-tag {
+  color: var(--text-tertiary);
+  font-weight: 600;
+}
+
+.sec-hl {
+  color: #B45309;
+}
+
+.sec-site {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.source-meta-chips {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  color: var(--text-secondary);
+}
+
+.sec-divider {
+  color: var(--border-subtle);
+}
+
+.last-seen-tag {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: #F1F5F9;
+  color: #475569;
+}
+
+.last-seen-tag.amber {
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FDE68A;
+}
+
+/* ── Card 1: 4-Segment Arrival Strip ─────────────────────── */
+.arrival-strip-container {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 4px;
+}
+
+.arrival-strip-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 9.5px;
+  color: var(--text-tertiary);
+}
+
+.strip-active-caption {
+  font-weight: 700;
+  color: var(--brand-primary);
+}
+
+.arrival-strip-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+}
+
+.arrival-strip-segment {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 2px;
+  border: 1px solid var(--border-subtle);
+  border-left-width: 3px;
+  border-radius: 5px;
+  background: var(--surface-subtle);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  font-family: inherit;
+}
+
+.arrival-strip-segment:hover {
+  background: white;
+  border-color: var(--brand-medium);
+  transform: translateY(-1px);
+}
+
+.arrival-strip-segment.active {
+  background: white;
+  border-color: var(--brand-primary);
+  box-shadow: 0 1px 4px rgba(34, 115, 79, 0.15);
+}
+
+.seg-band-name {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  line-height: 1;
+}
+
+.arrival-strip-segment.active .seg-band-name {
+  color: var(--text-primary);
+}
+
+.seg-count-badge {
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+/* ── Card 2: CI Range Bar & Institutional Rows ───────────── */
+.ci-range-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 3px;
+}
+
+.ci-range-bar-track {
+  position: relative;
+  height: 6px;
+  background: #E2E8F0;
+  border-radius: 3px;
+  overflow: visible;
+}
+
+.ci-range-fill {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #93C5FD 0%, #3B82F6 50%, #1D4ED8 100%);
+  border-radius: 3px;
+}
+
+.ci-range-point {
+  position: absolute;
+  top: -3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #1E3A8A;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  transform: translateX(-50%);
+}
+
+.ci-range-labels {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 9px;
+  color: var(--text-tertiary);
+  font-weight: 600;
+}
+
+.ci-center-lbl {
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.facility-audit-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 3px 0 4px;
+  font-size: 10.5px;
+}
+
+.facility-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.facility-icon {
+  font-size: 11px;
+}
+
+.facility-type {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.facility-count {
+  font-weight: 700;
+}
+
+.facility-sub {
+  font-size: 9.5px;
+  color: var(--text-tertiary);
+}
+
+.highest-risk-site-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: #FFF4EC;
+  border: 1px solid #FED7AA;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.highest-risk-site-btn:hover {
+  background: #FFEDD5;
+  border-color: #FB923C;
+}
+
+.site-priority-pill {
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #C2410C;
+  background: white;
+  border: 1px solid #FDBA74;
+  padding: 1px 4px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.site-name-truncate {
+  font-size: 10px;
+  font-weight: 700;
+  color: #9A3412;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.site-metrics-compact {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #EA580C;
+  white-space: nowrap;
+}
+
+/* ── Card 3: Top 3 Stacked FRP Bar ───────────────────────── */
+.source-stacked-container {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 4px;
+}
+
+.stacked-bar-track {
+  display: flex;
+  height: 7px;
+  border-radius: 3.5px;
+  overflow: hidden;
+  background: #F1F5F9;
+}
+
+.stacked-bar-segment {
+  height: 100%;
+  transition: width 0.2s ease;
+}
+
+.stacked-labels-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 9.5px;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.stacked-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+
+.legend-swatch {
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+}
+
+.legend-name {
+  font-weight: 500;
+}
+
+.legend-pct {
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.territory-split-text {
+  font-size: 10px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+/* ── Footers ─────────────────────────────────────────────── */
+.decision-footer {
+  padding-top: 4px;
+  border-top: 1px solid rgba(0, 40, 20, 0.05);
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.footer-transport-text {
+  font-size: 10px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.footer-lbl {
+  font-weight: 700;
+  color: var(--text-tertiary);
+}
+
+/* ── Card 4: AQI Overrides & GRAP ────────────────────────── */
 .aqi-card {
   background: linear-gradient(135deg, #1A4433 0%, #237253 60%, #2D9765 100%) !important;
   border-color: transparent !important;
+  color: white;
 }
 
-.aqi-card .metric-label { color: rgba(255, 255, 255, 0.7); }
-.aqi-card .metric-value  { color: white; }
+.aqi-card .decision-card-q {
+  color: #A7F3D0;
+}
+
+.aqi-card .metric-label {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.aqi-card .metric-value {
+  color: white;
+}
+
+.aqi-info-btn {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.aqi-info-btn:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.aqi-card .kpi-amber-tag {
+  background: rgba(234, 179, 8, 0.25);
+  color: #FEF08A;
+  border-color: rgba(234, 179, 8, 0.5);
+}
+
+.decision-primary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 4px 0;
+}
 
 .aqi-status-badge {
   display: inline-flex;
   align-items: center;
-  padding: 2px 10px;
+  padding: 2px 9px;
   border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.2);
   color: white;
   font-size: 11px;
-  font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.35);
 }
 
+.aqi-grap-line {
+  padding-top: 5px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 9.5px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.grap-trigger-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  font-weight: 500;
+}
+
+.grap-indicative-tag {
+  font-size: 8.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 1px 4px;
+  border-radius: 3px;
+  color: #D1FAE5;
+  white-space: nowrap;
+  cursor: help;
+}
+
+/* ── Responsive Layouts ──────────────────────────────────── */
 @media (max-width: 1024px) {
   .metric-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 480px), (max-width: 390px) {
   .metric-grid {
     grid-template-columns: 1fr;
   }
