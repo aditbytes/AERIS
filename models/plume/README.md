@@ -357,3 +357,45 @@ is verified by labelled mathematical tests, not by these real captures.
 Before fitting or assessing real predictive skill, capture fresh wind with
 the corrected UTC parser, provide sufficient temporal/spatial coverage,
 and collect actual PM2.5 histories. No calibration or ML was implemented.
+
+## Historical calibration eligibility (Task 3)
+
+```text
+REAL_CALIBRATION_STATUS: BLOCKED_NO_VALID_HISTORICAL_DATA
+CALIBRATION_STATUS: BLOCKED_NO_VALID_HISTORICAL_DATA
+CALIBRATION_HOLDOUT: NOT_AVAILABLE
+PARAMETER_SOURCE: BASELINE_DEFAULT
+```
+
+The [historical data inventory and eligibility audit](CALIBRATION_INVENTORY.md)
+documents the actual files, timestamp ranges, counts, units, provenance,
+repository history, background eligibility, leakage risks and identifiability.
+The real AQI snapshot contains 60 stations and 59 dated PM2.5 measurements,
+with only one record per station. Fifty-eight measurements precede the first
+captured fire; the last, at 08:00 UTC on October 7, has no same-station
+background and predates every current source's last detection. Git history
+contains no additional distinct AQI, fire or wind capture. Publication and
+validation copies do not add independent observations.
+
+No eligible observed PM2.5-minus-background target or independent event holdout
+exists. The archived wind's timing also remains unconfirmed after the parser
+defect described above. The Task 3 instruction requires stopping calibration
+implementation at this data gate: no optimizer, calibration script,
+`params.json`, automatic calibrated-parameter loading, synthetic historical
+fixture or ML was added. All four calibration parameters remain **ASSUMED**:
+`sigma0_m=2000`, `k_m_sqrt_hour=1000`, `tau_hours=24`,
+`concentration_scale_ug=1e12`. Existing explicit parameter overrides retain
+their documented behavior; no supplied file is certified as calibrated.
+
+Matched events/stations/targets are **0/0/0**. Baseline, fitted, event-level,
+station-level and holdout RMSE/MAE/bias are **NOT_AVAILABLE**. No background,
+search bounds or apparently precise fit was invented. A future calibration
+must evaluate station-time puff concentrations, rather than the spatial/time
+peak stored in corridor band properties, and protect later independent events
+from fitting and background/target leakage.
+
+Task 3 recommendation: **FIX_REQUIRED** for data readiness. The baseline's
+Task 2 readiness above does not imply that calibration data is available.
+The audit reran the existing suites: **65 plume tests passed, 0 failed**;
+**322 repository tests passed, 0 failed**, with one existing Requests warning
+on Python 3.14.3. Captured snapshots and model implementations were preserved.
