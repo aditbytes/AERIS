@@ -305,8 +305,8 @@ export default function AnalyticsView() {
           <div className="station-scatter-wrapper">
             <div className="station-pills-list">
               {stations.slice(0, 10).map((st) => {
-                const aqiVal = st.aqi ?? 200
-                const aqiClass = aqiVal > 400 ? 'badge-vh' : aqiVal > 300 ? 'badge-h' : 'badge-m'
+                const aqiVal = st.aqi
+                const aqiClass = aqiVal == null ? '' : aqiVal > 400 ? 'badge-vh' : aqiVal > 300 ? 'badge-h' : 'badge-m'
 
                 return (
                   <div
