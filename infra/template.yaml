@@ -83,7 +83,9 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: s3:PutObject
-                Resource: !Sub ${DataBucket.Arn}/bronze/*
+                Resource:
+                  - !Sub ${DataBucket.Arn}/bronze/*
+                  - !Sub ${DataBucket.Arn}/reference/*
               - Effect: Allow
                 Action: sqs:SendMessage
                 Resource: !GetAtt FetchDlq.Arn
