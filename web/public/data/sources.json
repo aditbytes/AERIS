@@ -12,7 +12,13 @@
       "first_seen": "2026-10-07T07:44:00Z",
       "last_seen": "2026-10-07T08:39:00Z",
       "confidence": 0.75,
-      "emission_strength": 0.989
+      "emission_strength": 0.989,
+      "territory": "india",
+      "district": "Firozpur District",
+      "state": "Punjab",
+      "country": "India",
+      "location_name": "Firozpur Rural Agricultural Belt (Punjab, India)",
+      "airshed_role": "High-intensity domestic stubble burning cluster"
     },
     {
       "id": "src_007",
@@ -25,7 +31,13 @@
       "first_seen": "2026-10-07T07:44:00Z",
       "last_seen": "2026-10-07T08:41:00Z",
       "confidence": 0.76,
-      "emission_strength": 0.775
+      "emission_strength": 0.775,
+      "territory": "transboundary",
+      "district": "Gujranwala Division",
+      "state": "Punjab (Pakistan)",
+      "country": "Pakistan",
+      "location_name": "Transboundary Influx (Gujranwala Airshed, Pakistan)",
+      "airshed_role": "Upwind transboundary smoke influx carried by NW 315° winds"
     },
     {
       "id": "src_005",
@@ -38,7 +50,13 @@
       "first_seen": "2026-10-07T07:44:00Z",
       "last_seen": "2026-10-07T08:41:00Z",
       "confidence": 0.75,
-      "emission_strength": 0.717
+      "emission_strength": 0.717,
+      "territory": "india",
+      "district": "Amritsar / Tarn Taran District",
+      "state": "Punjab",
+      "country": "India",
+      "location_name": "Amritsar–Tarn Taran Paddy Belt (Punjab, India)",
+      "airshed_role": "Major domestic agricultural residue burning corridor"
     },
     {
       "id": "src_006",
@@ -51,7 +69,13 @@
       "first_seen": "2026-10-07T07:44:00Z",
       "last_seen": "2026-10-07T08:39:00Z",
       "confidence": 0.75,
-      "emission_strength": 0.454
+      "emission_strength": 0.454,
+      "territory": "transboundary",
+      "district": "Sheikhupura District",
+      "state": "Punjab (Pakistan)",
+      "country": "Pakistan",
+      "location_name": "Transboundary Influx (Sheikhupura Sector, Pakistan)",
+      "airshed_role": "Upwind transboundary smoke source affecting corridor"
     },
     {
       "id": "src_008",
@@ -64,7 +88,13 @@
       "first_seen": "2026-10-07T07:44:00Z",
       "last_seen": "2026-10-07T08:39:00Z",
       "confidence": 0.66,
-      "emission_strength": 0.24
+      "emission_strength": 0.24,
+      "territory": "transboundary",
+      "district": "Muridke / Lahore North",
+      "state": "Punjab (Pakistan)",
+      "country": "Pakistan",
+      "location_name": "Transboundary Influx (Muridke Sector, Pakistan)",
+      "airshed_role": "Upwind Ravi basin transboundary emission"
     },
     {
       "id": "src_003",
@@ -77,7 +107,13 @@
       "first_seen": "2026-10-07T07:44:00Z",
       "last_seen": "2026-10-07T08:39:00Z",
       "confidence": 0.65,
-      "emission_strength": 0.173
+      "emission_strength": 0.173,
+      "territory": "transboundary",
+      "district": "Bahawalnagar Sector",
+      "state": "Punjab (Pakistan)",
+      "country": "Pakistan",
+      "location_name": "Transboundary Influx (Sutlej Basin Sector, Pakistan)",
+      "airshed_role": "External upwind agricultural and industrial thermal source"
     },
     {
       "id": "src_001",
@@ -90,7 +126,13 @@
       "first_seen": "2026-10-07T07:44:00Z",
       "last_seen": "2026-10-07T08:20:00Z",
       "confidence": 0.65,
-      "emission_strength": 0.059
+      "emission_strength": 0.059,
+      "territory": "india",
+      "district": "Palwal District",
+      "state": "Haryana",
+      "country": "India",
+      "location_name": "Palwal Industrial & Waste Hub (Haryana, India)",
+      "airshed_role": "Domestic peripheral NCR industrial and waste emission"
     },
     {
       "id": "src_009",
@@ -103,7 +145,13 @@
       "first_seen": "2026-10-07T08:39:00Z",
       "last_seen": "2026-10-07T08:39:00Z",
       "confidence": 0.65,
-      "emission_strength": 0.056
+      "emission_strength": 0.056,
+      "territory": "india",
+      "district": "Sirsa District",
+      "state": "Haryana",
+      "country": "India",
+      "location_name": "Sirsa Agricultural Residue Cluster (Haryana, India)",
+      "airshed_role": "Domestic crop residue burning hotspot in western Haryana"
     },
     {
       "id": "src_002",
@@ -116,7 +164,13 @@
       "first_seen": "2026-10-07T07:44:00Z",
       "last_seen": "2026-10-07T08:39:00Z",
       "confidence": 0.65,
-      "emission_strength": 0.039
+      "emission_strength": 0.039,
+      "territory": "india",
+      "district": "Fatehabad District",
+      "state": "Haryana",
+      "country": "India",
+      "location_name": "Fatehabad Crop Residue Hotspot (Haryana, India)",
+      "airshed_role": "Domestic agricultural biomass burning site"
     },
     {
       "id": "src_010",
@@ -129,7 +183,13 @@
       "first_seen": "2026-10-07T08:22:00Z",
       "last_seen": "2026-10-07T08:22:00Z",
       "confidence": 0.65,
-      "emission_strength": 0.038
+      "emission_strength": 0.038,
+      "territory": "india",
+      "district": "Tarn Taran District",
+      "state": "Punjab",
+      "country": "India",
+      "location_name": "Tarn Taran Khemkaran Border Sector (Punjab, India)",
+      "airshed_role": "Domestic border agricultural stubble burning"
     }
   ]
 }

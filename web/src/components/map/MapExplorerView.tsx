@@ -31,6 +31,7 @@ import {
 } from 'lucide-react'
 import { useAeris, type TimeHorizon } from '@/services/dataContext'
 import { getRiskLevel, riskLabel, type CorridorBandProperties, type RankedSite } from '@/types/schemas'
+import { createThermalMarkerElement } from './thermalMarker'
 import './MapExplorerView.css'
 
 try {
@@ -86,13 +87,14 @@ export default function MapExplorerView() {
   const [isRegionsOpen, setIsRegionsOpen]   = useState(false)
   const [isFullscreen, setIsFullscreen]     = useState(false)
 
-  // Layer Visibility
-  const [showFires, setShowFires]       = useState(true)
-  const [showPlume, setShowPlume]       = useState(true)
-  const [showSchools, setShowSchools]   = useState(true)
-  const [showHospitals, setShowHospitals] = useState(true)
-  const [showStations, setShowStations] = useState(true)
-  const [showSoiBorder, setShowSoiBorder] = useState(true)
+  // Layer Visibility & Territory Scope
+  const [showFires, setShowFires]             = useState(true)
+  const [fireScopeFilter, setFireScopeFilter] = useState<'all' | 'india' | 'transboundary'>('all')
+  const [showPlume, setShowPlume]             = useState(true)
+  const [showSchools, setShowSchools]         = useState(true)
+  const [showHospitals, setShowHospitals]     = useState(true)
+  const [showStations, setShowStations]       = useState(true)
+  const [showSoiBorder, setShowSoiBorder]     = useState(true)
 
   const activeLayerCount = [showFires, showPlume, showSchools, showHospitals, showStations, showSoiBorder].filter(Boolean).length
 
@@ -291,36 +293,42 @@ export default function MapExplorerView() {
     markersRef.current.forEach(m => m.remove())
     markersRef.current = []
 
-    // 1. Fire Sources
+    // 1. Thermal Fire Sources
     if (showFires && sources) {
-      sources.sources.forEach(src => {
-        const size = Math.round(26 + src.emission_strength * 18)
-        const el = document.createElement('div')
-        el.className = 'explorer-fire-marker'
-        el.style.width  = `${size}px`
-        el.style.height = `${size}px`
-        el.innerHTML = `
-          <div class="fire-pulse-ring"></div>
-          <div class="fire-glyph" style="font-size: ${size * 0.65}px">🔥</div>
-        `
-        el.title = `${src.type}: ${src.fire_count} fires (${src.total_frp_mw.toFixed(0)} MW)`
+      const filteredSources = sources.sources.filter(src => {
+        if (fireScopeFilter === 'india') return src.territory === 'india'
+        if (fireScopeFilter === 'transboundary') return src.territory === 'transboundary'
+        return true
+      })
 
-        el.addEventListener('click', (e) => {
-          e.stopPropagation()
-          setSelectedFeature({
-            type: 'fire',
-            title: src.type.replace(/_/g, ' ').toUpperCase(),
-            subtitle: `Active stubble burning cluster in Punjab`,
-            coords: [src.lon, src.lat],
-            metrics: [
-              { label: 'Detected Fires', value: `${src.fire_count} hotspots` },
-              { label: 'Radiative Power (FRP)', value: `${src.total_frp_mw.toFixed(1)} MW` },
-              { label: 'Detection Confidence', value: `${(src.confidence * 100).toFixed(0)}%` },
-              { label: 'Emission Strength', value: `${(src.emission_strength * 100).toFixed(0)}%` },
-            ],
-            actionText: 'Dispatch agricultural monitoring enforcement & drone suppression team.',
-          })
+      filteredSources.forEach(src => {
+        const isTransboundary = src.territory === 'transboundary'
+        const isSelected = selectedFeature?.type === 'fire' && selectedFeature.title.includes(src.id)
+
+        const el = createThermalMarkerElement(src, {
+          isSelected,
+          onClick: () => {
+            setSelectedFeature({
+              type: 'fire',
+              title: `${src.district || src.type.replace(/_/g, ' ')} (${src.id})`,
+              subtitle: src.location_name || (isTransboundary ? 'Transboundary Regional Airshed Influx' : 'Domestic Stubble Burning Cluster'),
+              coords: [src.lon, src.lat],
+              metrics: [
+                { label: 'Radiative Power (FRP)', value: `${src.total_frp_mw.toFixed(1)} MW` },
+                { label: 'Detected Fires', value: `${src.fire_count} hotspots` },
+                { label: 'Territory Scope', value: isTransboundary ? '🌐 Transboundary (Pakistan)' : '🇮🇳 Domestic (India)' },
+                { label: 'Detection Confidence', value: `${(src.confidence * 100).toFixed(0)}% (VIIRS SNPP/NOAA-21)` },
+                { label: 'Plume Emission Flux', value: `${(src.emission_strength * 100).toFixed(0)}% intensity` },
+                { label: 'District / Sector', value: src.district || 'Unassigned' },
+              ],
+              actionText: isTransboundary
+                ? 'Transboundary Influx: High-altitude smoke trajectory entering Indian airspace via NW 315° winds. Regional airshed modeling alert active.'
+                : 'Actionable Domestic Source: Ground enforcement & drone misting suppression deployment recommended for local district administration.',
+            })
+          },
         })
+
+        el.title = `${src.district || src.type}: ${src.fire_count} fires (${src.total_frp_mw.toFixed(0)} MW) [${isTransboundary ? 'Transboundary' : 'India'}]`
 
         const marker = new Marker({ element: el, anchor: 'center' })
           .setLngLat([src.lon, src.lat])
@@ -418,7 +426,7 @@ export default function MapExplorerView() {
         markersRef.current.push(marker)
       })
     }
-  }, [sources, rankedSites, aqi, showFires, showSchools, showHospitals, showStations, webGlSupported, setSelectedSiteId])
+  }, [sources, rankedSites, aqi, showFires, fireScopeFilter, showSchools, showHospitals, showStations, webGlSupported, setSelectedSiteId, selectedFeature?.title])
 
   // ── Fly to selected preset ───────────────────────────────────────────────
   const flyToPreset = (center: [number, number], zoom: number) => {
@@ -446,6 +454,17 @@ export default function MapExplorerView() {
         <div className="map-floating-hud" onClick={(e) => e.stopPropagation()}>
           {/* Camera Presets: Segmented Quick Chips + Regional Dropdown */}
           <div className="hud-presets-group">
+            <button
+              className={`hud-preset-chip ${fireScopeFilter === 'india' ? 'active' : ''}`}
+              onClick={() => {
+                setIsRegionsOpen(false)
+                setFireScopeFilter(prev => prev === 'india' ? 'all' : 'india')
+              }}
+              title={fireScopeFilter === 'india' ? "Viewing India CPCB Scope — click to show Full Regional Airshed" : "Viewing Full Regional Airshed — click to filter to India CPCB Scope"}
+              type="button"
+            >
+              <span>{fireScopeFilter === 'india' ? '🇮🇳 India Scope' : '🌐 Full Airshed'}</span>
+            </button>
             <button
               className="hud-preset-chip"
               onClick={() => {
@@ -607,18 +626,52 @@ export default function MapExplorerView() {
             <div className="layer-panel-body">
               {/* Layer Toggles */}
               <div className="layer-toggles-list">
-                <label className="layer-toggle-row">
-                  <input
-                    type="checkbox"
-                    checked={showFires}
-                    onChange={(e) => setShowFires(e.target.checked)}
-                  />
-                  <span className="layer-badge-icon">🔥</span>
-                  <div className="layer-info">
-                    <span className="layer-name">Stubble Burning Clusters</span>
-                    <span className="layer-desc">10 active sites • 215 fires (676 MW)</span>
-                  </div>
-                </label>
+                <div className="layer-item-wrapper">
+                  <label className="layer-toggle-row">
+                    <input
+                      type="checkbox"
+                      checked={showFires}
+                      onChange={(e) => setShowFires(e.target.checked)}
+                    />
+                    <span className="layer-badge-icon">🔥</span>
+                    <div className="layer-info">
+                      <span className="layer-name">Thermal Fire Hotspots</span>
+                      <span className="layer-desc">
+                        {fireScopeFilter === 'india' ? '6 domestic clusters • 156 fires (894 MW)'
+                          : fireScopeFilter === 'transboundary' ? '4 transboundary clusters • 59 fires (384 MW)'
+                          : '10 regional clusters • 215 fires (1,275 MW)'}
+                      </span>
+                    </div>
+                  </label>
+                  {showFires && (
+                    <div className="layer-subfilter-bar">
+                      <button
+                        type="button"
+                        className={`subfilter-pill ${fireScopeFilter === 'all' ? 'active' : ''}`}
+                        onClick={() => setFireScopeFilter('all')}
+                        title="Show all regional fires (Domestic + Transboundary)"
+                      >
+                        All (10)
+                      </button>
+                      <button
+                        type="button"
+                        className={`subfilter-pill ${fireScopeFilter === 'india' ? 'active' : ''}`}
+                        onClick={() => setFireScopeFilter('india')}
+                        title="Show domestic Indian fires only (CPCB Focus)"
+                      >
+                        🇮🇳 India (6)
+                      </button>
+                      <button
+                        type="button"
+                        className={`subfilter-pill ${fireScopeFilter === 'transboundary' ? 'active' : ''}`}
+                        onClick={() => setFireScopeFilter('transboundary')}
+                        title="Show transboundary upwind fires only (Pakistan Influx)"
+                      >
+                        🌐 Transboundary (4)
+                      </button>
+                    </div>
+                  )}
+                </div>
 
                 <label className="layer-toggle-row">
                   <input

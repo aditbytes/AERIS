@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Maximize2 } from 'lucide-react'
 import { useAeris } from '@/services/dataContext'
 import { getRiskLevel, riskLabel, type CorridorBandProperties } from '@/types/schemas'
+import { createThermalMarkerElement, createThermalPopupHtml } from './thermalMarker'
 import TimeControls from './TimeControls'
 import './MapContainer.css'
 
@@ -36,6 +37,7 @@ export default function MapContainer() {
   const mapInitRef      = useRef(false)
   const markersRef      = useRef<Marker[]>([])
   const [webGlSupported, setWebGlSupported] = useState(true)
+  const [scopeFilter, setScopeFilter]       = useState<'all' | 'india'>('all')
 
   const {
     sources,
@@ -226,33 +228,22 @@ export default function MapContainer() {
     markersRef.current.forEach(m => m.remove())
     markersRef.current = []
 
-    // 1. Fire Sources
+    // 1. Thermal Fire Sources (Filtered by Territory Scope)
     if (sources) {
-      sources.sources.forEach(src => {
-        const size = Math.round(24 + src.emission_strength * 18)
-        const el = document.createElement('div')
-        el.className = 'fire-marker'
-        el.style.width  = `${size}px`
-        el.style.height = `${size}px`
-        el.innerHTML = `
-          <div class="fire-pulse-ring"></div>
-          <div class="fire-icon" style="font-size:${size * 0.7}px">🔥</div>
-        `
-        el.title = `${src.type} — FRP: ${src.total_frp_mw.toFixed(0)} MW | Confidence: ${(src.confidence * 100).toFixed(0)}%`
+      const activeSources = sources.sources.filter(src => {
+        if (scopeFilter === 'india') return src.territory === 'india'
+        return true
+      })
+
+      activeSources.forEach(src => {
+        const el = createThermalMarkerElement(src)
+        const popupHtml = createThermalPopupHtml(src)
 
         const marker = new Marker({ element: el, anchor: 'center' })
           .setLngLat([src.lon, src.lat])
           .setPopup(
-            new Popup({ offset: 20, closeButton: false, className: 'aeris-popup' })
-              .setHTML(`
-                <div class="popup-content">
-                  <strong>${src.type.replace(/_/g, ' ')}</strong>
-                  <div>🔥 ${src.fire_count} fires detected</div>
-                  <div>⚡ FRP: ${src.total_frp_mw.toFixed(0)} MW</div>
-                  <div>📡 Confidence: ${(src.confidence * 100).toFixed(0)}%</div>
-                  <div>💨 Emission: ${(src.emission_strength * 100).toFixed(0)}%</div>
-                </div>
-              `)
+            new Popup({ offset: 18, closeButton: false, className: 'aeris-popup' })
+              .setHTML(popupHtml)
           )
           .addTo(map)
 
@@ -291,7 +282,7 @@ export default function MapContainer() {
         markersRef.current.push(marker)
       })
     }
-  }, [sources, rankedSites, webGlSupported])
+  }, [sources, rankedSites, scopeFilter, webGlSupported])
 
   // ── 4. Fly to selected site ───────────────────────────────────────────────
   useEffect(() => {
@@ -419,18 +410,22 @@ export default function MapContainer() {
               </g>
 
               {/* Fire Clusters */}
-              {sources?.sources.slice(0, 6).map((src) => {
-                const [cx, cy] = toSvgCoords(src.lon, src.lat, 680, 380)
-                return (
-                  <g key={src.id} transform={`translate(${cx}, ${cy})`}>
-                    <circle r="12" fill="rgba(239, 68, 68, 0.25)" />
-                    <circle r="6" fill="#DC2626" />
-                    <text x="10" y="4" fontSize="10" fontWeight="700" fill="#991B1B">
-                      🔥 {src.fire_count} Fires ({src.total_frp_mw.toFixed(0)} MW)
-                    </text>
-                  </g>
-                )
-              })}
+              {sources?.sources
+                .filter(src => scopeFilter === 'all' || src.territory === 'india')
+                .slice(0, 8)
+                .map((src) => {
+                  const [cx, cy] = toSvgCoords(src.lon, src.lat, 680, 380)
+                  const isTrans = src.territory === 'transboundary'
+                  return (
+                    <g key={src.id} transform={`translate(${cx}, ${cy})`}>
+                      <circle r="14" fill={isTrans ? 'rgba(245, 158, 11, 0.25)' : 'rgba(239, 68, 68, 0.28)'} />
+                      <circle r="6" fill={isTrans ? '#D97706' : '#DC2626'} />
+                      <text x="10" y="4" fontSize="9.5" fontWeight="700" fill={isTrans ? '#92400E' : '#991B1B'}>
+                        {isTrans ? '🌐' : '🔥'} {src.district || src.type} ({src.total_frp_mw.toFixed(0)} MW)
+                      </text>
+                    </g>
+                  )
+                })}
 
               {/* Receptor Facilities */}
               {rankedSites?.sites.slice(0, 4).map((site) => {
@@ -450,6 +445,15 @@ export default function MapContainer() {
 
         {/* Unified Top-Right Floating Quick Action Capsule */}
         <div className="map-quick-hud">
+          <button
+            className={`quick-hud-chip ${scopeFilter === 'india' ? 'active' : ''}`}
+            onClick={() => setScopeFilter(prev => prev === 'india' ? 'all' : 'india')}
+            title={scopeFilter === 'india' ? "Viewing India CPCB Scope — click for Full Transboundary Airshed" : "Viewing Full Regional Airshed — click for India CPCB Scope"}
+            type="button"
+          >
+            <span>{scopeFilter === 'india' ? '🇮🇳 India Scope' : '🌐 Full Airshed'}</span>
+          </button>
+          <div className="quick-hud-divider" />
           <button
             className="quick-hud-chip"
             onClick={() => mapRef.current?.flyTo({ center: [78.9, 23.5], zoom: 4.2, speed: 1.2 })}
@@ -504,7 +508,7 @@ export default function MapContainer() {
         <div className="map-micro-legend">
           <div className="micro-legend-item">
             <span className="micro-legend-glyph">🔥</span>
-            <span>Fires</span>
+            <span>{scopeFilter === 'india' ? 'India (6)' : 'Airshed (10)'}</span>
           </div>
           <div className="micro-legend-item">
             <div className="micro-legend-swatch plume" />

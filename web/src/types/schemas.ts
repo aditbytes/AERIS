@@ -19,6 +19,12 @@ export const SourceSchema = z.object({
   last_seen:         z.string(),
   confidence:        z.number().min(0).max(1),
   emission_strength: z.number().min(0).max(1),
+  territory:         z.enum(['india', 'transboundary']).optional(),
+  district:          z.string().optional(),
+  state:             z.string().optional(),
+  country:           z.string().optional(),
+  location_name:     z.string().optional(),
+  airshed_role:      z.string().optional(),
 })
 
 export const SourcesFileSchema = z.object({

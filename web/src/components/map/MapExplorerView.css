@@ -689,19 +689,187 @@
 }
 
 /* ── Map Markers ────────────────────────────────────────────────────────── */
-/* Fire Marker */
-.explorer-fire-marker {
+/* ── Thermal Radiant Fire Markers ────────────────────────────────────────── */
+.thermal-fire-marker {
   position: relative;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), z-index 0.2s;
+  z-index: 10;
+}
+
+.thermal-fire-marker:hover,
+.thermal-fire-marker.is-selected {
+  transform: scale(1.22) translateY(-3px);
+  z-index: 60;
+}
+
+.thermal-anchor {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.fire-glyph {
+/* Concentric Radiant Halos */
+.thermal-radiant-halo {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Domestic India Halos: Deep crimson & amber heatwave */
+.is-india .thermal-radiant-halo {
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.36) 0%, rgba(220, 38, 38, 0.08) 70%, transparent 100%);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+}
+
+/* Transboundary Halos: Atmospheric amber-gold & indigo dashed boundary */
+.is-transboundary .thermal-radiant-halo {
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.34) 0%, rgba(217, 119, 6, 0.08) 70%, transparent 100%);
+  border: 1px dashed rgba(245, 158, 11, 0.7);
+}
+
+.ring-1 {
+  animation: thermal-radiance 2.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+}
+
+.ring-2 {
+  animation: thermal-radiance 2.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite 0.7s;
+}
+
+.ring-3 {
+  animation: thermal-radiance 2.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite 1.4s;
+}
+
+@keyframes thermal-radiance {
+  0% {
+    transform: scale(0.75);
+    opacity: 0.9;
+  }
+  65% {
+    transform: scale(2.1);
+    opacity: 0.25;
+  }
+  100% {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+
+/* Core Flame Glyph */
+.thermal-core {
   position: relative;
-  z-index: 1;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  animation: thermal-breathe 2.4s ease-in-out infinite alternate;
+}
+
+.is-india .thermal-core {
+  background: radial-gradient(circle, rgba(254, 240, 138, 0.4) 0%, rgba(220, 38, 38, 0.25) 80%);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.55);
+}
+
+.is-transboundary .thermal-core {
+  background: radial-gradient(circle, rgba(254, 243, 199, 0.45) 0%, rgba(217, 119, 6, 0.3) 80%);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
+}
+
+.thermal-svg {
+  display: block;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}
+
+@keyframes thermal-breathe {
+  0% {
+    transform: scale(0.94);
+    filter: drop-shadow(0 2px 4px rgba(220, 38, 38, 0.5));
+  }
+  100% {
+    transform: scale(1.08);
+    filter: drop-shadow(0 4px 10px rgba(249, 115, 22, 0.8));
+  }
+}
+
+/* Micro FRP Pill Badge */
+.thermal-frp-pill {
+  position: absolute;
+  top: calc(100% - 3px);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1.5px 6px;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-family: var(--font);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.28);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.pill-india {
+  background: rgba(17, 24, 39, 0.92);
+  color: #FEF08A;
+  border: 1px solid rgba(239, 68, 68, 0.6);
+}
+
+.pill-transboundary {
+  background: rgba(30, 27, 75, 0.94);
+  color: #FDE047;
+  border: 1px dashed rgba(245, 158, 11, 0.85);
+}
+
+.pill-flag {
+  font-size: 8.5px;
+  line-height: 1;
+}
+
+.pill-mw {
+  line-height: 1;
+}
+
+/* Sub-filter Bar for Layers */
+.layer-subfilter-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  margin-left: 25px;
+}
+
+.subfilter-pill {
+  font-family: var(--font);
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.subfilter-pill:hover {
+  background: white;
+  color: var(--text-primary);
+}
+
+.subfilter-pill.active {
+  background: var(--brand-primary);
+  color: white;
+  border-color: var(--brand-primary);
 }
 
 /* Receptor Site Marker */
