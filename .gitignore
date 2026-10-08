@@ -13,3 +13,9 @@ cdk.out/
 *.tfstate*
 .terraform/
 data/raw/
+
+# AWS credentials (never commit)
+docs/aditya's_work/aws_key/
+*.pem
+rootkey.csv
+*accessKeys.csv
