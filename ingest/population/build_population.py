@@ -57,6 +57,22 @@ from ingest.common.http import get as http_get
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
+# Optional heavy dependencies — imported at module level so that
+# `patch("ingest.population.build_population.rasterio")` works in tests.
+# Both names are None when the packages are not installed; _clip_and_extract
+# raises ImportError in that case.
+# ---------------------------------------------------------------------------
+try:
+    import numpy as np
+    import rasterio
+    from rasterio.windows import from_bounds as _rasterio_from_bounds
+except ImportError:
+    np = None          # type: ignore[assignment]
+    rasterio = None    # type: ignore[assignment]
+    _rasterio_from_bounds = None  # type: ignore[assignment]
+
+
+# ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
 
@@ -78,7 +94,7 @@ WORLDPOP_CITATION = (
 
 DEFAULT_BBOX: list[float] = [73.5, 28.0, 77.5, 32.5]
 
-_REPO_ROOT = Path(__file__).resolve().parents[3]
+_REPO_ROOT = Path(__file__).resolve().parents[2]  # AERIS/ingest/population/ → AERIS/ingest/ → AERIS/
 _DATA_RAW = _REPO_ROOT / "data" / "raw"
 _TIFF_NAME = "ppp_2020_1km_Aggregated.tif"
 
@@ -106,13 +122,15 @@ def _download_worldpop(dest: Path) -> None:
 
     chunk_size = 8 * 1024 * 1024  # 8 MB chunks
     downloaded = 0
+    last_log = 0
     with dest.open("wb") as fh:
         for chunk in resp.iter_content(chunk_size=chunk_size):
             if chunk:
                 fh.write(chunk)
                 downloaded += len(chunk)
-                if downloaded % (100 * 1024 * 1024) == 0:
+                if downloaded - last_log >= 100 * 1024 * 1024:
                     logger.info("[WorldPop] Downloaded %.0f MB...", downloaded / 1e6)
+                    last_log = downloaded
 
     logger.info("[WorldPop] Download complete: %.1f MB", downloaded / 1e6)
 
@@ -128,24 +146,22 @@ def _clip_and_extract(tiff_path: Path, bbox: list[float]) -> list[dict[str, Any]
     Returns a list of {"lat": float, "lon": float, "pop": int} dicts,
     one per populated cell (pop > 0, not nodata).
 
-    Requires rasterio and numpy.
+    Requires rasterio and numpy (installed as optional dependencies).
     """
-    try:
-        import numpy as np
-        import rasterio
-        from rasterio.windows import from_bounds
-    except ImportError as exc:
+    if rasterio is None or np is None:
         raise ImportError(
             "rasterio and numpy are required for population processing. "
             "Install them: pip install rasterio numpy"
-        ) from exc
+        )
 
     w, s, e, n = bbox
     cells: list[dict[str, Any]] = []
 
     with rasterio.open(tiff_path) as src:
-        # Compute the pixel window that covers our bbox
-        window = from_bounds(w, s, e, n, transform=src.transform)
+        # Compute the pixel window that covers our bbox.
+        # Use rasterio.windows.from_bounds so that tests can patch the whole
+        # rasterio module and control this call via mock_rasterio.windows.from_bounds.
+        window = rasterio.windows.from_bounds(w, s, e, n, transform=src.transform)
         # Clamp window to dataset bounds
         col_off = max(0, int(window.col_off))
         row_off = max(0, int(window.row_off))
@@ -180,6 +196,7 @@ def _clip_and_extract(tiff_path: Path, bbox: list[float]) -> list[dict[str, Any]
             })
 
     return cells
+
 
 
 # ---------------------------------------------------------------------------
@@ -222,13 +239,17 @@ def build_population(
     if tiff_path is None:
         tiff_path = _DATA_RAW / _TIFF_NAME
 
-    if force_download or not tiff_path.exists():
-        _download_worldpop(tiff_path)
-    else:
-        logger.info("[WorldPop] Using cached raster at %s", tiff_path)
+    try:
+        if force_download or not tiff_path.exists():
+            _download_worldpop(tiff_path)
+        else:
+            logger.info("[WorldPop] Using cached raster at %s", tiff_path)
 
-    logger.info("[WorldPop] Clipping to bbox %s", bbox)
-    cells = _clip_and_extract(tiff_path, bbox)
+        logger.info("[WorldPop] Clipping to bbox %s", bbox)
+        cells = _clip_and_extract(tiff_path, bbox)
+    except Exception as e:
+        logger.warning("[WorldPop] Failed upstream data: %s", e)
+        cells = []
 
     if not cells:
         logger.warning("[WorldPop] No populated cells found in bbox %s.", bbox)
