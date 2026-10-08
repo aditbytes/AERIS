@@ -868,11 +868,11 @@ export default function MapExplorerView() {
                 </div>
                 <div className="telem-row">
                   <span className="telem-lbl">Delhi NCR ETA:</span>
-                  <span className="telem-val">{etaHours != null ? `~ ${etaHours.toFixed(1)}h` : '~ 0h'}</span>
+                  <span className="telem-val">{etaHours != null ? `~ ${etaHours.toFixed(1)}h` : '—'}</span>
                 </div>
                 <div className="telem-row">
                   <span className="telem-lbl">Potentially Exposed:</span>
-                  <span className="telem-val">{exposedPopulation ? `${(exposedPopulation / 1000).toFixed(0)}K residents` : '571K'}</span>
+                  <span className="telem-val">{exposedPopulation != null ? `${(exposedPopulation / 1000).toFixed(0)}K residents` : '—'}</span>
                 </div>
               </div>
             </div>
