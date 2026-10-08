@@ -17,3 +17,10 @@ done
 aws cloudformation delete-stack --region "$REGION" --stack-name "$STACK"
 aws cloudformation wait stack-delete-complete --region "$REGION" --stack-name "$STACK"
 echo "Stack $STACK deleted."
+
+# Lambda auto-created these before logs moved to /aeris/<stack>/ (never expire, not stack-owned)
+for group in $(aws logs describe-log-groups --region "$REGION" \
+    --log-group-name-prefix "/aws/lambda/$STACK-" --query 'logGroups[].logGroupName' --output text); do
+  echo "Deleting log group $group"
+  aws logs delete-log-group --region "$REGION" --log-group-name "$group"
+done
