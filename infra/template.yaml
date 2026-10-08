@@ -1,5 +1,11 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: AERIS foundation - data/web buckets, least-privilege roles, monthly budget alerts
+Transform: AWS::Serverless-2016-10-31
+Description: AERIS - data/web buckets, least-privilege roles, budget alerts, ingestion Lambdas
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Architectures: [arm64]
 
 Parameters:
   AlertEmail:
@@ -75,11 +81,8 @@ Resources:
                 Action: s3:PutObject
                 Resource: !Sub ${DataBucket.Arn}/bronze/*
               - Effect: Allow
-                Action: secretsmanager:GetSecretValue
-                Resource: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:aeris/*
-              - Effect: Allow
-                Action: ssm:GetParameter
-                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/aeris/*
+                Action: sqs:SendMessage
+                Resource: !GetAtt FetchDlq.Arn
 
   ModelRole:
     Type: AWS::IAM::Role
@@ -178,6 +181,169 @@ Resources:
                 Action: s3:GetObject
                 Resource: !Sub ${DataBucket.Arn}/gold/*
 
+  # --- Ingestion: fetch -> bronze/ ----------------------------------------
+  FetchDlq:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600
+
+  FirmsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: {Service: lambda.amazonaws.com}
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: fetch
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: s3:PutObject
+                Resource: !Sub ${DataBucket.Arn}/bronze/*
+              - Effect: Allow
+                Action: sqs:SendMessage
+                Resource: !GetAtt FetchDlq.Arn
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource:
+                  - !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:aeris/FIRMS_MAP_KEY-*
+
+  AqiRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: {Service: lambda.amazonaws.com}
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: fetch
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: s3:PutObject
+                Resource: !Sub ${DataBucket.Arn}/bronze/*
+              - Effect: Allow
+                Action: sqs:SendMessage
+                Resource: !GetAtt FetchDlq.Arn
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource:
+                  - !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:aeris/OPENAQ_API_KEY-*
+                  - !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:aeris/DATA_GOV_IN_KEY-*
+
+  WeatherRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: {Service: lambda.amazonaws.com}
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: fetch
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: s3:PutObject
+                Resource: !Sub ${DataBucket.Arn}/bronze/*
+              - Effect: Allow
+                Action: sqs:SendMessage
+                Resource: !GetAtt FetchDlq.Arn
+
+  FirmsFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      CodeUri: lambda/
+      Handler: ingest.firms.handler.lambda_handler
+      Role: !GetAtt FirmsRole.Arn
+      MemorySize: 256
+      Timeout: 120
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt FetchDlq.Arn
+      EventInvokeConfig:
+        MaximumRetryAttempts: 1
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: rate(15 minutes)
+
+  AqiFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      CodeUri: lambda/
+      Handler: ingest.aqi.handler.lambda_handler
+      Role: !GetAtt AqiRole.Arn
+      MemorySize: 256
+      Timeout: 300
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt FetchDlq.Arn
+      EventInvokeConfig:
+        MaximumRetryAttempts: 1
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: rate(30 minutes)
+
+  WeatherFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      CodeUri: lambda/
+      Handler: ingest.weather.handler.lambda_handler
+      Role: !GetAtt WeatherRole.Arn
+      MemorySize: 512
+      Timeout: 300
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt FetchDlq.Arn
+      EventInvokeConfig:
+        MaximumRetryAttempts: 1
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: rate(60 minutes)
+
+  SitesFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      CodeUri: lambda/
+      Handler: ingest.sites.handler.lambda_handler
+      Role: !GetAtt FetcherRole.Arn
+      MemorySize: 256
+      Timeout: 300
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt FetchDlq.Arn
+      EventInvokeConfig:
+        MaximumRetryAttempts: 1
+
   # --- Cost guard ---------------------------------------------------------
   MonthlyBudget:
     Type: AWS::Budgets::Budget
@@ -198,6 +364,8 @@ Resources:
           Subscribers: [{SubscriptionType: EMAIL, Address: !Ref AlertEmail}]
 
 Outputs:
+  FetchDlqUrl: {Value: !Ref FetchDlq}
+  FetchDlqArn: {Value: !GetAtt FetchDlq.Arn}
   DataBucketName: {Value: !Ref DataBucket}
   WebBucketName: {Value: !Ref WebBucket}
   FetcherRoleArn: {Value: !GetAtt FetcherRole.Arn}
