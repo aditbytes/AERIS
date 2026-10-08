@@ -13,8 +13,16 @@ function formatM(n: number): string {
 export default function WhatIfWeAct() {
   const { exposedPopulation, rankedSites, interventionScenario, setInterventionScenario } = useAeris()
 
-  const total = exposedPopulation ?? 570_938
-  const siteCount = rankedSites?.sites.length ?? 494
+  const total = exposedPopulation
+  const siteCount = rankedSites?.sites.length ?? 0
+  if (!total) {
+    return (
+      <div className="whatif card">
+        <h3 className="section-title">What If We Act?</h3>
+        <p className="panel-sub">No population is inside the current forecast corridor.</p>
+      </div>
+    )
+  }
 
   const schoolHosp = Math.round(total * 0.65)
   const allIntervene = Math.round(total * 0.45)
