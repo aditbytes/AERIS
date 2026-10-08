@@ -564,6 +564,7 @@ Resources:
     Properties:
       CorsConfiguration:
         AllowOrigins:
+          - !Sub https://${WebDistribution.DomainName}
           - http://localhost:5173
         AllowMethods: [GET, POST, OPTIONS]
         AllowHeaders: [Content-Type]
@@ -605,6 +606,63 @@ Resources:
         StartRun: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: POST, Path: /run}}
         RunStatus: {Type: HttpApi, Properties: {ApiId: !Ref HttpApi, Method: GET, Path: "/run/{run_id}"}}
 
+  # --- Website: CloudFront -> private web bucket (origin access control) ---
+  WebOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub ${AWS::StackName}-web-oac
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  WebDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: AERIS web
+        DefaultRootObject: index.html
+        HttpVersion: http2and3
+        # North America, Europe, Asia incl. India - cheaper than PriceClass_All
+        PriceClass: PriceClass_200
+        Origins:
+          - Id: web
+            DomainName: !GetAtt WebBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt WebOriginAccessControl.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        DefaultCacheBehavior:
+          TargetOriginId: web
+          ViewerProtocolPolicy: redirect-to-https
+          Compress: true
+          AllowedMethods: [GET, HEAD]
+          # Managed-CachingOptimized
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+        # Single-page app: unknown paths fall back to index.html
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+
+  WebBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: {Service: cloudfront.amazonaws.com}
+            Action: s3:GetObject
+            Resource: !Sub ${WebBucket.Arn}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${WebDistribution}
+
   # --- Cost guard ---------------------------------------------------------
   MonthlyBudget:
     Type: AWS::Budgets::Budget
@@ -628,6 +686,9 @@ Outputs:
   ApiUrl:
     Description: API_BASE_URL for the web build
     Value: !Sub https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com
+  WebUrl:
+    Value: !Sub https://${WebDistribution.DomainName}
+  WebDistributionId: {Value: !Ref WebDistribution}
   PipelineStateMachineArn: {Value: !Ref PipelineStateMachine}
   FetchDlqUrl: {Value: !Ref FetchDlq}
   FetchDlqArn: {Value: !GetAtt FetchDlq.Arn}
