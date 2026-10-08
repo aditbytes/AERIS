@@ -29,11 +29,13 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # Live feeds published into gold/ unchanged so the API serves one consistent set.
+# Each feed lists candidate keys in order; the first that exists is used.
 FEEDS = {
-    "fires": ("bronze/fires/latest", False),
-    "aqi": ("bronze/aqi/latest", False),
-    "wind": ("bronze/wind/latest", False),
-    "sites": ("reference/sites/latest", True),
+    "fires": (["bronze/fires/latest"], False),
+    "aqi": (["bronze/aqi/latest"], False),
+    "wind": (["bronze/wind/latest"], False),
+    # reference/ never expires; bronze/sites is the pre-reference location (expires after 14 days)
+    "sites": (["reference/sites/latest", "bronze/sites/latest"], True),
 }
 
 
@@ -44,10 +46,20 @@ def _key(event: dict[str, Any], name: str, default: str) -> str:
 def publish_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """Copy the latest real feeds into gold/ (fires, aqi, wind, sites)."""
     out = {}
-    for name, (src, geojson) in FEEDS.items():
-        obj = storage.read_json(_key(event, name, src), geojson=geojson)
+    for name, (candidates, geojson) in FEEDS.items():
+        keys = [event[f"{name}_key"]] if f"{name}_key" in (event or {}) else candidates
+        obj = _read_first(keys, geojson)
         out[name] = storage.write_json(name, obj, geojson=geojson)
     return {"published": out}
+
+
+def _read_first(keys: list[str], geojson: bool) -> Any:
+    for key in keys:
+        try:
+            return storage.read_json(key, geojson=geojson)
+        except FileNotFoundError:
+            logger.warning("publish: %s not found", key)
+    raise FileNotFoundError(f"None of {keys} exist")
 
 
 def detect_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
