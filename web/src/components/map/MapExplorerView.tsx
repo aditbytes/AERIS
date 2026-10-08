@@ -32,6 +32,7 @@ import {
 import { useAeris, type TimeHorizon } from '@/services/dataContext'
 import { getRiskLevel, riskLabel, type CorridorBandProperties, type RankedSite } from '@/types/schemas'
 import { createThermalMarkerElement } from './thermalMarker'
+import { getStyleForMode, setupMapLayers, applyProjectionAndPitch } from './mapStyles'
 import './MapExplorerView.css'
 
 try {
@@ -78,6 +79,8 @@ export default function MapExplorerView() {
     exposedPopulation,
     etaHours,
     interventionScenario,
+    basemapMode,
+    setBasemapMode,
   } = useAeris()
 
   const [webGlSupported, setWebGlSupported] = useState(true)
@@ -115,20 +118,20 @@ export default function MapExplorerView() {
     try {
       const map = new Map({
         container: mapContainerRef.current,
-        style: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
+        style: getStyleForMode(basemapMode),
         center: [76.8, 30.1],
         zoom: 6.8,
-        minZoom: 2.8,   // Fix: Smoothly zoom out to whole subcontinent
-        maxZoom: 18,    // High resolution inspection
-        pitch: 0,
-        bearing: 0,
+        minZoom: 2.2,   // Smoothly zoom out to full 3D globe / subcontinent
+        maxZoom: 18,    // High resolution facility & plume inspection
+        pitch: basemapMode === 'globe' ? 42 : 0,
+        bearing: basemapMode === 'globe' ? -8 : 0,
         attributionControl: false,
       })
 
       map.on('error', (e) => {
         const msg = e.error?.message || ''
         if (msg.includes('WebGL') || msg.includes('Worker') || msg.includes('GL')) {
-          console.warn('[AERIS MapExplorer] Fallback to SVG:', msg)
+          console.warn('[AERIS MapExplorer] Fallback to vector canvas:', msg)
           setWebGlSupported(false)
         }
       })
@@ -136,35 +139,8 @@ export default function MapExplorerView() {
       mapRef.current = map
 
       map.on('load', () => {
-        // 1. Official Survey of India boundary layer (includes J&K, Ladakh, PoK)
-        map.addSource('india-boundary', {
-          type: 'geojson',
-          data: './data/india-boundary.geojson',
-        })
-
-        // Outer halo
-        map.addLayer({
-          id: 'india-border-halo',
-          type: 'line',
-          source: 'india-boundary',
-          paint: {
-            'line-color': '#22734F',
-            'line-width': 5.0,
-            'line-opacity': 0.4,
-          },
-        })
-
-        // Solid SOI line
-        map.addLayer({
-          id: 'india-border-line',
-          type: 'line',
-          source: 'india-boundary',
-          paint: {
-            'line-color': '#164E35',
-            'line-width': 2.6,
-            'line-opacity': 0.95,
-          },
-        })
+        setupMapLayers(map, basemapMode)
+        applyProjectionAndPitch(map, basemapMode)
 
         // Sovereign Territory Badges
         const jkEl = document.createElement('div')
@@ -176,44 +152,6 @@ export default function MapExplorerView() {
         ladakhEl.className = 'soi-territory-tag'
         ladakhEl.innerText = 'Ladakh (India)'
         new Marker({ element: ladakhEl, anchor: 'center' }).setLngLat([77.8, 34.2]).addTo(map)
-
-        // 2. Corridor polygon source
-        map.addSource('corridor', {
-          type: 'geojson',
-          data: { type: 'FeatureCollection', features: [] },
-        })
-
-        // Plume fill layer
-        map.addLayer({
-          id: 'plume-fill',
-          type: 'fill',
-          source: 'corridor',
-          filter: ['==', ['get', 'kind'], 'band'],
-          paint: {
-            'fill-color': [
-              'interpolate', ['linear'], ['get', 'hour_from'],
-              0, 'rgba(220, 38, 38, 0.72)',
-              2, 'rgba(234, 88, 12, 0.60)',
-              4, 'rgba(245, 158, 11, 0.44)',
-              8, 'rgba(234, 179, 8, 0.28)',
-            ],
-            'fill-opacity': 0.85,
-          },
-        })
-
-        // Centerline layer
-        map.addLayer({
-          id: 'plume-centerline',
-          type: 'line',
-          source: 'corridor',
-          filter: ['==', ['get', 'kind'], 'centerline'],
-          paint: {
-            'line-color': '#FFFFFF',
-            'line-width': 2.8,
-            'line-dasharray': [4, 2],
-            'line-opacity': 0.95,
-          },
-        })
       })
     } catch (err) {
       console.warn('[AERIS MapExplorer] Constructor failed:', err)
@@ -226,6 +164,43 @@ export default function MapExplorerView() {
       mapInitRef.current = false
     }
   }, [webGlSupported])
+
+  // ── 1b. Dynamically switch basemap style & 3D globe projection ─────────────
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !webGlSupported) return
+
+    map.setStyle(getStyleForMode(basemapMode))
+    const onStyleLoad = () => {
+      setupMapLayers(map, basemapMode)
+      applyProjectionAndPitch(map, basemapMode)
+
+      if (map.getLayer('india-border-line')) {
+        map.setLayoutProperty('india-border-line', 'visibility', showSoiBorder ? 'visible' : 'none')
+        map.setLayoutProperty('india-border-halo', 'visibility', showSoiBorder ? 'visible' : 'none')
+      }
+      if (map.getLayer('plume-fill')) {
+        map.setLayoutProperty('plume-fill', 'visibility', showPlume ? 'visible' : 'none')
+      }
+      if (map.getLayer('plume-centerline')) {
+        map.setLayoutProperty('plume-centerline', 'visibility', showPlume ? 'visible' : 'none')
+      }
+      if (map.getLayer('plume-line')) {
+        map.setLayoutProperty('plume-line', 'visibility', showPlume ? 'visible' : 'none')
+      }
+    }
+    map.once('style.load', onStyleLoad)
+  }, [basemapMode, webGlSupported, showSoiBorder, showPlume])
+
+  // Automatically trigger map.resize() whenever container bounds resize
+  useEffect(() => {
+    if (!mapContainerRef.current) return
+    const ro = new ResizeObserver(() => {
+      mapRef.current?.resize()
+    })
+    ro.observe(mapContainerRef.current)
+    return () => ro.disconnect()
+  }, [])
 
   // ── 2. Update corridor GeoJSON when timeHorizon changes ──────────────────
   useEffect(() => {
@@ -548,6 +523,44 @@ export default function MapExplorerView() {
 
           <div className="hud-divider" />
 
+          {/* Basemap Projection Switcher */}
+          <div className="hud-basemap-group">
+            <button
+              className={`hud-basemap-btn ${basemapMode === 'satellite' ? 'active' : ''}`}
+              onClick={() => setBasemapMode('satellite')}
+              title="ESRI Photorealistic Satellite Imagery"
+              type="button"
+            >
+              <span>🛰️ Sat</span>
+            </button>
+            <button
+              className={`hud-basemap-btn ${basemapMode === 'globe' ? 'active' : ''}`}
+              onClick={() => setBasemapMode('globe')}
+              title="3D Spherical Earth Globe Projection"
+              type="button"
+            >
+              <span>🪐 3D Globe</span>
+            </button>
+            <button
+              className={`hud-basemap-btn ${basemapMode === 'dark' ? 'active' : ''}`}
+              onClick={() => setBasemapMode('dark')}
+              title="Tactical Dark Matter GIS Style"
+              type="button"
+            >
+              <span>🌑 Dark</span>
+            </button>
+            <button
+              className={`hud-basemap-btn ${basemapMode === 'topo' ? 'active' : ''}`}
+              onClick={() => setBasemapMode('topo')}
+              title="Clean Topographic Street Basemap"
+              type="button"
+            >
+              <span>🗺️ Topo</span>
+            </button>
+          </div>
+
+          <div className="hud-divider" />
+
           {/* Integrated Time Horizon & Playback */}
           <div className="hud-playback-group">
             <button
@@ -624,7 +637,45 @@ export default function MapExplorerView() {
             </div>
 
             <div className="layer-panel-body">
+              {/* Basemap & Visual Projection */}
+              <div className="layer-section-title">Basemap & Visual Engine</div>
+              <div className="layer-basemap-selector">
+                <button
+                  type="button"
+                  className={`layer-basemap-card ${basemapMode === 'satellite' ? 'active' : ''}`}
+                  onClick={() => setBasemapMode('satellite')}
+                >
+                  <strong>🛰️ Satellite</strong>
+                  <small>ESRI Photorealistic</small>
+                </button>
+                <button
+                  type="button"
+                  className={`layer-basemap-card ${basemapMode === 'globe' ? 'active' : ''}`}
+                  onClick={() => setBasemapMode('globe')}
+                >
+                  <strong>🪐 3D Globe</strong>
+                  <small>Earth sphere + 42° tilt</small>
+                </button>
+                <button
+                  type="button"
+                  className={`layer-basemap-card ${basemapMode === 'dark' ? 'active' : ''}`}
+                  onClick={() => setBasemapMode('dark')}
+                >
+                  <strong>🌑 Dark GIS</strong>
+                  <small>Tactical night console</small>
+                </button>
+                <button
+                  type="button"
+                  className={`layer-basemap-card ${basemapMode === 'topo' ? 'active' : ''}`}
+                  onClick={() => setBasemapMode('topo')}
+                >
+                  <strong>🗺️ Topo</strong>
+                  <small>Cartographic roads</small>
+                </button>
+              </div>
+
               {/* Layer Toggles */}
+              <div className="layer-section-title">Telemetry & Geospatial Layers</div>
               <div className="layer-toggles-list">
                 <div className="layer-item-wrapper">
                   <label className="layer-toggle-row">

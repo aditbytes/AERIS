@@ -13,6 +13,7 @@ import type { ActionsFile, AqiFile, CorridorGeoJSON, RankedSite, RankedSitesFile
 export type TimeHorizon = 0 | 1 | 2 | 3
 
 export type InterventionScenario = 'none' | 'partial' | 'full'
+export type BasemapMode = 'satellite' | 'globe' | 'dark' | 'topo'
 
 interface AerisState {
   // Data
@@ -31,6 +32,8 @@ interface AerisState {
   searchTerm:           string
   flyToLocation:        { lon: number; lat: number; zoom?: number; name?: string } | null
   interventionScenario: InterventionScenario
+  basemapMode:          BasemapMode
+  setBasemapMode:       (mode: BasemapMode) => void
 
   // Status
   loading: boolean
@@ -78,6 +81,28 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
   const [searchTerm,           setSearchTerm]           = useState('')
   const [flyToLocation,        setFlyToLocation]        = useState<{ lon: number; lat: number; zoom?: number; name?: string } | null>(null)
   const [interventionScenario, setInterventionScenario] = useState<InterventionScenario>('partial')
+
+  // Production Basemap Engine Mode with localStorage persistence (default: satellite)
+  const [basemapMode, setBasemapModeState] = useState<BasemapMode>(() => {
+    try {
+      const saved = localStorage.getItem('aeris_basemap_mode')
+      if (saved === 'satellite' || saved === 'globe' || saved === 'dark' || saved === 'topo') {
+        return saved
+      }
+    } catch {
+      // Ignore
+    }
+    return 'satellite'
+  })
+
+  const setBasemapMode = useCallback((mode: BasemapMode) => {
+    setBasemapModeState(mode)
+    try {
+      localStorage.setItem('aeris_basemap_mode', mode)
+    } catch {
+      // Ignore
+    }
+  }, [])
 
   // Sidebar collapse state with localStorage persistence
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
@@ -180,6 +205,7 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
     sources, corridor, rankedSites, actions, aqi, wind,
     timeHorizon, selectedSiteId, showActionsModal,
     activeTab, searchTerm, flyToLocation, interventionScenario,
+    basemapMode, setBasemapMode,
     loading, error,
     exposedPopulation, activeExposedPopulation, avertedExposures, etaHours, avgAqi,
     isSidebarCollapsed, toggleSidebar, setSidebarCollapsed,

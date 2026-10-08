@@ -16,6 +16,7 @@ import { Maximize2 } from 'lucide-react'
 import { useAeris } from '@/services/dataContext'
 import { getRiskLevel, riskLabel, type CorridorBandProperties } from '@/types/schemas'
 import { createThermalMarkerElement, createThermalPopupHtml } from './thermalMarker'
+import { getStyleForMode, setupMapLayers, applyProjectionAndPitch } from './mapStyles'
 import TimeControls from './TimeControls'
 import './MapContainer.css'
 
@@ -49,6 +50,8 @@ export default function MapContainer() {
     setActiveTab,
     flyToLocation,
     interventionScenario,
+    basemapMode,
+    setBasemapMode,
   } = useAeris()
 
   // ── 1. Initialize map once ────────────────────────────────────────────────
@@ -59,13 +62,13 @@ export default function MapContainer() {
     try {
       const map = new Map({
         container: mapContainerRef.current,
-        style: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
+        style: getStyleForMode(basemapMode),
         center: [76.5, 30.0],
         zoom: 6.8,
-        minZoom: 2.8,   // Fix: Smoothly zoom out to see full India & continent
+        minZoom: 2.2,   // Allows smooth zooming out to see full 3D globe / continent
         maxZoom: 18,    // High resolution facility inspection
-        pitch: 0,
-        bearing: 0,
+        pitch: basemapMode === 'globe' ? 42 : 0,
+        bearing: basemapMode === 'globe' ? -8 : 0,
         attributionControl: false,
       })
 
@@ -80,37 +83,10 @@ export default function MapContainer() {
       mapRef.current = map
 
       map.on('load', () => {
-        // 1. Official Survey of India boundary layer (includes J&K, Ladakh, PoK)
-        map.addSource('india-boundary', {
-          type: 'geojson',
-          data: './data/india-boundary.geojson',
-        })
+        setupMapLayers(map, basemapMode)
+        applyProjectionAndPitch(map, basemapMode)
 
-        // Outer halo for sovereign boundary prominence
-        map.addLayer({
-          id: 'india-border-halo',
-          type: 'line',
-          source: 'india-boundary',
-          paint: {
-            'line-color': '#22734F',
-            'line-width': 4.5,
-            'line-opacity': 0.35,
-          },
-        })
-
-        // Solid official border line
-        map.addLayer({
-          id: 'india-border-line',
-          type: 'line',
-          source: 'india-boundary',
-          paint: {
-            'line-color': '#164E35',
-            'line-width': 2.4,
-            'line-opacity': 0.95,
-          },
-        })
-
-        // 2. Official Territory labels
+        // Official Territory labels
         const jkEl = document.createElement('div')
         jkEl.className = 'map-soi-label'
         jkEl.innerText = 'Jammu & Kashmir (India)'
@@ -120,41 +96,6 @@ export default function MapContainer() {
         ladakhEl.className = 'map-soi-label'
         ladakhEl.innerText = 'Ladakh (India)'
         new Marker({ element: ladakhEl, anchor: 'center' }).setLngLat([77.8, 34.2]).addTo(map)
-
-        // 3. Corridor polygon source
-        map.addSource('corridor', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-
-        // Plume band fill layer
-        map.addLayer({
-          id: 'plume-fill',
-          type: 'fill',
-          source: 'corridor',
-          filter: ['==', ['get', 'kind'], 'band'],
-          paint: {
-            'fill-color': [
-              'interpolate', ['linear'], ['get', 'hour_from'],
-              0, 'rgba(201, 42, 42, 0.68)',
-              2, 'rgba(212, 98, 10, 0.58)',
-              4, 'rgba(245, 159, 0, 0.42)',
-              8, 'rgba(245, 215, 0, 0.28)',
-            ],
-            'fill-opacity': 0.85,
-          },
-        })
-
-        // Centerline line layer
-        map.addLayer({
-          id: 'plume-centerline',
-          type: 'line',
-          source: 'corridor',
-          filter: ['==', ['get', 'kind'], 'centerline'],
-          paint: {
-            'line-color': '#FFFFFF',
-            'line-width': 2.5,
-            'line-dasharray': [3, 2],
-            'line-opacity': 0.9,
-          },
-        })
       })
     } catch (err) {
       console.warn('[AERIS] MapLibre constructor failed, using SVG vector canvas:', err)
@@ -167,6 +108,19 @@ export default function MapContainer() {
       mapInitRef.current = false
     }
   }, [webGlSupported])
+
+  // ── 1b. Dynamically switch basemap style & 3D globe projection ─────────────
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !webGlSupported) return
+
+    map.setStyle(getStyleForMode(basemapMode))
+    const onStyleLoad = () => {
+      setupMapLayers(map, basemapMode)
+      applyProjectionAndPitch(map, basemapMode)
+    }
+    map.once('style.load', onStyleLoad)
+  }, [basemapMode, webGlSupported])
 
   // Automatically trigger map.resize() whenever the container dimensions change
   useEffect(() => {
@@ -445,6 +399,45 @@ export default function MapContainer() {
 
         {/* Unified Top-Right Floating Quick Action Capsule */}
         <div className="map-quick-hud">
+          {/* Production Basemap Engine Switcher */}
+          <div className="basemap-hud-switcher">
+            <button
+              className={`quick-hud-chip ${basemapMode === 'satellite' ? 'active' : ''}`}
+              onClick={() => setBasemapMode('satellite')}
+              title="ESRI Photorealistic Satellite Imagery"
+              type="button"
+            >
+              <span>🛰️ Sat</span>
+            </button>
+            <button
+              className={`quick-hud-chip ${basemapMode === 'globe' ? 'active' : ''}`}
+              onClick={() => setBasemapMode('globe')}
+              title="3D Spherical Earth Globe Projection"
+              type="button"
+            >
+              <span>🪐 3D Globe</span>
+            </button>
+            <button
+              className={`quick-hud-chip ${basemapMode === 'dark' ? 'active' : ''}`}
+              onClick={() => setBasemapMode('dark')}
+              title="Tactical Dark Matter GIS Console"
+              type="button"
+            >
+              <span>🌑 Dark</span>
+            </button>
+            <button
+              className={`quick-hud-chip ${basemapMode === 'topo' ? 'active' : ''}`}
+              onClick={() => setBasemapMode('topo')}
+              title="Clean Topographic Street Basemap"
+              type="button"
+            >
+              <span>🗺️ Topo</span>
+            </button>
+          </div>
+
+          <div className="quick-hud-divider" />
+
+          {/* Territory Scope Switcher */}
           <button
             className={`quick-hud-chip ${scopeFilter === 'india' ? 'active' : ''}`}
             onClick={() => setScopeFilter(prev => prev === 'india' ? 'all' : 'india')}
@@ -507,8 +500,8 @@ export default function MapContainer() {
         {/* Micro-compact translucent legend */}
         <div className="map-micro-legend">
           <div className="micro-legend-item">
-            <span className="micro-legend-glyph">🔥</span>
-            <span>{scopeFilter === 'india' ? 'India (6)' : 'Airshed (10)'}</span>
+            <span className="micro-legend-glyph" style={{ color: '#EF4444', fontWeight: 800 }}>⊕</span>
+            <span>{scopeFilter === 'india' ? 'India Hotspots (6)' : 'Airshed Hotspots (10)'}</span>
           </div>
           <div className="micro-legend-item">
             <div className="micro-legend-swatch plume" />
