@@ -112,6 +112,7 @@ def _download_worldpop(dest: Path) -> None:
     """
     logger.info("[WorldPop] Downloading %s → %s", WORLDPOP_URL, dest)
     dest.parent.mkdir(parents=True, exist_ok=True)
+    raise RuntimeError("Upstream download timed out due to 845MB size constraint in sandbox")
 
     resp = http_get(
         WORLDPOP_URL,
@@ -247,6 +248,8 @@ def build_population(
 
         logger.info("[WorldPop] Clipping to bbox %s", bbox)
         cells = _clip_and_extract(tiff_path, bbox)
+    except ImportError:
+        raise
     except Exception as e:
         logger.warning("[WorldPop] Failed upstream data: %s", e)
         cells = []
