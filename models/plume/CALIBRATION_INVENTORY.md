@@ -11,11 +11,12 @@ CALIBRATION_HOLDOUT: NOT_AVAILABLE
 PARAMETER_SOURCE: BASELINE_DEFAULT
 ```
 
-The Task 3 request explicitly requires stopping calibration implementation when
-no suitable real history exists. This audit is that stopping point. No
-`calibrate.py`, `params.json`, fitted-parameter loader or calibration fixtures
-were created. The existing physics, source detector and captured inputs are
-unchanged. The Task 2 recommendation meant the baseline was ready to be
+The original Task 3 request required stopping calibration implementation when
+no suitable real history exists, and that audit stopped here. The subsequent
+completion request explicitly authorizes a gated engine and parameter loader;
+these are now implemented without running real-data optimization. No
+`params.json` or historical observations were created. The existing physics,
+source detector and captured inputs remain unchanged. Task 2 meant the baseline was ready to be
 calibrated when eligible history becomes available; it did not certify that
 such history was already present.
 
@@ -139,11 +140,13 @@ not queried; unavailable remote objects cannot be counted as repository data.
 | `tau_hours` | 24 hours | ASSUMED |
 | `concentration_scale_ug` | 1e12 micrograms per nominal strength-one hourly puff | ASSUMED |
 
-No fitted values, search bounds, resolution, optimizer tolerance or uncertainty
-estimates were selected. There are no valid targets to justify a search or
-estimate any parameter. The existing `resolve_params(None)` still selects
-`PlumeParams()`; explicit caller/CLI overrides remain supported and do not
-imply calibration. No `CALIBRATED_PARAMS` artifact exists.
+No fitted values or uncertainty estimates were selected. There are no valid
+targets to execute a search or estimate any parameter. The completion engine
+defines explicit engineering-prior grids, described in the plume README, without
+claiming physical validation. With `params.json` absent, `resolve_params(None)`
+still selects the documented baseline. The new loader distinguishes BASELINE,
+CALIBRATED and EXPLICIT provenance; explicit caller/CLI overrides remain supported.
+No real calibrated artifact exists.
 
 The inspected formulation remains:
 
@@ -171,8 +174,9 @@ unsupported by history must remain ASSUMED.
 
 ## Matching, targets and leakage controls
 
-No matching table, background series, train/holdout split or optimizer was
-constructed. A future eligible record must establish source/event time, input
+No real matching table, background series, train/holdout split or fit was
+constructed. The completion engine implements these stages behind the strict
+gate. A future eligible record must establish source/event time, input
 availability, covered wind/PBLH, plausible modelled transport and observation
 time, with a real station-specific background that does not use the target.
 Transport association must use the actual puff field and timing, rather than
@@ -212,17 +216,52 @@ Event-level and station-level metrics, baseline-versus-fitted improvement and
 out-of-sample performance are all NOT_AVAILABLE. Zero eligible observations
 does not mean zero prediction error.
 
-The requested existing suites were run on Python 3.14.3:
+The original audit's existing suites were run on Python 3.14.3:
 
 - `python -m pytest models/plume -q`: **65 passed, 0 failed**, 0.97 seconds.
 - `python -m pytest -q`: **322 passed, 0 failed**, 13.10 seconds; one existing
   Requests dependency compatibility warning.
 
 On Windows these commands used UTF-8 mode and separate unique `--basetemp`
-directories under ignored `.venv/`. No new calibration tests were added because
-calibration implementation stopped at the required data gate. The calibration
-CLI was not run because no valid calibration CLI was implemented. Python 3.12
-runtime was not available or validated in this task.
+directories under ignored `.venv/`. That audit did not add calibration code or
+run a calibration CLI. The subsequent completion adds mathematical optimizer,
+schema/loading and chronology tests, alongside actual-capture blocked-CLI and
+pipeline regression checks. Mathematical artifacts are marked MATHEMATICAL_TEST,
+cannot be named deployable `params.json`, and are rejected by the production
+loader. They are not real-data fits. Python 3.12 runtime remains unverified.
+
+## Completion engine behavior
+
+`python -m models.plume.calibrate` now discovers normalized local historical
+manifests or audits the current live files. For this repository it exits 1
+with BLOCKED_NO_VALID_HISTORICAL_DATA, optimizer_executed=false, null metrics,
+no fitted values and no `params.json`. No downloads or original-input changes
+occur. The earlier numerical/model replay outputs remain ineligible as targets.
+
+The engine requires independently reviewed real provenance/timing, reproducible
+frozen fire/source packets, independent pre-event station backgrounds, plausible
+baseline-puff transport, and protected chronological event/station coverage.
+It optimizes station-time Gaussian increments, not corridor-band maxima.
+Only a supported real-data fit that improves both training and protected holdout
+RMSE can produce a validated parameter artifact. Weak/boundary parameters stay
+at baseline; explicit caller parameters override the calibrated file, which
+overrides baseline only when valid. Missing history and malformed artifacts
+cannot silently create fitted values.
+
+See [plume README](README.md#calibration-engine-and-eligibility) for the exact
+internal manifest schema, matching policies, engineering-prior bounds, sensitivity,
+split rules, result fields, artifact checks and future successful path.
+Implementation recommendation: READY_FOR_VALID_HISTORY. Actual calibration
+data readiness is still blocked and requires the real histories listed below.
+
+Completion validation: **116 plume tests passed, 0 failed**; **377 repository
+tests passed, 0 failed**, with one existing Requests warning, on Python 3.14.3.
+Actual default calibration CLI exits 1 with optimizer not executed, matched
+events/stations/targets 0/0/0, fitted parameters null and no `params.json`.
+A newly computed 22-source detector output from the existing FIRMS capture was
+accepted by the plume in a covered 2-hour replay, producing 36 contract-valid
+features. It is a rerun of the same capture, not new historical evidence. The
+original older 10-source snapshot and all other captured data remain unchanged.
 
 ## Scientific conclusion
 

@@ -379,23 +379,222 @@ validation copies do not add independent observations.
 
 No eligible observed PM2.5-minus-background target or independent event holdout
 exists. The archived wind's timing also remains unconfirmed after the parser
-defect described above. The Task 3 instruction requires stopping calibration
-implementation at this data gate: no optimizer, calibration script,
-`params.json`, automatic calibrated-parameter loading, synthetic historical
-fixture or ML was added. All four calibration parameters remain **ASSUMED**:
+defect described above. The original Task 3 audit stopped implementation here.
+The completion task adds the gated engine below without executing a real-data
+optimizer or creating `params.json`, historical fixtures or ML.
+All four calibration parameters remain **ASSUMED**:
 `sigma0_m=2000`, `k_m_sqrt_hour=1000`, `tau_hours=24`,
 `concentration_scale_ug=1e12`. Existing explicit parameter overrides retain
 their documented behavior; no supplied file is certified as calibrated.
 
 Matched events/stations/targets are **0/0/0**. Baseline, fitted, event-level,
-station-level and holdout RMSE/MAE/bias are **NOT_AVAILABLE**. No background,
-search bounds or apparently precise fit was invented. A future calibration
+station-level and holdout RMSE/MAE/bias are **NOT_AVAILABLE**. No background
+or apparently precise fit was invented. A future calibration
 must evaluate station-time puff concentrations, rather than the spatial/time
 peak stored in corridor band properties, and protect later independent events
 from fitting and background/target leakage.
 
-Task 3 recommendation: **FIX_REQUIRED** for data readiness. The baseline's
+Original Task 3 audit recommendation: **FIX_REQUIRED** for data readiness. The baseline's
 Task 2 readiness above does not imply that calibration data is available.
 The audit reran the existing suites: **65 plume tests passed, 0 failed**;
 **322 repository tests passed, 0 failed**, with one existing Requests warning
 on Python 3.14.3. Captured snapshots and model implementations were preserved.
+
+## Calibration engine and eligibility
+
+`history.py` validates provenance, chronology and observations, constructs
+pre-event backgrounds, freezes puff-based associations and splits physical
+events. `calibrate.py` provides `calibrate(history, config=..., background_estimator=...)`
+returning `CalibrationResult`. Its `to_dict()` and sorted JSON serialization
+are deterministic. `parameters.py` validates and atomically writes/loads
+parameter artifacts. No module makes network requests or downloads data.
+
+The current repository still returns `BLOCKED_NO_VALID_HISTORICAL_DATA`, with
+`optimizer_executed=false`, `fitted_parameters=null` and no `params.json`.
+Unavailable metrics are JSON `null`, never zero errors. Results retain dataset
+metadata, accepted/rejected records/reasons, source/event/station provenance,
+background references, transport ages, wind/PBLH, parameter statuses, metrics,
+leakage checks, warnings and sensitivity diagnostics when available.
+
+```bash
+python -m models.plume.calibrate
+# Current real repository: deterministic JSON on stdout, exit 1.
+
+python -m models.plume.calibrate --history data/history/calibration.json --report .venv/calibration-report.json
+# Future eligible real manifest: fit, validate, then atomically write params.json.
+```
+
+Default discovery checks `data/history/calibration.json` and
+`data/historical/calibration.json`. Multiple manifests require explicit selection;
+there is no automatic merge. Without a manifest the CLI inventories actual live
+inputs and reports rejection. `--history` selects a local manifest;
+`--params-output` changes the successful artifact destination. `--report` may
+save blocked metadata. Outputs cannot overwrite consumed history/live inputs
+or each other. Blocked/invalid runs preserve previous parameters and snapshots.
+
+## Future historical manifest schema
+
+The internal schema is version 1 and does not change pipeline contracts.
+No example historical measurements are shipped. Assemble these fields from
+independently reviewed real captures, preserving original observations:
+
+| Level | Required fields |
+| --- | --- |
+| Manifest | `schema_version=1`, `evidence_kind="REAL_CAPTURED_HISTORY"`, `provenance`, aware `calibration_timestamp`, `events`, `observations` |
+| Provenance | `kind="REAL_CAPTURED_HISTORY"`, nonempty `source`, `capture_id`, `archive_reference`, `timing_verified=true` |
+| Event | Unique `capture_id`, persistent physical `event_id`, aware `source_event_time`, `forecast_start`, actual contract-shaped `fires`, `sources`, `wind`, and `provenance` |
+| Event provenance | `event_group_verified=true`; separate `fires`, `sources`, `wind` provenance objects, each with `content_sha256` matching `history.content_hash(payload)` |
+| Observation | Unique `id`, stable `station_id`, WGS84 `lat`/`lon`, aware `period_start`, `observed_at`, `available_at`, finite nonnegative `pm25_ugm3`, `unit="ug/m3"`, `observational=true`, provenance |
+
+`content_hash` hashes sorted finite JSON of the parsed payload, independent of
+file whitespace. Digests check consistency; provenance flags are auditable
+assertions by the archive owner, not authentication of atmospheric truth.
+Review units, quality, timing and physical event grouping before marking them
+verified. Model-generated or mathematical values cannot be relabelled real.
+
+Sources must reproduce exactly from their packet's frozen fires using the
+unchanged detector defaults. `source_event_time` is the earliest contributing
+source detection. Source/wind generation times and latest contributing detection
+must be strictly before `forecast_start`; target intervals must follow it.
+Later-captured hindcast inputs are deliberately ineligible for automatic
+prospective adoption. The plume CLI retains its labelled archive-replay API.
+Calibration timestamp is an explicit analysis/run reference supplied in the
+manifest, must follow observation availability, and is never generated from
+the wall clock.
+
+Targets may be instantaneous hourly frames (`period_start=observed_at`) or
+averaging intervals whose endpoints align to whole hours 1 through 48 after
+the forecast start. Interval predictions use the trapezoidal mean of hourly
+puff concentrations, not band maxima. Nonaligned intervals fail without shifting
+timestamps. Duplicate station timestamps and overlapping measurement intervals
+are rejected. Resource limits are 100 event captures and 10,000 observations.
+
+## Background and transport matching
+
+Default background is the median of at least three same-station readings within
+24 hours before the earliest contributing fire. Coordinates and averaging
+durations must match the target. Whole periods must finish before the event
+and be available before prediction. Target/future values and other stations
+cannot supply background. The target is observed PM2.5 minus background,
+including negative deltas.
+
+A pluggable estimator receives only eligible pre-event readings, never target
+PM2.5. It returns `BackgroundEstimate(value_ugm3, observation_ids, method)`.
+Cited IDs must be distinct eligible readings and meet the minimum; the finite,
+nonnegative estimate must remain within their measured range. Plugins are
+trusted local mathematical functions and must not use external target data
+or supply invented constants.
+
+Matching runs once using baseline puff geometry, before optimization and without
+target concentrations. A receptor must have real local wind/PBLH coverage.
+At a relevant frame, an aged puff must have travelled at least 1 km, the
+source-to-puff direction must align with source-to-station direction (cosine
+at least 0.5), and the receptor must lie within two baseline sigmas of its centre.
+These are engineering association policies, not validated attribution criteria.
+Zero travel, upwind geometry and radius-only matches fail. Matching stays fixed
+across all parameter candidates.
+
+Repeated captures of one physical event remain together; the latest eligible
+capture supplies a target without consulting PM2.5. Targets plausible for
+multiple independent events are rejected as ambiguous. Predictions sum matched
+sources' puff concentrations at the station/time. Every matched target is
+excluded from background references.
+
+## Chronological protection and minimum history
+
+Automatic adoption requires three physical event groups, two stations in each
+partition, four fitting targets and two holdout targets. These minimums are
+engineering gates, not evidence of statistical generalization. Event grouping
+must be independently reviewed; overlapping fire identities assigned different
+event IDs are rejected. Snapshot-ranked `src_*` values are not event IDs.
+
+Groups sort by earliest source-event time. The latest 34%, rounded up while
+retaining at least two training groups, form the protected holdout. All training
+targets must precede the first holdout forecast reference. Target/background IDs
+must be disjoint across partitions. There is no random row split, future input,
+holdout-based selection or event-specific manual tuning. Insufficient groups,
+stations, targets or clean chronology block optimization with holdout unavailable.
+Partial fits also require a protected holdout.
+
+## Bounded search, sensitivity and adoption
+
+`CalibrationConfig` holds all axes, budgets and sensitivity tolerances. The
+initial grid has 625 combinations. Bounds are factor-of-two engineering priors
+around the baseline, not physically validated ranges:
+
+| Parameter | Bounds | Grid values |
+| --- | --- | --- |
+| `sigma0_m` | 1000 to 4000 m | 1000, 1500, 2000, 3000, 4000 |
+| `k_m_sqrt_hour` | 500 to 2000 m/sqrt(hour) | 500, 750, 1000, 1500, 2000 |
+| `tau_hours` | 12 to 48 hours | 12, 18, 24, 36, 48 |
+| `concentration_scale_ug` | 5e11 to 2e12 ug/nominal-puff-strength | 5e11, 7.5e11, 1e12, 1.5e12, 2e12 |
+
+Custom axes must declare bounds, include baseline values and respect the
+candidate budget (625 by default). Nonpositive sigma/tau/scale, negative k,
+nonfinite numbers and out-of-bound values fail. Explicitly bounded zero k is
+permitted by the physical model. Bounds are never expanded to fit current data.
+
+The objective is ordinary target-level training RMSE; MAE and prediction-minus-
+observation bias are also reported. Baseline and candidates use identical frozen
+targets. Transport is cached because these four parameters do not change
+advection; sigma/decay are recomputed with existing formulas. Equal errors prefer
+values nearer baseline, then deterministic parameter order. Event/station
+metrics and training target shares expose dominance; above 50% triggers a warning.
+
+Parameter variation among errors within `max(0.1 ug/m3, 1% of best RMSE)` marks
+weak identification. Boundary optima are also unsupported. Such parameters
+retain baseline values; the engine reselects with them fixed and inspects
+sensitivity at the retained optimum. Equivalent grid values and fixed-other-
+parameter profiles are reported, not confidence intervals or false precision.
+The known source-radius floor can make sigma0 inactive.
+
+Acceptance requires an identified parameter and strictly lower RMSE on training
+and the untouched chronological holdout. Failure or no holdout improvement
+retains baseline and writes nothing; holdout is never used to retune. A supported
+subset yields `PARTIALLY_CALIBRATED`; other parameters remain `ASSUMED`.
+
+## Parameter artifacts and precedence
+
+Successful artifacts contain all physical/numerical values, four parameter
+units/statuses, dataset provenance/hash/counts/time range, explicit calibration
+timestamp, model/schema version, RMSE objective, baseline/fitted/holdout metrics,
+event split, leakage checks and identifiability diagnostics. Serialization forbids
+NaN/infinity; atomic replacement follows validation.
+
+`load_parameters()` returns `LoadedParameters(params, provenance, metadata)`:
+
+1. Explicit `PlumeParams` or dict wins, labelled `EXPLICIT`. Missing fields in
+   an explicit dict retain the existing API's baseline defaults.
+2. Otherwise valid local `models/plume/params.json` supplies `CALIBRATED` values.
+3. An absent file supplies documented `BASELINE` values.
+
+Existing corrupt, wrong-version/unit, blocked, mathematical or non-improving
+artifacts fail closed; they do not silently fall back. The existing plume
+`resolve_params` path and pipeline use this loader. CLI `--params` supports
+flat explicit overrides or a validated calibration artifact. GeoJSON fields
+remain unchanged; loader metadata carries provenance outside the shared contract.
+
+Numerical optimizer/artifact tests are labelled `MATHEMATICAL_TEST`. Their optional
+serialization path cannot write a file named `params.json`, and the production
+loader rejects them. No real historical fixture has appeared and no numerical
+test is presented as observational calibration. Completion recommendation:
+**READY_FOR_VALID_HISTORY**, with actual calibration still blocked.
+
+## Completion validation
+
+- `pytest models/plume`: **116 passed, 0 failed** (4.57 seconds).
+- Full `pytest`: **377 passed, 0 failed**, one existing Requests dependency
+  warning (16.03 seconds).
+- Runtime: **Python 3.14.3**. Seven changed/new Python files also passed Python
+  3.12 grammar parsing; no Python 3.12 runtime or Lambda packaging was verified.
+- Actual default calibration CLI: **exit 1**, BLOCKED_NO_VALID_HISTORICAL_DATA,
+  optimizer not executed, matches 0/0/0, fitted values null, `params.json` absent.
+- Real FIRMS detector output in an isolated live-input copy: **22 sources**;
+  a covered 2-hour archive replay from 2026-10-07T08:41:00Z yielded **36 features**.
+  Actual source/corridor validators returned `[]`, and all geometries were valid.
+  This newly computed detector output does not overwrite the older 10-source
+  snapshot or add an independent event.
+- Default uncovered plume CLI failed and preserved the prior valid corridor.
+  Missing-input and invalid-parameter preservation also passed pipeline tests.
+- Source detection and all original real snapshot/publication-copy hashes were
+  preserved. No network, downloads, historical observations, commits or PR edits.

@@ -84,6 +84,44 @@ def test_corridor_refuses_uncovered_forecast_preserving_result(live_copy):
     assert path.read_bytes() == before
 
 
+def test_detect_to_corridor_passes_actual_validators(live_copy):
+    from pipeline.contracts import check_corridor, check_sources
+    steps.detect_handler(_LOCAL_KEYS, None)
+    assert check_sources(_load(live_copy / "sources.json")) == []
+    steps.corridor_handler(_covered_forecast_event(live_copy), None)
+    assert check_corridor(_load(live_copy / "corridor.geojson")) == []
+
+
+@pytest.mark.parametrize("missing", ["sources.json", "wind.json"])
+def test_corridor_missing_inputs_preserve_previous_result(live_copy, missing):
+    steps.detect_handler(_LOCAL_KEYS, None)
+    steps.corridor_handler(_covered_forecast_event(live_copy), None)
+    output = live_copy / "corridor.geojson"
+    before = output.read_bytes()
+    (live_copy / missing).unlink()
+    with pytest.raises(FileNotFoundError):
+        steps.corridor_handler(_covered_forecast_event(live_copy), None)
+    assert output.read_bytes() == before
+
+
+def test_invalid_calibrated_parameters_preserve_corridor_and_explicit_override_works(live_copy, monkeypatch):
+    from models.plume import parameters
+    from pipeline.contracts import check_corridor
+    steps.detect_handler(_LOCAL_KEYS, None)
+    event = _covered_forecast_event(live_copy)
+    steps.corridor_handler(event, None)
+    path = live_copy / "corridor.geojson"
+    before = path.read_bytes()
+    invalid = live_copy / "bad-parameter-artifact.json"
+    invalid.write_text('{"status":"CALIBRATED"}', encoding="utf-8")
+    monkeypatch.setattr(parameters, "PARAMETER_FILE", invalid)
+    with pytest.raises(ValueError):
+        steps.corridor_handler(event, None)
+    assert path.read_bytes() == before
+    steps.corridor_handler({**event, "plume_params": {}}, None)
+    assert check_corridor(_load(path)) == []
+
+
 def test_agent_restores_data_dir(live_copy, monkeypatch):
     for step in (steps.detect_handler, steps.corridor_handler, steps.rank_handler, steps.agent_handler):
         step(_covered_forecast_event(live_copy), None)

@@ -101,6 +101,26 @@ def concentration_grid(frame: Frame, grid: Grid, params: PlumeParams) -> np.ndar
     return result
 
 
+def concentration_at(frame: Frame, projection: LocalProjection, lat: float, lon: float,
+                     params: PlumeParams) -> float:
+    """Station-point increment using the identical Gaussian and radial support."""
+    from models.plume.advect import coordinates, number
+    coordinates({"lat": lat, "lon": lon}, "receptor")
+    x, y = projection.forward.transform(lon, lat, errcheck=True)
+    if math.hypot(x, y) > projection.max_radius_m:
+        raise ValueError("Receptor exceeds supported local projection radius")
+    values = []
+    for puff in frame.puffs:
+        r2 = (x - puff.x_m) ** 2 + (y - puff.y_m) ** 2
+        if r2 > (params.kernel_sigma_cutoff * puff.sigma_m) ** 2:
+            continue
+        sigma2 = puff.sigma_m ** 2
+        values.append(params.concentration_scale_ug * puff.strength * puff.decay
+                      / (2 * math.pi * sigma2 * max(puff.pblh_m, params.pblh_floor_m))
+                      * math.exp(-r2 / (2 * sigma2)))
+    return number(math.fsum(values), "station concentration")
+
+
 def _polygon_parts(geometry: Any) -> list[Polygon]:
     if geometry.is_empty:
         return []
@@ -257,6 +277,9 @@ def main(argv: list[str] | None = None) -> None:
         sources = json.loads(sources_path.read_text(encoding="utf-8"))
         wind = json.loads(wind_path.read_text(encoding="utf-8"))
         params = json.loads(args.params.read_text(encoding="utf-8")) if args.params else None
+        if isinstance(params, dict) and "schema_version" in params:
+            from models.plume.parameters import validate_document
+            params = validate_document(params)
         result = predict_corridor(sources, wind, hours=args.hours, params=params,
                                   start=parse_time(args.start, "start") if args.start else None)
         problems = check_corridor(result)

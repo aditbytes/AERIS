@@ -50,7 +50,7 @@ def coordinates(obj: Any, name: str) -> tuple[float, float]:
 
 @dataclass(frozen=True)
 class PlumeParams:
-    """Baseline assumptions, not fitted or calibrated values; all distances SI."""
+    """Physical values with uncalibrated defaults; loader retains calibration provenance."""
 
     sigma0_m: float = 2000.0
     k_m_sqrt_hour: float = 1000.0
@@ -85,7 +85,9 @@ class PlumeParams:
 
 def resolve_params(params: PlumeParams | dict[str, Any] | None) -> PlumeParams:
     if params is None:
-        return PlumeParams()
+        # Lazy import keeps the physical dataclass independent of file loading.
+        from models.plume.parameters import load_parameters
+        return load_parameters().params
     if isinstance(params, PlumeParams):
         return params
     if isinstance(params, dict):
