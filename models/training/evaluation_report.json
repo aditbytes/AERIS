@@ -1,0 +1,281 @@
+{
+  "MODEL_DEFAULT": "PHYSICS_BASELINE",
+  "MODEL_SURROGATE": "AVAILABLE_FOR_OPTIONAL_USE",
+  "REAL_OBSERVATIONAL_VALIDATION": "NOT_AVAILABLE",
+  "SURROGATE_VALIDATION": "BASELINE_SIMULATED",
+  "comparison_basis": "Teacher reproduction: generated labels and replayed physics share the same equations/parameters; zero physics error is an identity check, not observed accuracy.",
+  "dataset_sha256": "234f0930667e15434ab2ca71d2ac0e6a5043b38851193978608591f5817a7855",
+  "dataset_size": {
+    "test": 1600,
+    "train": 8000,
+    "validation": 1600
+  },
+  "feature_names": [
+    "wind_speed_ms",
+    "sin_wind_toward",
+    "cos_wind_toward",
+    "downwind_m",
+    "crosswind_m",
+    "forecast_hours",
+    "pblh_m",
+    "source_emission_strength",
+    "source_radius_m"
+  ],
+  "generation_protocol": "steady-weather-mixture-v1",
+  "generation_seed": 42,
+  "hyperparameters": {
+    "early_stopping": false,
+    "l2_regularization": 0.1,
+    "learning_rate": 0.07,
+    "loss": "poisson",
+    "max_iter": 220,
+    "max_leaf_nodes": 31,
+    "min_samples_leaf": 12,
+    "random_state": 42
+  },
+  "model_bytes": 792417,
+  "model_sha256": "caf81beb49f7759b172ec68070e13089e8e66e4df416a1c1fec59ef32f7cd499",
+  "physics": {
+    "bias_ugm3": 0.0,
+    "count": 1600,
+    "mae_ugm3": 0.0,
+    "normalized_mae": 0.0,
+    "prediction_distribution": {
+      "max": 145.74689317987227,
+      "mean": 5.348363996726244,
+      "min": 0.0,
+      "p50": 0.5355929998788367,
+      "p90": 14.3544111333009,
+      "p99": 76.87933735303285,
+      "zero_count": 543
+    },
+    "relative_error": {
+      "definition": "abs(prediction-target)/target; zero targets excluded",
+      "eligible_count": 1057,
+      "max": 0.0,
+      "mean": 0.0,
+      "median": 0.0,
+      "p90": 0.0,
+      "zero_target_count": 543
+    },
+    "rmse_ugm3": 0.0,
+    "target_distribution": {
+      "max": 145.74689317987227,
+      "mean": 5.348363996726244,
+      "min": 0.0,
+      "p50": 0.5355929998788367,
+      "p90": 14.3544111333009,
+      "p99": 76.87933735303285,
+      "zero_count": 543
+    },
+    "worst_absolute_error_ugm3": 0.0
+  },
+  "physics_configuration": {
+    "parameters": {
+      "concentration_scale_ug": 1000000000000.0,
+      "grid_cell_m": 2000.0,
+      "idw_power": 2.0,
+      "k_m_sqrt_hour": 1000.0,
+      "kernel_sigma_cutoff": 4.0,
+      "max_grid_cells": 250000,
+      "max_projection_radius_km": 1000.0,
+      "max_time_gap_hours": 3.0,
+      "max_wind_distance_km": 50.0,
+      "pblh_floor_m": 200.0,
+      "risk_scale_ugm3": 50.0,
+      "sigma0_m": 2000.0,
+      "tau_hours": 24.0,
+      "threshold_ugm3": 5.0,
+      "wind_neighbors": 4
+    },
+    "physics_version": "lagrangian-puff-v1",
+    "source_sha256": {
+      "advect.py": "c835f48cf800fc5e74b28dd4fbde6e1d8a6efb75715d4dd9ff8108bc59bec1a6",
+      "corridor.py": "cb0434390ffee6987c392dc91df68a07988eb2e774758b5462195a717431fa25",
+      "parameters.py": "95f02b6af89eaa851933c0c44e25493d267582100cf48f066bd18479a9ecbfdd"
+    }
+  },
+  "physics_version": "lagrangian-puff-v1",
+  "reference_origin": {
+    "lat": 30.0,
+    "lon": 75.0
+  },
+  "reference_time": "2020-01-01T00:00:00Z",
+  "scenario_counts": {
+    "test": 200,
+    "train": 1000,
+    "validation": 200
+  },
+  "schema_version": 1,
+  "scope": "STEADY_WEATHER_SINGLE_SOURCE_HOURLY_EMISSIONS_POINT",
+  "seed": 42,
+  "software_versions": {
+    "numpy": "2.4.3",
+    "python": "3.14.3",
+    "scikit_learn": "1.8.0"
+  },
+  "surrogate": {
+    "bias_ugm3": -0.7777978829559058,
+    "count": 1600,
+    "mae_ugm3": 1.7852700330852673,
+    "normalized_mae": 0.3337974068664808,
+    "prediction_distribution": {
+      "max": 134.14055728240845,
+      "mean": 4.5705661137703375,
+      "min": 6.638792646815077e-05,
+      "p50": 0.7142212857277592,
+      "p90": 11.947955488625302,
+      "p99": 52.6583234394191,
+      "zero_count": 0
+    },
+    "relative_error": {
+      "definition": "abs(prediction-target)/target; zero targets excluded",
+      "eligible_count": 1057,
+      "max": 980.8523558676128,
+      "mean": 3.2222144242097337,
+      "median": 0.27202171568441724,
+      "p90": 1.7819560631769615,
+      "zero_target_count": 543
+    },
+    "rmse_ugm3": 6.8716391464413045,
+    "target_distribution": {
+      "max": 145.74689317987227,
+      "mean": 5.348363996726244,
+      "min": 0.0,
+      "p50": 0.5355929998788367,
+      "p90": 14.3544111333009,
+      "p99": 76.87933735303285,
+      "zero_count": 543
+    },
+    "worst_absolute_error_ugm3": 99.11438966910248
+  },
+  "target_name": "pm25_delta_ugm3",
+  "units": "ug/m3",
+  "validation": {
+    "bias_ugm3": -0.6486545612843752,
+    "count": 1600,
+    "mae_ugm3": 1.8977808663908022,
+    "normalized_mae": 0.3639022403252679,
+    "prediction_distribution": {
+      "max": 268.9608783807666,
+      "mean": 4.566429755576391,
+      "min": 7.499558770860877e-05,
+      "p50": 0.6460377275234519,
+      "p90": 12.045905402696786,
+      "p99": 46.8466346206324,
+      "zero_count": 0
+    },
+    "relative_error": {
+      "definition": "abs(prediction-target)/target; zero targets excluded",
+      "eligible_count": 1055,
+      "max": 903.1059927306121,
+      "mean": 3.461902027935603,
+      "median": 0.2934092882890983,
+      "p90": 1.9774093025473756,
+      "zero_target_count": 545
+    },
+    "rmse_ugm3": 7.620061638181924,
+    "target_distribution": {
+      "max": 224.75306647768,
+      "mean": 5.215084316860766,
+      "min": 0.0,
+      "p50": 0.46462288802280227,
+      "p90": 14.302221227147042,
+      "p99": 62.73430628590637,
+      "zero_count": 545
+    },
+    "worst_absolute_error_ugm3": 129.2119272728298
+  },
+  "worst_cases": [
+    {
+      "error_ugm3": -99.11438966910248,
+      "features": [
+        0.6232747390989662,
+        0.966594029670333,
+        0.2563122740051041,
+        6546.398721691398,
+        202.49420296151357,
+        7.0,
+        63.49651246377493,
+        0.7264278270891015,
+        3275.634628672126
+      ],
+      "point_id": 7,
+      "prediction_ugm3": 46.632503510769794,
+      "scenario_id": "0fb555544bb25fc31ac834c919ad36ceb004215e609fad689194345185129d01",
+      "target_ugm3": 145.74689317987227
+    },
+    {
+      "error_ugm3": -87.5715040276124,
+      "features": [
+        0.24601374345527624,
+        -0.8066610209122406,
+        0.5910143799780355,
+        2632.8521033853362,
+        -834.5484650881519,
+        12.0,
+        350.05077791178144,
+        0.7258751361078528,
+        4864.68761513702
+      ],
+      "point_id": 7,
+      "prediction_ugm3": 40.475022609248704,
+      "scenario_id": "58a0d769b938c7e6335c71d21d3b84b5cd7ea38f68ea0eed734f280ec142a4b3",
+      "target_ugm3": 128.0465266368611
+    },
+    {
+      "error_ugm3": -86.43381269472117,
+      "features": [
+        0.6232747390989662,
+        0.966594029670333,
+        0.2563122740051041,
+        6354.18380199959,
+        -1663.3068389841221,
+        7.0,
+        63.49651246377493,
+        0.7264278270891015,
+        3275.634628672126
+      ],
+      "point_id": 5,
+      "prediction_ugm3": 45.69260189862864,
+      "scenario_id": "0fb555544bb25fc31ac834c919ad36ceb004215e609fad689194345185129d01",
+      "target_ugm3": 132.1264145933498
+    },
+    {
+      "error_ugm3": -72.93587234316215,
+      "features": [
+        0.0,
+        0.0,
+        0.0,
+        -210.19056755387925,
+        -2185.370081798107,
+        11.0,
+        73.18414253570272,
+        0.3550221213680483,
+        5485.191838651278
+      ],
+      "point_id": 3,
+      "prediction_ugm3": 27.547752686585216,
+      "scenario_id": "0983cad8f3a2e121b41b94b06a9069749d64f14131429a5b296902e9e32a4b0a",
+      "target_ugm3": 100.48362502974736
+    },
+    {
+      "error_ugm3": -64.80611281209187,
+      "features": [
+        0.24601374345527624,
+        -0.8066610209122406,
+        0.5910143799780355,
+        5291.174880567874,
+        2961.8453652642074,
+        12.0,
+        350.05077791178144,
+        0.7258751361078528,
+        4864.68761513702
+      ],
+      "point_id": 5,
+      "prediction_ugm3": 30.11119557996995,
+      "scenario_id": "58a0d769b938c7e6335c71d21d3b84b5cd7ea38f68ea0eed734f280ec142a4b3",
+      "target_ugm3": 94.91730839206181
+    }
+  ]
+}

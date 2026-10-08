@@ -598,3 +598,45 @@ test is presented as observational calibration. Completion recommendation:
   Missing-input and invalid-parameter preservation also passed pipeline tests.
 - Source detection and all original real snapshot/publication-copy hashes were
   preserved. No network, downloads, historical observations, commits or PR edits.
+
+## Task 4 optional ML point surrogate
+
+The optional [training package](../training/README.md) trains a small deterministic
+`HistGradientBoostingRegressor` on `BASELINE_SIMULATED` targets from this engine's
+actual `simulate_source()` and `concentration_at()` calls. Physics equations,
+parameter loading, the source detector, published snapshots and the corridor
+pipeline are unchanged. No calibrated `params.json` is created by ML training.
+
+Its defined scope is one steady-weather source emitting hourly puffs for 1–12
+hours, sampled at a point relative to a fixed numerical reference origin. Its
+ordered features include wind speed/toward direction, downwind/crosswind position,
+elapsed forecast hours, PBLH, emission strength and source radius. It cannot
+replace changing-weather or 48-hour corridor forecasts. Train, validation and
+test are disjoint scenario groups; targets are neither clipped nor observational.
+
+`models.training.predict.predict_point()` defaults to `model="physics"` for these
+reference scenarios. `model="surrogate"` explicitly requires a valid artifact.
+An absent artifact does not affect the existing physics pipeline. Strict local
+SageMaker training/inference contracts, artifact provenance and the held-out
+[evaluation report](../training/evaluation_report.json) are documented with the
+training package; no cloud deployment is claimed.
+
+```text
+MODEL_DEFAULT: PHYSICS_BASELINE
+MODEL_SURROGATE: AVAILABLE_FOR_OPTIONAL_USE
+REAL_OBSERVATIONAL_VALIDATION: NOT_AVAILABLE
+SURROGATE_VALIDATION: BASELINE_SIMULATED
+```
+
+Generated-test ML RMSE/MAE/bias are 6.871639/1.785270/−0.777798 µg/m³, with a
+99.114390 µg/m³ worst absolute error. Replayed physics has zero error against its
+own generated targets, an identity check rather than observational accuracy.
+The surrogate demonstrates numerical approximation only. Physics remains the
+production default; promotion requires independent observational evidence and
+repeatable improvements under the decision rule in the training README. Task 3
+real-history calibration remains `BLOCKED_NO_VALID_HISTORICAL_DATA`.
+
+Task 4 verification on Python 3.14.3: training **66 passed**, plume **116 passed**,
+full suite **443 passed**, with one existing Requests dependency warning. All 30
+protected source/physics/pipeline and real snapshot hashes were preserved.
+Python 3.12 was grammar-checked only; no 3.12 runtime or cloud deployment was tested.
