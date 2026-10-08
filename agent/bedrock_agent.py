@@ -8,8 +8,9 @@ exposed population from AERIS_DATA_DIR). Its plan is validated before it is
 accepted: every site_id must be a real ranked site, and the plan must not be empty.
 
 Env:
-  AGENT_MODEL_ID   Bedrock model or inference-profile id
-  AWS_REGION       region for the Bedrock runtime client
+  AGENT_MODEL_ID            Bedrock model or inference-profile id (tried first)
+  AGENT_FALLBACK_MODEL_IDS  comma-separated ids tried next, in order (default: Amazon Nova)
+  AWS_REGION                region for the Bedrock runtime client
 """
 
 from __future__ import annotations
@@ -27,7 +28,10 @@ from agent.agent import AuthorityAction, SiteAction
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL_ID = "anthropic.claude-opus-5-5"
+DEFAULT_MODEL_ID = "global.anthropic.claude-sonnet-4-6"
+# Amazon Nova is billed directly by AWS (no Marketplace subscription), so it works
+# when Anthropic models are blocked by account access or payment issues.
+DEFAULT_FALLBACK_MODEL_IDS = "apac.amazon.nova-pro-v1:0,amazon.nova-pro-v1:0,apac.amazon.nova-lite-v1:0,amazon.nova-lite-v1:0"
 
 SYSTEM_PROMPT = """You are the AERIS action agent for air-quality emergencies in north-west India \
 (Punjab, Haryana, Delhi NCR). Smoke from detected fires is forecast to move along a corridor; \
@@ -95,15 +99,20 @@ def _validate(plan: _Plan) -> None:
         raise ValueError("Agent returned no site actions although ranked sites exist")
 
 
-def generate_bedrock_plan(model_id: str | None = None) -> dict[str, Any]:
-    """Run the Strands agent on Bedrock and return an actions.json-shaped dict."""
+def _model_ids(model_id: str | None) -> list[str]:
+    """Primary model, then AGENT_FALLBACK_MODEL_IDS (comma-separated) in order, without duplicates."""
+    primary = model_id or os.environ.get("AGENT_MODEL_ID", DEFAULT_MODEL_ID)
+    fallbacks = os.environ.get("AGENT_FALLBACK_MODEL_IDS", DEFAULT_FALLBACK_MODEL_IDS)
+    ids = [primary] + [m.strip() for m in fallbacks.split(",") if m.strip()]
+    return list(dict.fromkeys(ids))
+
+
+def _run_model(model_id: str) -> _Plan:
     from strands import Agent
     from strands.models import BedrockModel
 
-    model_id = model_id or os.environ.get("AGENT_MODEL_ID", DEFAULT_MODEL_ID)
     model = BedrockModel(model_id=model_id, region_name=os.environ.get("AWS_REGION"), max_tokens=8000)
     agent = Agent(model=model, tools=_tools(), system_prompt=SYSTEM_PROMPT, callback_handler=None)
-
     result = agent(
         "Read the current AERIS situation with the tools and produce the action plan.",
         structured_output_model=_Plan,
@@ -112,10 +121,27 @@ def generate_bedrock_plan(model_id: str | None = None) -> dict[str, Any]:
     if not isinstance(plan, _Plan):
         raise ValueError(f"Agent returned no structured plan (stop_reason={result.stop_reason})")
     _validate(plan)
-    logger.info("Bedrock plan: %d site actions, %d authority actions", len(plan.actions), len(plan.authority_actions))
+    return plan
 
-    return {
-        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "generator": f"bedrock:{model_id}",
-        **plan.model_dump(),
-    }
+
+def generate_bedrock_plan(model_id: str | None = None) -> dict[str, Any]:
+    """
+    Run the Strands agent on Bedrock and return an actions.json-shaped dict.
+    Tries each model in turn (e.g. Claude, then Amazon Nova); raises if all fail.
+    """
+    errors = []
+    for mid in _model_ids(model_id):
+        try:
+            plan = _run_model(mid)
+        except Exception as exc:  # noqa: BLE001 - access, billing, throttling or validation: try the next model
+            logger.warning("Bedrock model %s failed: %s: %s", mid, type(exc).__name__, str(exc)[:300])
+            errors.append(f"{mid}: {type(exc).__name__}")
+            continue
+        logger.info("Bedrock plan from %s: %d site actions, %d authority actions",
+                    mid, len(plan.actions), len(plan.authority_actions))
+        return {
+            "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "generator": f"bedrock:{mid}",
+            **plan.model_dump(),
+        }
+    raise RuntimeError("All Bedrock models failed: " + "; ".join(errors))
