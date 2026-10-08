@@ -7,6 +7,11 @@ STACK="${AERIS_STACK:-aeris-foundation}"
 REGION="${AWS_REGION:-ap-south-1}"
 : "${ALERT_EMAIL:?Set ALERT_EMAIL to receive budget alerts}"
 
+# Always pass the agent models. On an existing stack, sam deploy keeps a parameter's
+# previous value when it is not passed, so template defaults alone never update it.
+AGENT_MODEL_ID="${AGENT_MODEL_ID:-global.anthropic.claude-sonnet-4-6}"
+AGENT_FALLBACK_MODEL_IDS="${AGENT_FALLBACK_MODEL_IDS:-apac.amazon.nova-pro-v1:0,apac.amazon.nova-lite-v1:0,apac.amazon.nova-micro-v1:0}"
+
 # Stage the Python packages (without tests) next to the Lambda Makefile; SAM builds from there.
 PACKAGES=(ingest models agent pipeline api)
 for pkg in "${PACKAGES[@]}"; do
@@ -25,7 +30,7 @@ sam deploy \
   --no-confirm-changeset \
   --no-fail-on-empty-changeset \
   --parameter-overrides "AlertEmail=$ALERT_EMAIL" "MonthlyBudgetUsd=${MONTHLY_BUDGET_USD:-50}" \
-    ${AGENT_MODEL_ID:+"AgentModelId=$AGENT_MODEL_ID"}
+    "AgentModelId=$AGENT_MODEL_ID" "AgentFallbackModelIds=$AGENT_FALLBACK_MODEL_IDS"
 
 aws cloudformation describe-stacks --region "$REGION" --stack-name "$STACK" \
   --query 'Stacks[0].Outputs' --output table

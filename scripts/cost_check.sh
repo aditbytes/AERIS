@@ -27,7 +27,8 @@ end=$(date -u -v+1d +%Y-%m-%d 2>/dev/null || date -u -d tomorrow +%Y-%m-%d)
 echo "Month-to-date cost by service ($start to $end):"
 aws ce get-cost-and-usage --region us-east-1 --time-period "Start=$start,End=$end" \
   --granularity MONTHLY --metrics UnblendedCost --group-by Type=DIMENSION,Key=SERVICE \
-  --query 'ResultsByTime[0].Groups[?Metrics.UnblendedCost.Amount>`0.005`].[Keys[0],Metrics.UnblendedCost.Amount]' \
-  --output text | sort -k2 -rn | sed 's/^/   /'
+  --query 'ResultsByTime[0].Groups[].[Keys[0],Metrics.UnblendedCost.Amount]' \
+  --output text | awk -F'\t' '$2 + 0 >= 0.005 { printf "   %-55s $%.2f\n", $1, $2; total += $2 } END { printf "   %-55s $%.2f\n", "TOTAL", total }' \
+  | sort -t'$' -k2 -rn
 
 exit $found

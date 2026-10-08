@@ -142,3 +142,12 @@ def test_real_corridor_pipeline_does_not_load_optional_ml_artifact(live_copy, mo
     result = steps.corridor_handler(_covered_forecast_event(live_copy), None)
     assert result["features"] > 0
     assert check_corridor(_load(live_copy / "corridor.geojson")) == []
+
+
+def test_agent_budget_leaves_reserve_for_fallback():
+    class Ctx:
+        def get_remaining_time_in_millis(self):
+            return 300_000
+
+    assert steps._agent_budget(Ctx()) == 300 - steps._AGENT_RESERVE_S
+    assert steps._agent_budget(None) is None

@@ -24,8 +24,12 @@ Parameters:
     Default: 14
   AgentModelId:
     Type: String
-    Default: anthropic.claude-opus-5-5
+    Default: global.anthropic.claude-sonnet-4-6
     Description: Bedrock model or inference-profile id for the Strands action agent
+  AgentFallbackModelIds:
+    Type: String
+    Default: apac.amazon.nova-pro-v1:0,apac.amazon.nova-lite-v1:0,apac.amazon.nova-micro-v1:0
+    Description: Comma-separated Bedrock ids tried in order if AgentModelId fails (Amazon Nova needs no Marketplace subscription)
 
 Resources:
   DataBucket:
@@ -455,12 +459,13 @@ Resources:
       LoggingConfig:
         LogGroup: !Ref AgentFunctionLogs
       MemorySize: 1024
-      # Strands agent runs take 30-60 s; leave room for Bedrock retries
-      Timeout: 300
+      # Strands runs take 30-60 s per model; room for the Claude -> Nova chain plus the rules fallback
+      Timeout: 600
       Environment:
         Variables:
           AGENT_MODEL_PROVIDER: bedrock
           AGENT_MODEL_ID: !Ref AgentModelId
+          AGENT_FALLBACK_MODEL_IDS: !Ref AgentFallbackModelIds
 
   PipelineStateMachine:
     Type: AWS::Serverless::StateMachine

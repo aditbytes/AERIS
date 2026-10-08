@@ -8,8 +8,9 @@ exposed population from AERIS_DATA_DIR). Its plan is validated before it is
 accepted: every site_id must be a real ranked site, and the plan must not be empty.
 
 Env:
-  AGENT_MODEL_ID   Bedrock model or inference-profile id
-  AWS_REGION       region for the Bedrock runtime client
+  AGENT_MODEL_ID            Bedrock model or inference-profile id (tried first)
+  AGENT_FALLBACK_MODEL_IDS  comma-separated ids tried next, in order (default: Amazon Nova)
+  AWS_REGION                region for the Bedrock runtime client
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
 from datetime import datetime, timezone
 from typing import Any
 
@@ -27,13 +29,19 @@ from agent.agent import AuthorityAction, SiteAction
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL_ID = "anthropic.claude-opus-5-5"
+DEFAULT_MODEL_ID = "global.anthropic.claude-sonnet-4-6"
+# Amazon Nova is billed directly by AWS (no Marketplace subscription), so it works
+# when Anthropic models are blocked by account access or payment issues.
+# In ap-south-1 Nova needs the apac. inference profile (bare ids: "on-demand throughput
+# isn't supported"). Each Nova model has its own daily token quota, so Micro is a
+# separate last chance when Pro and Lite are throttled.
+DEFAULT_FALLBACK_MODEL_IDS = "apac.amazon.nova-pro-v1:0,apac.amazon.nova-lite-v1:0,apac.amazon.nova-micro-v1:0"
 
 SYSTEM_PROMPT = """You are the AERIS action agent for air-quality emergencies in north-west India \
 (Punjab, Haryana, Delhi NCR). Smoke from detected fires is forecast to move along a corridor; \
 schools and hospitals inside it are ranked by risk.
 
-Use the tools to read the current situation, then write a prioritised action plan.
+Call get_sources, query_corridor, get_ranked_sites and get_exposed_population together in your first turn, then write a prioritised action plan. Use get_site only if one site needs more detail. Do not call a tool twice.
 
 Rules:
 - Use only numbers returned by the tools (ETA hours, PM2.5 delta, occupancy, exposed population, \
@@ -95,27 +103,80 @@ def _validate(plan: _Plan) -> None:
         raise ValueError("Agent returned no site actions although ranked sites exist")
 
 
-def generate_bedrock_plan(model_id: str | None = None) -> dict[str, Any]:
-    """Run the Strands agent on Bedrock and return an actions.json-shaped dict."""
-    from strands import Agent
+def _model_ids(model_id: str | None) -> list[str]:
+    """Primary model, then AGENT_FALLBACK_MODEL_IDS (comma-separated) in order, without duplicates."""
+    primary = model_id or os.environ.get("AGENT_MODEL_ID", DEFAULT_MODEL_ID)
+    fallbacks = os.environ.get("AGENT_FALLBACK_MODEL_IDS", DEFAULT_FALLBACK_MODEL_IDS)
+    ids = [primary] + [m.strip() for m in fallbacks.split(",") if m.strip()]
+    return list(dict.fromkeys(ids))
+
+
+# Bounds for one model attempt. Strands' default retry (6 attempts, up to 240 s
+# backoff) can spend minutes on a throttled model and time the Lambda out before
+# the next model or the rules plan gets a chance.
+MAX_TURNS = 8
+READ_TIMEOUT_S = 60
+# Do not start another model with less than this many seconds left.
+MIN_SECONDS_PER_MODEL = 75
+
+
+def _run_model(model_id: str) -> _Plan:
+    from botocore.config import Config
+    from strands import Agent, ModelRetryStrategy
     from strands.models import BedrockModel
 
-    model_id = model_id or os.environ.get("AGENT_MODEL_ID", DEFAULT_MODEL_ID)
-    model = BedrockModel(model_id=model_id, region_name=os.environ.get("AWS_REGION"), max_tokens=8000)
-    agent = Agent(model=model, tools=_tools(), system_prompt=SYSTEM_PROMPT, callback_handler=None)
-
+    model = BedrockModel(
+        model_id=model_id,
+        region_name=os.environ.get("AWS_REGION"),
+        max_tokens=8000,
+        boto_client_config=Config(
+            connect_timeout=5, read_timeout=READ_TIMEOUT_S, retries={"max_attempts": 2, "mode": "standard"}
+        ),
+    )
+    agent = Agent(
+        model=model,
+        tools=_tools(),
+        system_prompt=SYSTEM_PROMPT,
+        callback_handler=None,
+        retry_strategy=ModelRetryStrategy(max_attempts=2, initial_delay=2, max_delay=10),
+    )
     result = agent(
         "Read the current AERIS situation with the tools and produce the action plan.",
         structured_output_model=_Plan,
+        limits={"turns": MAX_TURNS},
     )
     plan = result.structured_output
     if not isinstance(plan, _Plan):
         raise ValueError(f"Agent returned no structured plan (stop_reason={result.stop_reason})")
     _validate(plan)
-    logger.info("Bedrock plan: %d site actions, %d authority actions", len(plan.actions), len(plan.authority_actions))
+    return plan
 
-    return {
-        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "generator": f"bedrock:{model_id}",
-        **plan.model_dump(),
-    }
+
+def generate_bedrock_plan(model_id: str | None = None, time_budget_s: float | None = None) -> dict[str, Any]:
+    """
+    Run the Strands agent on Bedrock and return an actions.json-shaped dict.
+    Tries each model in turn (e.g. Claude, then Amazon Nova); raises if all fail.
+    With ``time_budget_s``, stops starting new models once less than
+    MIN_SECONDS_PER_MODEL remains, so the caller can still fall back in time.
+    """
+    deadline = time.monotonic() + time_budget_s if time_budget_s else None
+    errors = []
+    for mid in _model_ids(model_id):
+        if deadline is not None and deadline - time.monotonic() < MIN_SECONDS_PER_MODEL:
+            errors.append(f"{mid}: skipped, time budget used up")
+            logger.warning("Skipping Bedrock model %s: time budget used up", mid)
+            continue
+        try:
+            plan = _run_model(mid)
+        except Exception as exc:  # noqa: BLE001 - access, billing, throttling or validation: try the next model
+            logger.warning("Bedrock model %s failed: %s: %s", mid, type(exc).__name__, str(exc)[:300])
+            errors.append(f"{mid}: {type(exc).__name__}")
+            continue
+        logger.info("Bedrock plan from %s: %d site actions, %d authority actions",
+                    mid, len(plan.actions), len(plan.authority_actions))
+        return {
+            "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "generator": f"bedrock:{mid}",
+            **plan.model_dump(),
+        }
+    raise RuntimeError("All Bedrock models failed: " + "; ".join(errors))

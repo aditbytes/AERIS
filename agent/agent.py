@@ -178,13 +178,14 @@ def generate_action_plan(data_dir: Path | None = None) -> ActionsOutput:
     )
 
 
-def run(data_dir: Path | None = None) -> dict[str, Any]:
+def run(data_dir: Path | None = None, time_budget_s: float | None = None) -> dict[str, Any]:
     """
     Execute action agent and return validated dict.
 
     AGENT_MODEL_PROVIDER=bedrock runs the Strands agent on Amazon Bedrock. If that
     fails, the rules-based plan (built from the same real data) is used instead.
-    The ``generator`` field records which one produced the plan.
+    The ``generator`` field records which one produced the plan. ``time_budget_s``
+    bounds how long the Bedrock attempts may take before falling back.
     """
     if data_dir:
         os.environ["AERIS_DATA_DIR"] = str(data_dir)
@@ -193,7 +194,7 @@ def run(data_dir: Path | None = None) -> dict[str, Any]:
         try:
             from agent.bedrock_agent import generate_bedrock_plan
 
-            return generate_bedrock_plan()
+            return generate_bedrock_plan(time_budget_s=time_budget_s)
         except Exception as exc:  # noqa: BLE001 - any Bedrock/validation failure falls back to rules
             logger.exception("Bedrock agent failed (%s); using the rules-based plan", type(exc).__name__)
 

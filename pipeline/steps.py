@@ -112,6 +112,17 @@ def rank_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
 _AGENT_INPUTS = [("sources", False), ("corridor", True), ("ranked_sites", False), ("sites", True)]
 
 
+# Seconds kept back from the Lambda timeout for the rules fallback and the S3 write.
+_AGENT_RESERVE_S = 30
+
+
+def _agent_budget(context: Any) -> float | None:
+    """Seconds the Bedrock attempts may use, from the Lambda's remaining time."""
+    if context is None or not hasattr(context, "get_remaining_time_in_millis"):
+        return None
+    return max(0.0, context.get_remaining_time_in_millis() / 1000 - _AGENT_RESERVE_S)
+
+
 def agent_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """Stage gold/ inputs in a temp dir for the agent tools, run the agent, write actions.json."""
     import json
@@ -124,7 +135,7 @@ def agent_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
             (Path(tmp) / f"{name}{'.geojson' if geojson else '.json'}").write_text(json.dumps(obj))
         previous = os.environ.get("AERIS_DATA_DIR")
         try:
-            result = run(Path(tmp))
+            result = run(Path(tmp), time_budget_s=_agent_budget(context))
         finally:
             if previous is None:
                 os.environ.pop("AERIS_DATA_DIR", None)
