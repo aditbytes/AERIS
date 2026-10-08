@@ -218,6 +218,10 @@ def _parse_point_hourly(
         # Normalise timestamp to ISO-8601 UTC
         try:
             dt = datetime.fromisoformat(t_str.replace("Z", "+00:00"))
+            # The request explicitly asks for timezone=UTC. A naive API time is
+            # UTC, not the execution host's local timezone (e.g. Asia/Kolkata).
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
             t_iso = dt.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
         except (ValueError, AttributeError):
             t_iso = t_str

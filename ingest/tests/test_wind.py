@@ -28,15 +28,40 @@ Tests:
 from __future__ import annotations
 
 import math
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from ingest.weather.fetch_wind import (
+    _parse_point_hourly,
     build_grid,
     fetch_wind,
     wind_components,
 )
+
+
+@pytest.mark.parametrize("api_time,expected", [
+    ("2026-10-07T00:00", "2026-10-07T00:00:00Z"),
+    ("2026-10-07T00:00:00Z", "2026-10-07T00:00:00Z"),
+    ("2026-10-07T05:30:00+05:30", "2026-10-07T00:00:00Z"),
+])
+def test_wind_parser_utc_independent_of_host_timezone(monkeypatch, api_time, expected):
+    """Mathematical time conversion, zero vectors; not atmospheric observations."""
+    import ingest.weather.fetch_wind as fetch_wind_module
+
+    class NonUtcHostDatetime(datetime):
+        def astimezone(self, tz=None):
+            # Reproduce naive astimezone interpretation on a host at UTC+05:30,
+            # regardless of the platform where the regression test runs.
+            if self.tzinfo is None:
+                self = self.replace(tzinfo=timezone(timedelta(hours=5, minutes=30)))
+            return super().astimezone(tz)
+
+    monkeypatch.setattr(fetch_wind_module, "datetime", NonUtcHostDatetime)
+    result = _parse_point_hourly(0, 0, {"time": [api_time], "wind_speed_10m": [0],
+                                      "wind_direction_10m": [0], "boundary_layer_height": [0]})
+    assert result["hours"][0]["t"] == expected
 
 
 # ---------------------------------------------------------------------------
