@@ -73,3 +73,12 @@ def test_agent_restores_data_dir(live_copy, monkeypatch):
     import os
 
     assert os.environ["AERIS_DATA_DIR"] == str(live_copy)
+
+
+def test_agent_budget_leaves_reserve_for_fallback():
+    class Ctx:
+        def get_remaining_time_in_millis(self):
+            return 300_000
+
+    assert steps._agent_budget(Ctx()) == 300 - steps._AGENT_RESERVE_S
+    assert steps._agent_budget(None) is None
