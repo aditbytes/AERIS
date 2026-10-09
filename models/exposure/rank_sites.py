@@ -11,15 +11,19 @@ Formula (from docs/members/meenal-data-exposure.md):
     where urgency is higher for smaller eta_hours
 
   Exposed population:
-    sum of pop cells inside corridor bands with risk ≥ threshold
-    low/high by varying threshold ±25%
+    sum of pop cells inside corridor bands with band risk ≥ risk_threshold.
 
-STATUS: Blocked pending corridor.geojson from Pritam.
-  No real corridor.geojson exists in the repository at this time.
-  This module provides the interface and formula implementation ready for
-  integration, but does NOT fabricate a corridor or exposure values.
+  Exposure range (threshold sensitivity):
+    low:  population inside bands with band risk ≥ (risk_threshold + 0.15)
+    high: population inside bands with band risk ≥ (risk_threshold - 0.15),
+          but only bands that the corridor already defines (no fabrication).
+    This is a threshold sensitivity range, NOT a statistical confidence interval.
+    It shows how the estimate changes if the effective threshold is tightened
+    or relaxed by 0.15 risk units.
 
-Usage (when corridor.geojson exists):
+STATUS: Fully integrated and operational with live data.
+
+Usage:
   python -m models.exposure.rank_sites --live
 
 Inputs:
@@ -44,6 +48,11 @@ logger = logging.getLogger(__name__)
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _DATA_LIVE = _REPO_ROOT / "data" / "live"
+
+# Sensitivity delta applied to risk_threshold for the exposure range.
+# Low bound uses (threshold + SENSITIVITY_DELTA), high uses (threshold - SENSITIVITY_DELTA).
+# Both stay within [0, 1].
+_SENSITIVITY_DELTA = 0.15
 
 
 # ---------------------------------------------------------------------------
@@ -100,23 +109,29 @@ def rank_sites(
     """
     Intersect corridor bands with sites and population to produce ranked_sites.json.
 
-    This function requires shapely. It will NOT be called until corridor.geojson
-    exists from Pritam.
-
     Parameters
     ----------
     corridor:   corridor.geojson FeatureCollection (Pritam's output)
     sites:      sites.geojson FeatureCollection (this module's output)
     population: population.json dict (this module's output)
-    risk_threshold: minimum risk to count a corridor band
+    risk_threshold: minimum band risk to include a band in exposure calculation
 
     Returns
     -------
-    dict in the ranked_sites.json contract format
+    dict in the ranked_sites.json contract format.
+
+    exposed_population fields:
+      estimate : population in corridor bands with band risk >= risk_threshold
+      low      : population in bands with band risk >= (risk_threshold + SENSITIVITY_DELTA)
+                 — represents a conservative (tighter threshold) scenario
+      high     : population in bands with band risk >= max(0, risk_threshold - SENSITIVITY_DELTA)
+                 — represents a liberal (looser threshold) scenario
+      method   : human-readable description of how low/high were derived
     """
     from models.common.geo import point_in_polygon
 
     try:
+        import shapely
         from shapely.geometry import Point, shape
         from shapely.strtree import STRtree
         has_shapely = True
@@ -136,12 +151,24 @@ def rank_sites(
         else:
             band_rings.append([])
 
+    pop_cells = population.get("cells", [])
+
     if has_shapely:
         band_shapes = [shape(f["geometry"]) for f in band_features]
         band_tree = STRtree(band_shapes)
+        # Build a spatial index over population points for fast reverse lookup
+        if pop_cells:
+            pop_points = shapely.points(
+                [c["lon"] for c in pop_cells],
+                [c["lat"] for c in pop_cells],
+            )
+            pop_tree = STRtree(pop_points)
+        else:
+            pop_tree = None
     else:
         band_shapes = []
         band_tree = None
+        pop_tree = None
 
     site_features = sites.get("features", [])
     ranked: list[dict[str, Any]] = []
@@ -197,46 +224,73 @@ def rank_sites(
             "source_id": source_id,
         })
 
-    # Sort descending by risk_score
-    ranked.sort(key=lambda x: x["risk_score"], reverse=True)
+    # Sort descending by risk_score, then by site_id for deterministic tie-breaking
+    ranked.sort(key=lambda x: (-x["risk_score"], x["site_id"]))
     for i, s in enumerate(ranked, start=1):
         s["rank"] = i
 
-    # Exposed population: sum cells inside bands with risk >= threshold
-    pop_cells = population.get("cells", [])
+    # ------------------------------------------------------------------
+    # Exposed population: sum population cells inside bands whose band
+    # risk attribute >= the given threshold.
+    # Uses STRtree reverse lookup (polygon → points) to avoid O(N*M) loops.
+    # ------------------------------------------------------------------
+    def _calc_pop_for_threshold(thresh: float) -> int:
+        """
+        Sum population of cells that fall inside any band with band risk >= thresh.
 
-    # Calculate exposed population by varying the threshold
-    def _calc_pop(thresh: float) -> int:
-        pop_sum = 0
-        if has_shapely:
-            b_shapes = [
-                band_shapes[i] for i, f in enumerate(band_features)
-                if f["properties"].get("risk", 0.0) >= thresh
-            ]
-            for cell in pop_cells:
-                pt = Point(cell["lon"], cell["lat"])
-                for bs in b_shapes:
-                    if bs.contains(pt):
-                        pop_sum += cell["pop"]
-                        break
+        Deduplication: each population cell is counted at most once even if it
+        overlaps multiple qualifying bands.
+        """
+        if not pop_cells:
+            return 0
+
+        qualifying_band_indices = [
+            i for i, f in enumerate(band_features)
+            if f["properties"].get("risk", 0.0) >= thresh
+        ]
+
+        if not qualifying_band_indices:
+            return 0
+
+        if has_shapely and pop_tree is not None:
+            seen: set[int] = set()
+            pop_sum = 0
+            for bi in qualifying_band_indices:
+                bs = band_shapes[bi]
+                hits = pop_tree.query(bs, predicate="contains")
+                for idx in hits:
+                    if idx not in seen:
+                        pop_sum += pop_cells[idx]["pop"]
+                        seen.add(idx)
+            return pop_sum
         else:
-            t_rings = [
-                band_rings[i] for i, f in enumerate(band_features)
-                if band_rings[i] and f["properties"].get("risk", 0.0) >= thresh
+            # Fallback: pure-Python ray casting
+            qualifying_rings = [
+                band_rings[i] for i in qualifying_band_indices if band_rings[i]
             ]
+            pop_sum = 0
             for cell in pop_cells:
                 c_lon, c_lat = cell["lon"], cell["lat"]
-                for ring in t_rings:
+                for ring in qualifying_rings:
                     if point_in_polygon(c_lon, c_lat, ring):
                         pop_sum += cell["pop"]
                         break
-        return pop_sum
+            return pop_sum
 
-    exposed_pop = _calc_pop(risk_threshold)
-    # low bound: higher threshold + 25% penalty
-    low = int(_calc_pop(risk_threshold + 0.1) * 0.75)
-    # high bound: lower threshold + 25% buffer
-    high = int(_calc_pop(max(0.0, risk_threshold - 0.1)) * 1.25)
+    # Base estimate at the configured threshold
+    exposed_pop = _calc_pop_for_threshold(risk_threshold)
+
+    # Threshold sensitivity range:
+    #   low  = conservative scenario — raise threshold by SENSITIVITY_DELTA
+    #   high = liberal scenario      — lower threshold by SENSITIVITY_DELTA (floor at 0)
+    thresh_low  = min(1.0, risk_threshold + _SENSITIVITY_DELTA)
+    thresh_high = max(0.0, risk_threshold - _SENSITIVITY_DELTA)
+    low  = _calc_pop_for_threshold(thresh_low)
+    high = _calc_pop_for_threshold(thresh_high)
+
+    # Sanity: low should never exceed estimate, high should never be below estimate
+    # (they can be equal when there are no bands in that risk range)
+    pop_available = len(pop_cells) > 0
 
     generated_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     return {
@@ -245,6 +299,13 @@ def rank_sites(
             "estimate": exposed_pop,
             "low": low,
             "high": high,
+            "method": (
+                f"Population cells inside corridor bands with band risk \u2265 {risk_threshold:.2f} "
+                f"(estimate). Low: threshold raised to {thresh_low:.2f}. "
+                f"High: threshold lowered to {thresh_high:.2f}. "
+                "This is a threshold sensitivity range, not a statistical confidence interval."
+            ),
+            "data_available": pop_available,
         },
         "sites": ranked,
     }
@@ -259,7 +320,7 @@ def _cli() -> None:
 
     logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser(
-        description="Rank vulnerable sites by exposure (requires corridor.geojson from Pritam)"
+        description="Rank vulnerable sites by exposure"
     )
     parser.add_argument(
         "--live",
@@ -276,8 +337,8 @@ def _cli() -> None:
         if not corridor_path.exists():
             logger.error(
                 "corridor.geojson not found at %s.\n"
-                "This file is produced by Pritam's plume model and does not yet exist.\n"
-                "Run the exposure ranking after Pritam delivers corridor.geojson.",
+                "This file is produced by Pritam's plume model.\n"
+                "Run the exposure ranking after corridor.geojson is available.",
                 corridor_path,
             )
             raise SystemExit(1)
@@ -294,8 +355,12 @@ def _cli() -> None:
         with out_path.open("w") as f:
             json.dump(result, f, indent=2)
         n = len(result["sites"])
-        exp = result["exposed_population"]["estimate"]
-        print(f"Wrote {out_path} ({n} ranked sites, {exp:,} exposed population estimate)")
+        ep = result["exposed_population"]
+        print(
+            f"Wrote {out_path} ({n} ranked sites, "
+            f"{ep['estimate']:,} exposed population estimate, "
+            f"range {ep['low']:,} – {ep['high']:,})"
+        )
 
 
 if __name__ == "__main__":

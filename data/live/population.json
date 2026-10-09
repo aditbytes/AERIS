@@ -1,8 +1,8 @@
 {
   "cell_km": 1.0,
-  "generated_at": "2026-10-08T13:13:45.663010Z",
+  "generated_at": "2026-10-09T01:28:11.818637Z",
   "source": {
-    "name": "WorldPop Global High Resolution Population Denominators",
+    "name": "WorldPop India 2020, 1 km aggregated population raster",
     "url": "https://worldpop-public-data.soton.ac.uk/GIS/Population/Global_2000_2020_1km/2020/IND/ind_ppp_2020_1km_Aggregated.tif",
     "doi": "10.5258/SOTON/WP00647",
     "year": 2020,
