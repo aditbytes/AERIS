@@ -42,7 +42,7 @@ def _covered_forecast_event(live_copy):
 
 
 def _load(path: Path):
-    return json.loads(path.read_text())
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def test_full_chain_writes_contract_files(live_copy):

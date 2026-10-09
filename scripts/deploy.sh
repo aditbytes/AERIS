@@ -12,15 +12,12 @@ REGION="${AWS_REGION:-ap-south-1}"
 AGENT_MODEL_ID="${AGENT_MODEL_ID:-global.anthropic.claude-sonnet-4-6}"
 AGENT_FALLBACK_MODEL_IDS="${AGENT_FALLBACK_MODEL_IDS:-apac.amazon.nova-pro-v1:0,apac.amazon.nova-lite-v1:0,apac.amazon.nova-micro-v1:0}"
 
-# Stage the Python packages (without tests) next to the Lambda Makefile; SAM builds from there.
-PACKAGES=(ingest models agent pipeline api)
-for pkg in "${PACKAGES[@]}"; do
-  rm -rf "infra/lambda/$pkg"
-  rsync -a --exclude tests --exclude __pycache__ --exclude notebooks "$pkg" infra/lambda/
-done
+# Use the same runtime-only source staging as the package-size CI gate.
+python3 scripts/stage_lambda_sources.py
 
 sam validate --region "$REGION" --template-file infra/template.yaml >/dev/null
 sam build --template-file infra/template.yaml --build-dir .aws-sam/build
+python3 scripts/verify_lambda_dependencies.py --artifacts-dir .aws-sam/build
 sam deploy \
   --template-file .aws-sam/build/template.yaml \
   --region "$REGION" \

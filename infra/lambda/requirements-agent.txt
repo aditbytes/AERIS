@@ -2,4 +2,6 @@
 # newer Bedrock Converse API than the Lambda runtime may ship.
 strands-agents>=1.59.0
 boto3>=1.40.0
+# Direct import of botocore.config.Config; boto3 constrains the matching SDK version.
+botocore>=1.40.0
 pydantic>=2.0.0
