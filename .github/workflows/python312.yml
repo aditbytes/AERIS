@@ -1,0 +1,67 @@
+name: Python 3.12 and Lambda dependencies
+
+"on":
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, "feature/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Python 3.12 tests and compilation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            infra/lambda/requirements*.txt
+      - name: Install declared dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Check installed dependency consistency
+        run: python -m pip check
+      - name: Run complete repository test suite
+        run: python -m pytest -ra
+      - name: Compile owned Python modules
+        run: python -m compileall -q ingest models agent pipeline api scripts infra/lambda/prune.py
+
+  lambda-dependencies:
+    name: Lambda build and uncompressed size gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            infra/lambda/requirements*.txt
+      - name: Install declared dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Check installed dependency consistency
+        run: python -m pip check
+      - name: Set up SAM CLI for local builds
+        uses: aws-actions/setup-sam@v2
+      - name: Stage runtime source files
+        run: python scripts/stage_lambda_sources.py
+      - name: Build configured Lambda artifacts without deploying
+        env:
+          SAM_CLI_TELEMETRY: "0"
+          AWS_EC2_METADATA_DISABLED: "true"
+        run: sam build --template-file infra/template.yaml --build-dir .aws-sam/build
+      - name: Enforce function plus layer size limits
+        run: python scripts/verify_lambda_dependencies.py --artifacts-dir .aws-sam/build --report .aws-sam/build/package-sizes.json

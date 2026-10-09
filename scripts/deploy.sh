@@ -17,6 +17,7 @@ python3 scripts/stage_lambda_sources.py
 
 sam validate --region "$REGION" --template-file infra/template.yaml >/dev/null
 sam build --template-file infra/template.yaml --build-dir .aws-sam/build
+python3 scripts/verify_lambda_dependencies.py --artifacts-dir .aws-sam/build
 sam deploy \
   --template-file .aws-sam/build/template.yaml \
   --region "$REGION" \
