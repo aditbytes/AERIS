@@ -84,9 +84,11 @@ export const RankedSiteSchema = z.object({
 export const RankedSitesFileSchema = z.object({
   generated_at:       z.string(),
   exposed_population: z.object({
-    estimate: z.number(),
-    low:      z.number(),
-    high:     z.number(),
+    estimate:       z.number(),
+    low:            z.number(),
+    high:           z.number(),
+    method:         z.string().optional(),
+    data_available: z.boolean().optional(),
   }),
   sites: z.array(RankedSiteSchema),
 })

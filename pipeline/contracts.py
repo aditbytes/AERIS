@@ -129,6 +129,10 @@ def check_ranked_sites(obj: Any) -> Problems:
     for k in ("estimate", "low", "high"):
         if not (isinstance(exp.get(k), int) and exp[k] >= 0):
             p.append(f"ranked_sites: exposed_population.{k} must be a non-negative int")
+    if "data_available" in exp and not isinstance(exp["data_available"], bool):
+        p.append("ranked_sites: exposed_population.data_available must be a bool")
+    if "method" in exp and not (isinstance(exp["method"], str) and exp["method"].strip()):
+        p.append("ranked_sites: exposed_population.method must be a non-empty str")
     ranks = []
     for i, s in enumerate(obj.get("sites") or []):
         w = f"ranked_sites.sites[{i}]"

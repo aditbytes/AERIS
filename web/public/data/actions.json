@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-10-08T14:52:19.030589Z",
-  "summary": "Active stubble burning cluster detected with 215 fires (FRP: 676 MW) and 99% emission strength. Smoke corridor approaches NCR receptor communities in ~0.5 hours, exposing an estimated 7.1M residents (90% CI: 5,349,092 - 18,110,132). Immediate protective interventions mandated for Akash Hospital, Ballabgarh and Dayal Hospital, Faridabad before threshold exceedance.",
+  "generated_at": "2026-10-09T06:00:03.651716Z",
+  "summary": "Active stubble burning cluster detected with 215 fires (FRP: 676 MW) and 99% emission strength. Smoke corridor approaches NCR receptor communities in ~0.5 hours, exposing an estimated 7.1M residents (exposure range: 7,132,123 - 14,488,106). Immediate protective interventions mandated for Akash Hospital, Ballabgarh and Dayal Hospital, Faridabad before threshold exceedance.",
   "actions": [
     {
       "priority": 1,
       "site_id": "s_0446",
       "who": "Medical Director, Akash Hospital, Ballabgarh",
       "action": "Activate hospital HVAC HEPA filtration in ICU & pulmonary wards; seal triage entryways and stage supplemental oxygen supplies",
-      "reason": "ETA 0.0h, forecast PM2.5 delta +15 µg/m³",
+      "reason": "ETA 0.0h, forecast PM2.5 delta +15 \u00b5g/m\u00b3",
       "deadline_hours": 0.5
     },
     {
@@ -15,7 +15,7 @@
       "site_id": "s_0476",
       "who": "Medical Director, Dayal Hospital, Faridabad",
       "action": "Activate hospital HVAC HEPA filtration in ICU & pulmonary wards; seal triage entryways and stage supplemental oxygen supplies",
-      "reason": "ETA 0.0h, forecast PM2.5 delta +15 µg/m³",
+      "reason": "ETA 0.0h, forecast PM2.5 delta +15 \u00b5g/m\u00b3",
       "deadline_hours": 0.5
     },
     {
@@ -23,7 +23,7 @@
       "site_id": "s_1420",
       "who": "Principal / Administrator, Government Senior Secondary School",
       "action": "Transition morning assembly and all sports indoors; verify classroom air purification and distribute certified N95 masks",
-      "reason": "ETA 0.0h, forecast PM2.5 delta +15 µg/m³",
+      "reason": "ETA 0.0h, forecast PM2.5 delta +15 \u00b5g/m\u00b3",
       "deadline_hours": 0.5
     },
     {
@@ -31,7 +31,7 @@
       "site_id": "s_2754",
       "who": "Principal / Administrator, Government Senior Secondary School",
       "action": "Transition morning assembly and all sports indoors; verify classroom air purification and distribute certified N95 masks",
-      "reason": "ETA 0.0h, forecast PM2.5 delta +15 µg/m³",
+      "reason": "ETA 0.0h, forecast PM2.5 delta +15 \u00b5g/m\u00b3",
       "deadline_hours": 0.5
     },
     {
@@ -39,7 +39,7 @@
       "site_id": "s_2755",
       "who": "Principal / Administrator, Government Primary School",
       "action": "Transition morning assembly and all sports indoors; verify classroom air purification and distribute certified N95 masks",
-      "reason": "ETA 0.0h, forecast PM2.5 delta +15 µg/m³",
+      "reason": "ETA 0.0h, forecast PM2.5 delta +15 \u00b5g/m\u00b3",
       "deadline_hours": 0.5
     },
     {
@@ -47,7 +47,7 @@
       "site_id": "s_0054",
       "who": "Medical Director, Civil Hospital",
       "action": "Activate hospital HVAC HEPA filtration in ICU & pulmonary wards; seal triage entryways and stage supplemental oxygen supplies",
-      "reason": "ETA 2.0h, forecast PM2.5 delta +15 µg/m³",
+      "reason": "ETA 2.0h, forecast PM2.5 delta +15 \u00b5g/m\u00b3",
       "deadline_hours": 1.5
     },
     {
@@ -55,7 +55,7 @@
       "site_id": "s_0326",
       "who": "Medical Director, Vardaan Hospital and Trauma Centre",
       "action": "Activate hospital HVAC HEPA filtration in ICU & pulmonary wards; seal triage entryways and stage supplemental oxygen supplies",
-      "reason": "ETA 2.0h, forecast PM2.5 delta +15 µg/m³",
+      "reason": "ETA 2.0h, forecast PM2.5 delta +15 \u00b5g/m\u00b3",
       "deadline_hours": 1.5
     },
     {
@@ -63,7 +63,7 @@
       "site_id": "s_0906",
       "who": "Medical Director, Civil Hospital Sohna",
       "action": "Activate hospital HVAC HEPA filtration in ICU & pulmonary wards; seal triage entryways and stage supplemental oxygen supplies",
-      "reason": "ETA 2.0h, forecast PM2.5 delta +15 µg/m³",
+      "reason": "ETA 2.0h, forecast PM2.5 delta +15 \u00b5g/m\u00b3",
       "deadline_hours": 1.5
     }
   ],

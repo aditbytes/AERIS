@@ -58,7 +58,8 @@ def test_full_chain_writes_contract_files(live_copy):
     corridor = _load(live_copy / "corridor.geojson")
     assert corridor["type"] == "FeatureCollection" and corridor["generated_at"]
     ranked = _load(live_copy / "ranked_sites.json")
-    assert set(ranked["exposed_population"]) == {"estimate", "low", "high"}
+    assert set(ranked["exposed_population"]) == {"estimate", "low", "high", "method", "data_available"}
+    assert isinstance(ranked["exposed_population"]["data_available"], bool)
     actions = _load(live_copy / "actions.json")
     assert actions["summary"] and actions["generated_at"]
     ranked_ids = {s["site_id"] for s in ranked["sites"]}
@@ -72,6 +73,15 @@ def test_detect_refuses_empty_fires(live_copy):
         steps.detect_handler(_LOCAL_KEYS, None)
     assert not (live_copy / "sources.json").exists()
     assert (live_copy / "fires.json").read_text() == before
+
+
+def test_rank_refuses_empty_population_cells(live_copy):
+    steps.detect_handler(_LOCAL_KEYS, None)
+    steps.corridor_handler(_covered_forecast_event(live_copy), None)
+    (live_copy / "population.json").write_text(json.dumps({"generated_at": "2026-10-08T00:00:00Z", "cells": []}))
+    with pytest.raises(ValueError, match="has no cells"):
+        steps.rank_handler(_LOCAL_KEYS, None)
+    assert not (live_copy / "ranked_sites.json").exists()
 
 
 def test_corridor_refuses_uncovered_forecast_preserving_result(live_copy):

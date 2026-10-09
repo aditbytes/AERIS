@@ -22,6 +22,7 @@ from agent.tools import (
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _DATA_LIVE = _REPO_ROOT / "data" / "live"
+_WEB_DATA = _REPO_ROOT / "web" / "public" / "data"
 
 
 class TestAgentSuite(unittest.TestCase):
@@ -87,6 +88,36 @@ class TestAgentSuite(unittest.TestCase):
         self.assertIn("summary", data)
         self.assertIn("actions", data)
         self.assertIn("authority_actions", data)
+
+    def test_no_misleading_ci_in_agent_summary(self):
+        plan = generate_action_plan()
+        summary_lower = plan.summary.lower()
+        self.assertNotIn("90% ci", summary_lower)
+        self.assertNotIn("90% confidence", summary_lower)
+        self.assertNotIn("confidence interval", summary_lower)
+        self.assertIn("exposure range", summary_lower)
+
+    def test_unavailable_population_fallback(self):
+        from unittest.mock import patch
+        with patch("agent.agent.get_exposed_population", return_value={"estimate": 0, "low": 0, "high": 0, "data_available": False}):
+            plan = generate_action_plan()
+            self.assertIn("population data unavailable", plan.summary)
+            self.assertNotIn("exposing an estimated 0 residents", plan.summary)
+
+    def test_live_actions_snapshot_no_misleading_ci(self):
+        actions_path = _DATA_LIVE / "actions.json"
+        if actions_path.exists():
+            data = json.loads(actions_path.read_text())
+            summary_lower = data.get("summary", "").lower()
+            self.assertNotIn("90% ci", summary_lower)
+            self.assertNotIn("confidence interval", summary_lower)
+
+        web_actions_path = _WEB_DATA / "actions.json"
+        if web_actions_path.exists():
+            web_data = json.loads(web_actions_path.read_text())
+            web_summary_lower = web_data.get("summary", "").lower()
+            self.assertNotIn("90% ci", web_summary_lower)
+            self.assertNotIn("confidence interval", web_summary_lower)
 
 
 if __name__ == "__main__":
