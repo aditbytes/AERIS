@@ -14,12 +14,11 @@ export default function AgentWidget() {
   const [showFullBriefing, setShowFullBriefing] = useState(false)
 
   // Compute stats from real contracts
-  const totalFires = sources?.sources.reduce((acc, s) => acc + s.fire_count, 0) ?? 215
-  const totalFrp   = sources?.sources.reduce((acc, s) => acc + s.total_frp_mw, 0) ?? 676
-  const expEst     = rankedSites?.exposed_population.estimate ?? 570_938
-  const expLow     = rankedSites?.exposed_population.low ?? 428_203
-  const expHigh    = rankedSites?.exposed_population.high ?? 713_672
-  const etaVal     = etaHours != null ? `${etaHours.toFixed(1)}h` : '0.5h'
+  // No data -> '—'; never a placeholder number
+  const totalFires = sources?.sources.reduce((acc, s) => acc + s.fire_count, 0)
+  const totalFrp   = sources?.sources.reduce((acc, s) => acc + s.total_frp_mw, 0)
+  const exposure   = rankedSites?.exposed_population
+  const etaVal     = etaHours != null ? `${etaHours.toFixed(1)}h` : '—'
 
   const topActions = actions?.actions.slice(0, 3) ?? []
 
@@ -46,21 +45,21 @@ export default function AgentWidget() {
         <div className="agent-chips-grid">
           <span className="agent-chip" title="Total active fire detections across airshed">
             <Flame size={11} color="#DC2626" />
-            <strong>{totalFires}</strong> Fires
+            <strong>{totalFires ?? '—'}</strong> Fires
           </span>
           <span className="agent-chip" title="Total Fire Radiative Power (MW)">
             <Zap size={11} color="#EA580C" />
-            <strong>{Math.round(totalFrp)}</strong> MW FRP
+            <strong>{totalFrp != null ? Math.round(totalFrp) : '—'}</strong> MW FRP
           </span>
           <span className="agent-chip highlight" title="Plume front arrival countdown to receptor communities">
             ⏱️ ETA <strong>~{etaVal}</strong>
           </span>
           <span
             className="agent-chip pop"
-            title={`Exposed population estimate: ${expEst.toLocaleString()} (90% Confidence Interval: ${expLow.toLocaleString()} – ${expHigh.toLocaleString()})`}
+            title={exposure ? `Exposed population estimate: ${exposure.estimate.toLocaleString()} (90% Confidence Interval: ${exposure.low.toLocaleString()} – ${exposure.high.toLocaleString()})` : 'No exposure estimate available'}
           >
             <Users size={11} color="#C92A2A" />
-            <strong>{formatPopK(expEst)}</strong> ({formatPopK(expLow)}–{formatPopK(expHigh)} CI)
+            {exposure ? <><strong>{formatPopK(exposure.estimate)}</strong> ({formatPopK(exposure.low)}–{formatPopK(exposure.high)} CI)</> : <strong>—</strong>}
           </span>
         </div>
       </div>

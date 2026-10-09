@@ -10,6 +10,7 @@ import Header from '@/components/layout/Header'
 import Sidebar from '@/components/layout/Sidebar'
 import MapContainer from '@/components/map/MapContainer'
 import TopAffectedAreas from '@/components/sites/TopAffectedAreas'
+import StaleBanner from '@/components/status/StaleBanner'
 import './App.css'
 
 // Lazy-loaded non-dashboard views for route-level code splitting
@@ -110,6 +111,7 @@ function Dashboard() {
       <Sidebar />
       <div className="main-content">
         <Header />
+        <StaleBanner />
 
         <Suspense fallback={<ViewSkeleton />}>
           {activeTab === 'map' && <MapExplorerView />}

@@ -23,8 +23,8 @@ export default function AqiKpiCard() {
         .slice(0, 10)
     : []
 
-  const displayAqi = avgAqi ?? 179
-  const category = aqiCategory(displayAqi)
+  const displayAqi = avgAqi ?? '—'
+  const category = avgAqi != null ? aqiCategory(avgAqi) : 'No data'
 
   // Find latest observation timestamp among reporting stations
   const latestObservedRaw = aqi?.stations.find(s => !!s.observed_at)?.observed_at ?? null
@@ -63,7 +63,7 @@ export default function AqiKpiCard() {
   return (
     <div
       className="metric-card aqi-card card"
-      title={`Observed Ground Station Average across ${stationAqis.length} sensors: ${displayAqi} (${category}). Note: Downwind Plume Peak is modeled separately up to 382 AQI.`}
+      title={`Observed Ground Station Average across ${stationAqis.length} sensors: ${displayAqi} (${category}). The downwind plume peak is modeled separately.`}
     >
       <div className="metric-icon" style={{ background: 'rgba(255,255,255,0.15)' }}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round">

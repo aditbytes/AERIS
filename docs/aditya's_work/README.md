@@ -8,12 +8,24 @@ Everything Aditya owns in AERIS: **all AWS tasks**. Source of truth: [`../member
 
 ## Phases
 
-| Phase | Day | Theme | Docs |
-|-------|-----|-------|------|
-| 1 | 1 | Foundation: account, IAM, storage, IaC | [phase-1-foundation](phase-1-foundation/) |
-| 2 | 2 | Ingestion on AWS: Lambdas, schedules, failures | [phase-2-ingestion](phase-2-ingestion/) |
-| 3 | 3 | Models, agent, API and website | [phase-3-models-agent-api](phase-3-models-agent-api/) |
-| 4 | 4 | Hardening, integration, submission, teardown | [phase-4-hardening-submission](phase-4-hardening-submission/) |
+| Phase | Day | Theme | Docs | Report |
+|-------|-----|-------|------|--------|
+| 1 | 1 | Foundation: account, IAM, storage, IaC | [phase-1-foundation](phase-1-foundation/) | [COMPLETION](phase-1-foundation/COMPLETION.md) |
+| 2 | 2 | Ingestion on AWS: Lambdas, schedules, failures | [phase-2-ingestion](phase-2-ingestion/) | [COMPLETION](phase-2-ingestion/COMPLETION.md) |
+| 3 | 3 | Models, agent, API and website | [phase-3-models-agent-api](phase-3-models-agent-api/) | [COMPLETION](phase-3-models-agent-api/COMPLETION.md) |
+| 4 | 4 | Hardening, integration, submission, teardown | [phase-4-hardening-submission](phase-4-hardening-submission/) | [COMPLETION](phase-4-hardening-submission/COMPLETION.md) |
+
+## Scripts
+
+| Script | Does |
+|--------|------|
+| `scripts/deploy.sh` | Build and deploy the whole stack (needs `ALERT_EMAIL`) |
+| `scripts/deploy_web.sh` | Build `web/` against the API, upload it, invalidate CloudFront |
+| `scripts/smoke_test.py` | Trigger a run and validate every API route against the contracts |
+| `scripts/local_api.py` | Serve the API Lambda locally over `data/live/` |
+| `scripts/load_reference.py` | Upload a real one-time snapshot (population) to `reference/` |
+| `scripts/cost_check.sh` | Read-only check for idle-billable resources and month-to-date spend |
+| `scripts/teardown.sh` | Empty the buckets and delete the stack |
 
 ## Phase 1 — Foundation
 1. [Account, credits and budgets](phase-1-foundation/01-account-credits-budgets.md)

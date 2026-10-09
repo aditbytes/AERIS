@@ -78,21 +78,20 @@ export default function Sidebar() {
   const getBadgeValue = (item: NavItemConfig): string | null => {
     if (item.badgeText) return item.badgeText
     if (item.badgeKey === 'fires') {
-      const count = sources?.sources?.length ?? 10
-      return `${count}`
+      const count = sources?.sources?.length
+      return count != null ? `${count}` : '—'
     }
     if (item.badgeKey === 'facilities') {
-      const count = rankedSites?.sites?.length ?? 494
-      return `${count}`
+      const count = rankedSites?.sites?.length
+      return count != null ? `${count}` : '—'
     }
     if (item.badgeKey === 'actions') {
-      const count = actions?.actions?.length ?? 8
-      return `${count}`
+      const count = actions?.actions?.length
+      return count != null ? `${count}` : '—'
     }
     if (item.badgeKey === 'wind') {
       const firstSpeedMs = wind?.points?.[0]?.hours?.[0]?.speed_ms
-      const windKmh = firstSpeedMs != null ? Math.round(firstSpeedMs * 3.6) : 18
-      return `${windKmh} km/h`
+      return firstSpeedMs != null ? `${Math.round(firstSpeedMs * 3.6)} km/h` : null
     }
     return null
   }

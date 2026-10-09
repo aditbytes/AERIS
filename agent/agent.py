@@ -163,7 +163,8 @@ def generate_action_plan(data_dir: Path | None = None) -> ActionsOutput:
         AuthorityAction(
             who="Directorate of Education (DoE)",
             action="Issue mandatory circular for all outdoor school activities and assemblies to remain indoors until 12:00 PM",
-            reason=f"Top 50 schools located directly along the downwind dispersion path",
+            reason=f"{sum(1 for s in get_ranked_sites(top_n=100_000) if s.get('type') == 'school'):,} "
+            "ranked schools located inside the forecast corridor",
         ),
     ]
 
@@ -177,10 +178,29 @@ def generate_action_plan(data_dir: Path | None = None) -> ActionsOutput:
     )
 
 
-def run(data_dir: Path | None = None) -> dict[str, Any]:
-    """Execute action agent and return validated dict."""
-    plan = generate_action_plan(data_dir)
-    return plan.model_dump()
+def run(data_dir: Path | None = None, time_budget_s: float | None = None) -> dict[str, Any]:
+    """
+    Execute action agent and return validated dict.
+
+    AGENT_MODEL_PROVIDER=bedrock runs the Strands agent on Amazon Bedrock. If that
+    fails, the rules-based plan (built from the same real data) is used instead.
+    The ``generator`` field records which one produced the plan. ``time_budget_s``
+    bounds how long the Bedrock attempts may take before falling back.
+    """
+    if data_dir:
+        os.environ["AERIS_DATA_DIR"] = str(data_dir)
+
+    if os.environ.get("AGENT_MODEL_PROVIDER", "").lower() == "bedrock":
+        try:
+            from agent.bedrock_agent import generate_bedrock_plan
+
+            return generate_bedrock_plan(time_budget_s=time_budget_s)
+        except Exception as exc:  # noqa: BLE001 - any Bedrock/validation failure falls back to rules
+            logger.exception("Bedrock agent failed (%s); using the rules-based plan", type(exc).__name__)
+
+    plan = generate_action_plan(data_dir).model_dump()
+    plan["generator"] = "rules"
+    return plan
 
 
 def main() -> None:

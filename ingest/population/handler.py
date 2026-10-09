@@ -30,9 +30,11 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     bbox = event.get("bbox", DEFAULT_BBOX)
     logger.info("lambda_handler: bbox=%s", bbox)
     result = build_population(bbox=bbox)
-    storage.write_json("population", result)
-    logger.info("lambda_handler: wrote population.json with %d cells", len(result["cells"]))
-    return result
+    if not result["cells"]:
+        raise RuntimeError("WorldPop clip produced no cells; keeping existing data")
+    location = storage.write_reference("population", result)
+    logger.info("lambda_handler: wrote %s with %d cells", location, len(result["cells"]))
+    return {"location": location, "count": len(result["cells"])}
 
 
 def _cli() -> None:

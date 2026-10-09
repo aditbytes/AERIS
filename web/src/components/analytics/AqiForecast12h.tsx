@@ -35,7 +35,17 @@ export default function AqiForecast12h() {
   const { corridor, avgAqi } = useAeris()
   const [hoverIdx, setHoverIdx] = useState<number | null>(null)
 
-  const baseline = avgAqi ?? 180
+  const baseline = avgAqi
+  if (baseline == null) {
+    return (
+      <div className="aqi-forecast card">
+        <div className="section-header">
+          <h3 className="section-title">AQI Forecast (Next 12 Hours)</h3>
+        </div>
+        <p className="panel-sub">No ground-station AQI is reporting, so the modeled forecast cannot be computed.</p>
+      </div>
+    )
+  }
 
   // Extract real bands from corridor.geojson
   const bands = (corridor?.features ?? [])

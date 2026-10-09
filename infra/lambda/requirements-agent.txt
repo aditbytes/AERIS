@@ -1,0 +1,5 @@
+# Strands agent on Bedrock. boto3 is pinned in the package because Strands needs a
+# newer Bedrock Converse API than the Lambda runtime may ship.
+strands-agents>=1.59.0
+boto3>=1.40.0
+pydantic>=2.0.0

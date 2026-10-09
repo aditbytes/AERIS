@@ -94,15 +94,14 @@ export default function MetricGrid() {
   const sourceFRPs = sortedSources.slice(0, 6).map(s => s.total_frp_mw)
 
   // 2. Population & Active Scenario metrics
-  const rawExposed = rankedSites?.exposed_population.estimate ?? 570_938
-  const lowCI      = rankedSites?.exposed_population.low ?? 428_203
-  const highCI     = rankedSites?.exposed_population.high ?? 713_672
-  const exposedDisplay = activeExposedPopulation ? formatPopulation(activeExposedPopulation) : '571K'
+  const exposure   = rankedSites?.exposed_population
+  const rawExposed = exposure?.estimate ?? 0
+  const exposedDisplay = activeExposedPopulation != null ? formatPopulation(activeExposedPopulation) : '—'
 
   const scenarioMeta = {
     none: {
       label: 'No Action',
-      deltaText: 'Baseline (571K)',
+      deltaText: exposure ? `Baseline (${formatPopulation(exposure.estimate)})` : 'Baseline',
       deltaClass: 'delta-up',
       tooltip: 'No intervention active. Showing baseline population within smoke plume footprint.',
     },
@@ -166,7 +165,7 @@ export default function MetricGrid() {
           </svg>
         </div>
         <div className="metric-body">
-          <span className="metric-label" title={`90% Confidence Interval: ${formatPopulation(lowCI)} – ${formatPopulation(highCI)}`}>
+          <span className="metric-label" title={exposure ? `90% Confidence Interval: ${formatPopulation(exposure.low)} – ${formatPopulation(exposure.high)}` : 'No exposure estimate available'}>
             Exposed · {scenarioMeta.label}
           </span>
           <div className="metric-value-row">

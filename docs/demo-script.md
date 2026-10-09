@@ -4,6 +4,8 @@
 **Target Duration:** Exactly 3:00 minutes (180 seconds)  
 **Presenter:** Saba Saeed (Product & AI Agent Lead) + Aditya (AWS Cloud Architect)
 
+> ⚠️ **Read every number off the live dashboard at recording time.** Counts in this script (494 facilities, 571K → 257K, 104 fires, 314,000) came from an earlier snapshot and are out of date. With the corrected wind model, the corridor follows the real forecast wind, so on some days the smoke does not head toward Delhi. Narrate what the map shows.
+
 ---
 
 ## Storyboard Overview & Timing
@@ -16,7 +18,7 @@
 [1:15 - 2:00] Exposure Assessment & The Strands Action Agent
      └── 494 vulnerable facilities ranked → AERIS Strands Agent executive summary → Instant action directives modal.
 [2:00 - 2:40] How It Works & Where AWS Fits (Aditya Architecture)
-     └── Serverless pipeline: EventBridge → ECS/Lambda → Bedrock Strands Agent → S3/CloudFront UI.
+     └── Serverless pipeline: EventBridge → Lambda → Step Functions → Bedrock (Strands) → API Gateway + CloudFront.
 [2:40 - 3:00] Real-World Impact & Call to Action
      └── 55% exposure reduction, zero fabricated data, proactive protection before the first breath of smoke.
 ```
@@ -67,14 +69,14 @@
 ---
 
 ### Segment 4: Under the Hood & Where AWS Fits (2:00 – 2:40)
-* **Visual:** Switch to Aditya's technical architecture slide (`aeris_architecture.drawio`).
+* **Visual:** Switch to the "As deployed" page of `aeris_architecture.drawio` (PNG: `docs/assets/aeris-deployed-architecture.png`). Highlight each column as it is named.
 * **Speaker (Aditya / Voiceover):**
-  > "AERIS is architected natively on AWS for sub-minute scalability and zero server maintenance:
+  > "Everything you just saw runs serverless on AWS in Mumbai, from one SAM template:
   > 
-  > 1. **Ingestion & Processing**: Amazon EventBridge schedules automated AWS Lambda fetchers that query NASA FIRMS, OpenAQ, and Open-Meteo, writing immutable GeoJSON snapshots into Amazon S3.
-  > 2. **Scientific Modeling**: Our Lagrangian advection and exposure models execute on containerized AWS ECS Fargate tasks with sub-second execution times.
-  > 3. **Action Intelligence**: The reasoning core runs on **Amazon Bedrock**, leveraging Claude and Llama foundation models via the AWS Strands Agents framework, constrained by strict Pydantic schemas.
-  > 4. **Global Delivery**: The React and MapLibre GL frontend is globally distributed via **Amazon CloudFront** and S3 with zero API key dependencies."
+  > 1. **Ingestion**: EventBridge Scheduler runs Lambda fetchers every 15, 30 and 60 minutes against NASA FIRMS, OpenAQ and Open-Meteo. API keys live in Secrets Manager, raw results land in S3, and any failed fetch goes to an SQS dead-letter queue instead of overwriting good data.
+  > 2. **Pipeline**: Every 30 minutes, AWS Step Functions runs five Lambdas in order: publish, detect fire clusters, advect the smoke corridor with forecast wind, rank schools and hospitals against WorldPop population, then the agent.
+  > 3. **Action agent**: The agent is built with the open-source **Strands Agents SDK** on **Amazon Bedrock**. It can only cite numbers its tools return, and every site it names is checked against the real ranking.
+  > 4. **Delivery**: An API Gateway HTTP API serves the results, flagging anything stale, and **CloudFront** serves the React and MapLibre app from a private S3 bucket. CloudWatch alarms and a budget email us if anything breaks."
 
 ---
 
