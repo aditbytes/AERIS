@@ -53,9 +53,9 @@ Pipeline run at **2026-10-08 16:14 UTC** (the numbers change every run; read the
 | | |
 |---|---|
 | 🔥 Sources detected | 10, from 387 VIIRS fire detections |
-| 🏫 Sites ranked | 1,806 schools and hospitals in the corridor |
+| 🏫 Sites ranked | 444 schools and hospitals in the corridor |
 | 🏥 Top-ranked site | Janakpuri Super Speciality Hospital, Delhi: already inside the 0–2 h band |
-| 👥 People exposed (estimate) | 458,428 |
+| 👥 People exposed (estimate) | 7,132,123 |
 | 🤖 Plan written by | Rules generator (Bedrock fallback; see Known limitations below) |
 
 ## 🏗️ Architecture (as deployed)

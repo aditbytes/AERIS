@@ -1,9 +1,11 @@
 {
-  "generated_at": "2026-10-08T14:52:18.978772Z",
+  "generated_at": "2026-10-09T02:05:47.935603Z",
   "exposed_population": {
     "estimate": 7132123,
-    "low": 5349092,
-    "high": 18110132
+    "low": 7132123,
+    "high": 14488106,
+    "method": "Population cells inside corridor bands with band risk \u2265 0.30 (estimate). Low: threshold raised to 0.45. High: threshold lowered to 0.15. This is a threshold sensitivity range, not a statistical confidence interval.",
+    "data_available": true
   },
   "sites": [
     {
@@ -541,7 +543,7 @@
     },
     {
       "site_id": "s_1591",
-      "name": "Queen’s Multispeciality Hospital",
+      "name": "Queen\u2019s Multispeciality Hospital",
       "type": "hospital",
       "lat": 28.3884907,
       "lon": 76.9790268,

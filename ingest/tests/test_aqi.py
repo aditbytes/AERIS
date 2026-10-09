@@ -139,31 +139,21 @@ _OAQ_LOCATIONS_RESP = {
     ]
 }
 
-# OpenAQ v3 /sensors/{id}/measurements response (limit=1)
-_OAQ_SENSOR_PM25_RESP = {
+# OpenAQ v3 /locations/{id}/latest response
+_OAQ_LOCATION_LATEST_RESP = {
     "results": [
         {
+            "sensorsId": 9001,
             "value": 182.0,
-            "parameter": {"id": 2, "name": "pm25"},
-            "period": {
-                "datetimeTo": {"utc": "2026-10-07T05:30:00Z"},
-            },
-        }
-    ]
-}
-
-_OAQ_SENSOR_PM10_RESP = {
-    "results": [
+            "datetime": {"utc": "2026-10-07T05:30:00Z"},
+        },
         {
+            "sensorsId": 9002,
             "value": 310.0,
-            "parameter": {"id": 1, "name": "pm10"},
-            "period": {
-                "datetimeTo": {"utc": "2026-10-07T05:30:00Z"},
-            },
+            "datetime": {"utc": "2026-10-07T05:30:00Z"},
         }
     ]
 }
-
 
 class TestFetchOpenAQ:
     def test_no_key_returns_empty(self):
@@ -171,15 +161,13 @@ class TestFetchOpenAQ:
         assert stations == []
 
     def test_normal_response_parsed(self):
-        """Mock /locations (with sensors[]) + per-sensor /measurements calls."""
+        """Mock /locations (with sensors[]) + /locations/{id}/latest calls."""
         def mock_get(url, **kwargs):
             resp = MagicMock()
-            if "/locations" in url:
+            if url.endswith("/latest"):
+                resp.json.return_value = _OAQ_LOCATION_LATEST_RESP
+            elif "/locations" in url:
                 resp.json.return_value = _OAQ_LOCATIONS_RESP
-            elif "/sensors/9001/" in url:  # PM2.5 sensor
-                resp.json.return_value = _OAQ_SENSOR_PM25_RESP
-            elif "/sensors/9002/" in url:  # PM10 sensor
-                resp.json.return_value = _OAQ_SENSOR_PM10_RESP
             else:
                 resp.json.return_value = {"results": []}
             return resp

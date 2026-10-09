@@ -110,7 +110,7 @@ export default function PopulationRiskView() {
             <span className="kpi-unit">Individuals</span>
           </div>
           <div className="kpi-footer">
-            <span className="kpi-sub">90% CI: {(exposed.low / 1000).toFixed(0)}K – {(exposed.high / 1000).toFixed(0)}K</span>
+            <span className="kpi-sub">Threshold Sensitivity Range: {(exposed.low / 1000).toFixed(0)}K – {(exposed.high / 1000).toFixed(0)}K</span>
           </div>
         </div>
 

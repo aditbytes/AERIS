@@ -56,10 +56,10 @@ export default function AgentWidget() {
           </span>
           <span
             className="agent-chip pop"
-            title={exposure ? `Exposed population estimate: ${exposure.estimate.toLocaleString()} (90% Confidence Interval: ${exposure.low.toLocaleString()} – ${exposure.high.toLocaleString()})` : 'No exposure estimate available'}
+            title={exposure ? `Exposed population estimate: ${exposure.estimate.toLocaleString()} (Threshold Sensitivity Range: ${exposure.low.toLocaleString()} – ${exposure.high.toLocaleString()})` : 'No exposure estimate available'}
           >
             <Users size={11} color="#C92A2A" />
-            {exposure ? <><strong>{formatPopK(exposure.estimate)}</strong> ({formatPopK(exposure.low)}–{formatPopK(exposure.high)} CI)</> : <strong>—</strong>}
+            {exposure ? <><strong>{formatPopK(exposure.estimate)}</strong> (range {formatPopK(exposure.low)}–{formatPopK(exposure.high)})</> : <strong>—</strong>}
           </span>
         </div>
       </div>

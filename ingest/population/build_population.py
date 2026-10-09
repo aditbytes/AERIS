@@ -18,7 +18,7 @@ Output schema → docs/data-contracts.md (`population.json`):
     "cell_km":   1.0,
     "generated_at": "<ISO-8601 UTC>",
     "source": {
-      "name":    "WorldPop Global High Resolution Population Denominators",
+      "name":    "WorldPop India 2020, 1 km aggregated population raster",
       "url":     "https://data.worldpop.org/...",
       "doi":     "10.5258/SOTON/WP00647",
       "year":    2020,
@@ -262,7 +262,7 @@ def build_population(
         "cell_km": 1.0,
         "generated_at": generated_at,
         "source": {
-            "name": "WorldPop Global High Resolution Population Denominators",
+            "name": "WorldPop India 2020, 1 km aggregated population raster",
             "url": WORLDPOP_URL,
             "doi": WORLDPOP_DOI,
             "year": WORLDPOP_YEAR,

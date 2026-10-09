@@ -43,6 +43,7 @@ from __future__ import annotations
 import logging
 import os
 import time
+import concurrent.futures
 from datetime import datetime, timezone
 from typing import Any
 
@@ -140,30 +141,25 @@ def _fetch_openaq_locations(
     return data.get("results", [])
 
 
-def _fetch_sensor_latest(
-    sensor_id: int, key: str, datetime_from: str
-) -> dict[str, Any] | None:
+def _fetch_location_latest(
+    loc_id: int, key: str
+) -> list[dict[str, Any]]:
     """
-    Fetch the single most recent measurement for one sensor after datetime_from.
+    Fetch the latest measurements for all sensors at a given location.
 
-    Returns the measurement dict or None if no recent data.
-    Uses /v3/sensors/{id}/measurements?limit=1&datetime_from=...
-
-    Includes a rate-limit sleep to stay within OpenAQ free tier limits.
+    Returns the list of measurement dicts or empty list on error.
+    Uses /v3/locations/{id}/latest.
     """
-    time.sleep(_OPENAQ_RATE_DELAY_S)
     try:
         resp = get(
-            f"{OPENAQ_BASE}/sensors/{sensor_id}/measurements",
-            params={"limit": 1, "datetime_from": datetime_from},
+            f"{OPENAQ_BASE}/locations/{loc_id}/latest",
             headers=_openaq_headers(key),
-            source_name="OpenAQ/sensor-measurement",
+            source_name="OpenAQ/location-latest",
             timeout=20,
         )
-        results = resp.json().get("results", [])
-        return results[0] if results else None
-    except (UpstreamError, IndexError, ValueError):
-        return None
+        return resp.json().get("results", [])
+    except (UpstreamError, ValueError):
+        return []
 
 
 def fetch_openaq(bbox: list[float], key: str) -> list[dict[str, Any]]:
@@ -209,22 +205,21 @@ def fetch_openaq(bbox: list[float], key: str) -> list[dict[str, Any]]:
         reverse=True,
     )[:_OPENAQ_MAX_STATIONS]  # cap to avoid exhausting rate limit
     logger.info(
-        "[OpenAQ] %d active stations (capped at %d). Fetching measurements.",
+        "[OpenAQ] %d active stations (capped at %d). Fetching measurements concurrently.",
         len(active_locs), _OPENAQ_MAX_STATIONS,
     )
 
     stations: list[dict[str, Any]] = []
 
-    for loc in active_locs:
+    def fetch_single_station(loc: dict[str, Any]) -> dict[str, Any] | None:
         loc_id = loc.get("id")
         coords = loc.get("coordinates") or {}
         lat = coords.get("latitude")
         lon = coords.get("longitude")
         if loc_id is None or lat is None or lon is None:
-            continue
+            return None
         name = loc.get("name", f"openaq_{loc_id}")
 
-        # Get PM2.5 and PM10 sensor IDs from the location's sensors list
         pm25_sensor_id: int | None = None
         pm10_sensor_id: int | None = None
         for sensor in loc.get("sensors") or []:
@@ -235,30 +230,37 @@ def fetch_openaq(bbox: list[float], key: str) -> list[dict[str, Any]]:
                 pm10_sensor_id = sensor.get("id")
 
         if pm25_sensor_id is None:
-            continue  # no PM2.5 sensor
+            return None  # no PM2.5 sensor
 
-        # Fetch latest measurement for PM2.5
-        pm25_meas = _fetch_sensor_latest(pm25_sensor_id, key, date_from_7d)
+        # Fetch latest measurements for all sensors at this location in one call
+        latest_results = _fetch_location_latest(loc_id, key)
+        
         pm25_val: float | None = None
-        observed_at: str | None = None
-        if pm25_meas:
-            pm25_val = float(pm25_meas["value"]) if pm25_meas.get("value") is not None else None
-            # Timestamp: period.datetimeTo.utc
-            period = pm25_meas.get("period") or {}
-            dt_to = (period.get("datetimeTo") or {}).get("utc")
-            observed_at = dt_to
-
-        # Optionally fetch PM10
         pm10_val: float | None = None
-        if pm10_sensor_id:
-            pm10_meas = _fetch_sensor_latest(pm10_sensor_id, key, date_from_7d)
-            if pm10_meas and pm10_meas.get("value") is not None:
-                pm10_val = float(pm10_meas["value"])
+        observed_at: str | None = None
+
+        for res in latest_results:
+            sid = res.get("sensorsId")
+            val = res.get("value")
+            if val is None:
+                continue
+            
+            if sid == pm25_sensor_id:
+                pm25_val = float(val)
+                # Keep timestamp of the PM2.5 reading
+                dt_utc = (res.get("datetime") or {}).get("utc")
+                if dt_utc:
+                    observed_at = dt_utc
+            elif sid == pm10_sensor_id:
+                pm10_val = float(val)
+
+        if pm25_val is None:
+            return None
 
         # AQI from PM2.5
         aqi_val: int | None = None
         aqi_cat: str | None = None
-        if pm25_val is not None and pm25_val >= 0:
+        if pm25_val >= 0:
             aqi_val, aqi_cat = compute_pm25_aqi(pm25_val)
 
         # Normalise timestamp
@@ -269,7 +271,7 @@ def fetch_openaq(bbox: list[float], key: str) -> list[dict[str, Any]]:
             except ValueError:
                 observed_at = None
 
-        stations.append({
+        return {
             "id": f"OAQ_{loc_id}",
             "name": name,
             "lat": float(lat),
@@ -280,7 +282,15 @@ def fetch_openaq(bbox: list[float], key: str) -> list[dict[str, Any]]:
             "aqi_category": aqi_cat,
             "observed_at": observed_at,
             "source": "OpenAQ",
-        })
+        }
+
+    # Use ThreadPoolExecutor to fetch stations concurrently (rate-limited by max_workers=5)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        results = list(executor.map(fetch_single_station, active_locs))
+        
+    for res in results:
+        if res is not None:
+            stations.append(res)
 
     logger.info("[OpenAQ] Normalised %d station(s) with readings.", len(stations))
     return stations
@@ -466,8 +476,11 @@ def fetch_aqi(
 
     generated_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
-    openaq_stations = fetch_openaq(bbox, openaq_key)
-    cpcb_stations = fetch_cpcb(bbox, cpcb_key)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        f_openaq = executor.submit(fetch_openaq, bbox, openaq_key)
+        f_cpcb = executor.submit(fetch_cpcb, bbox, cpcb_key)
+        openaq_stations = f_openaq.result()
+        cpcb_stations = f_cpcb.result()
 
     # Combine: OpenAQ first, then CPCB records not already covered
     combined = openaq_stations + cpcb_stations

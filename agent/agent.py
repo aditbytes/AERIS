@@ -98,7 +98,7 @@ def generate_action_plan(data_dir: Path | None = None) -> ActionsOutput:
 
     pop_str = f"{est_pop/1_000_000:.1f}M" if est_pop >= 1_000_000 else f"{est_pop:,}"
     summary_parts.append(
-        f"Smoke corridor approaches NCR receptor communities in ~{max(0.5, min_eta):.1f} hours, exposing an estimated {pop_str} residents (90% CI: {low_pop:,} - {high_pop:,})."
+        f"Smoke corridor approaches NCR receptor communities in ~{max(0.5, min_eta):.1f} hours, exposing an estimated {pop_str} residents (range: {low_pop:,} - {high_pop:,})."
     )
 
     top_facility_names = [s.get("name", "vulnerable sites") for s in ranked_sites[:2]]

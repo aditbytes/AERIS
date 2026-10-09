@@ -77,7 +77,7 @@ Run your fetchers against the live sources for the Punjab/Haryana → Delhi-NCR 
 
 - Use the **OpenStreetMap Overpass API**: `amenity=school`, `amenity=hospital`, `healthcare=hospital` within the Delhi-NCR bbox
 - Convert ways and relations to centroid points; dedupe by name and distance
-- Fill `occupancy` where tags exist (`capacity`, `beds`); otherwise estimate defaults (school ≈ 800, hospital ≈ 150 beds) and mark `"occupancy_estimated": true`
+- Fill `occupancy` where tags exist (`capacity`, `beds`); otherwise leave it as `null` (never fabricate or estimate).
 - Save once to `sites.geojson` (this is a static dataset; it does not need a schedule)
 - [ ] `fetch_sites(bbox) -> geojson`, tests
 
