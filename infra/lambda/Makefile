@@ -13,16 +13,19 @@ build-FirmsFunction build-AqiFunction build-WeatherFunction build-SitesFunction:
 	mkdir -p "$(ARTIFACTS_DIR)"
 	cp -R ingest "$(ARTIFACTS_DIR)/ingest"
 	$(PIP) -r requirements.txt
+	python3 prune.py "$(ARTIFACTS_DIR)"
 
 build-PublishFunction build-DetectFunction build-CorridorFunction build-RankFunction:
 	mkdir -p "$(ARTIFACTS_DIR)"
 	cp -R ingest models pipeline "$(ARTIFACTS_DIR)/"
 	$(PIP) -r requirements-pipeline.txt
+	python3 prune.py "$(ARTIFACTS_DIR)"
 
 build-AgentFunction:
 	mkdir -p "$(ARTIFACTS_DIR)"
 	cp -R ingest agent pipeline "$(ARTIFACTS_DIR)/"
 	$(PIP) -r requirements-agent.txt
+	python3 prune.py "$(ARTIFACTS_DIR)"
 
 build-ApiFunction:
 	mkdir -p "$(ARTIFACTS_DIR)"
