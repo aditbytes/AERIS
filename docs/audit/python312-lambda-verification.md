@@ -8,7 +8,7 @@ Verified locally on **2026-10-09**, on `feature/python312-lambda-verification`, 
 
 One job installs `requirements.txt`, checks dependency consistency, runs the complete repository suite, and compiles the owned Python modules. A separate Linux Python 3.12 job uses the official AWS SAM setup action, stages runtime sources, runs `sam build`, then enforces the size limit on the actual output directories. Neither job deploys or requires AWS credentials.
 
-**The workflow has not run on GitHub.** Local results below are not remote CI results.
+**GitHub jobs remain unverified.** Runs on 2026-10-09 were rejected before any steps started because GitHub reported an account billing lock. The [free CircleCI alternative and activation instructions](../ci-circleci.md) preserve both verification jobs. Local results below are not remote CI results.
 
 ## Local runtime tests
 
