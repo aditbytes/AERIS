@@ -15,6 +15,7 @@ Audit taken on **2026-10-08 at about 21:50 IST** against `main` (`dfb0b16`), eve
 | [`improvements.md`](improvements.md) | What to fix and improve, in priority order |
 | [`aeris-explained-hinglish.md`](aeris-explained-hinglish.md) | What the app does, in short, in Hinglish |
 | [`whatsapp-team-update.md`](whatsapp-team-update.md) | Ready-to-paste WhatsApp message for the team |
+| [`python312-lambda-verification.md`](python312-lambda-verification.md) | 2026-10-09 follow-up: Python 3.12 tests, CI, ARM64 wheels and package-size checks |
 
 ## Headline answers
 
