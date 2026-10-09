@@ -1,0 +1,171 @@
+{
+  "build_input_sha256": {
+    "infra/lambda/Makefile": "6c34c14d9594353ab43c19a7feb2393b3eb48cb4b994867ac479d12be5f1b179",
+    "infra/lambda/prune.py": "e47dfa78a808df97f3f6829cd11b0be066076645f2a868da3b6223cf908452cc",
+    "infra/template.yaml": "168c0c711bdf04be526feb5a4fda1ac7ed7bcba7a1033f68d2949261b640624f",
+    "scripts/stage_lambda_sources.py": "ec0416afca06f062f6cfdad322c23ddeb6d5c46a62162425ca9c8313aea84b9a"
+  },
+  "ci_run_verified": false,
+  "deployment_verified": false,
+  "host": "Windows AMD64 Python 3.12.10",
+  "layers_configured": false,
+  "limit_bytes": 262144000,
+  "measurement_kind": "LOCAL_CROSS_PLATFORM_ASSEMBLY",
+  "method": "Fresh pip --no-compile installation of validated Linux ARM64 wheels plus shared source staging and Makefile artifact pruning; sum every remaining file byte. CI measures actual SAM outputs separately.",
+  "packages": [
+    {
+      "code_uri": "infra/lambda/",
+      "files": 141,
+      "functions": [
+        "FirmsFunction",
+        "AqiFunction",
+        "WeatherFunction",
+        "SitesFunction"
+      ],
+      "headroom_bytes": 259864420,
+      "installed_distributions": {
+        "certifi": "2026.7.22",
+        "charset-normalizer": "3.5.2",
+        "idna": "3.20",
+        "requests": "2.34.2",
+        "urllib3": "2.8.0"
+      },
+      "layer_bytes": 0,
+      "manifest": "infra/lambda/requirements.txt",
+      "manifest_sha256": "f8e6011ebb172da7eba7a0ebf7aa6b310a6c55380df1351fca177b5593920bba",
+      "package_bytes": 2279580,
+      "target_architecture": "arm64",
+      "target_platform": "manylinux2014_aarch64",
+      "target_runtime": "python3.12",
+      "total_bytes": 2279580
+    },
+    {
+      "code_uri": "infra/lambda/",
+      "files": 2067,
+      "functions": [
+        "PublishFunction",
+        "DetectFunction",
+        "CorridorFunction",
+        "RankFunction"
+      ],
+      "headroom_bytes": 39054286,
+      "installed_distributions": {
+        "certifi": "2026.7.22",
+        "cloudpickle": "3.1.2",
+        "joblib": "1.6.0",
+        "numpy": "2.2.6",
+        "pyproj": "3.7.1",
+        "scikit-learn": "1.7.0",
+        "scipy": "1.16.3",
+        "shapely": "2.1.2",
+        "threadpoolctl": "3.7.0"
+      },
+      "layer_bytes": 0,
+      "manifest": "infra/lambda/requirements-pipeline.txt",
+      "manifest_sha256": "ff877dc0a2e3d4292f06f12672cff08716c6b93be1f0bc25938e7d679823e26a",
+      "package_bytes": 223089714,
+      "target_architecture": "arm64",
+      "target_platform": "manylinux2014_aarch64",
+      "target_runtime": "python3.12",
+      "total_bytes": 223089714
+    },
+    {
+      "code_uri": "infra/lambda/",
+      "files": 4051,
+      "functions": [
+        "AgentFunction"
+      ],
+      "headroom_bytes": 200119444,
+      "installed_distributions": {
+        "PyJWT": "2.15.1",
+        "PyYAML": "6.0.3",
+        "annotated-types": "0.8.0",
+        "anyio": "4.15.1",
+        "attrs": "26.1.0",
+        "boto3": "1.43.110",
+        "botocore": "1.43.110",
+        "certifi": "2026.7.22",
+        "cffi": "2.1.1",
+        "click": "8.5.0",
+        "cryptography": "50.0.2",
+        "docstring_parser": "0.18.0",
+        "h11": "0.16.0",
+        "httpcore": "1.0.9",
+        "httpcore2": "2.13.1",
+        "httpx": "0.28.1",
+        "httpx2": "2.13.1",
+        "idna": "3.20",
+        "jmespath": "1.1.0",
+        "jsonschema": "4.26.0",
+        "jsonschema-specifications": "2025.9.1",
+        "mcp": "2.1.1",
+        "mcp-types": "2.1.1",
+        "opentelemetry-api": "1.45.1",
+        "opentelemetry-instrumentation": "0.66b1",
+        "opentelemetry-instrumentation-threading": "0.66b1",
+        "opentelemetry-sdk": "1.45.1",
+        "opentelemetry-semantic-conventions": "0.66b1",
+        "packaging": "26.3",
+        "pycparser": "3.1",
+        "pydantic": "2.14.0",
+        "pydantic_core": "2.50.0",
+        "python-dateutil": "2.9.0.post0",
+        "python-multipart": "0.0.32",
+        "referencing": "0.37.0",
+        "rpds-py": "2026.9.1",
+        "s3transfer": "0.19.2",
+        "six": "1.17.0",
+        "sse-starlette": "3.5.0",
+        "starlette": "1.7.0",
+        "strands-agents": "1.59.0",
+        "truststore": "0.10.4",
+        "typing-inspection": "0.4.4",
+        "typing_extensions": "4.16.0",
+        "urllib3": "2.8.0",
+        "uvicorn": "0.54.0",
+        "watchdog": "6.0.0",
+        "wrapt": "2.5.0"
+      },
+      "layer_bytes": 0,
+      "manifest": "infra/lambda/requirements-agent.txt",
+      "manifest_sha256": "d75b3e08e95462f81246062a59b61781eaa6734b51bf570d408b17be329470ff",
+      "package_bytes": 62024556,
+      "target_architecture": "arm64",
+      "target_platform": "manylinux2014_aarch64",
+      "target_runtime": "python3.12",
+      "total_bytes": 62024556
+    },
+    {
+      "code_uri": "infra/lambda/",
+      "files": 23,
+      "functions": [
+        "ApiFunction"
+      ],
+      "headroom_bytes": 262051628,
+      "installed_distributions": {},
+      "layer_bytes": 0,
+      "manifest": null,
+      "manifest_sha256": null,
+      "package_bytes": 92372,
+      "target_architecture": "arm64",
+      "target_platform": "manylinux2014_aarch64",
+      "target_runtime": "python3.12",
+      "total_bytes": 92372
+    }
+  ],
+  "sam_build_verified": false,
+  "tests": {
+    "python_3_12_10": {
+      "failed": 0,
+      "passed": 570,
+      "warnings": 2
+    },
+    "python_3_14_3": {
+      "failed": 0,
+      "passed": 570,
+      "warnings": 1
+    },
+    "verifier_staging_pruning_tests": 38
+  },
+  "verified_date": "2026-10-09"
+}
