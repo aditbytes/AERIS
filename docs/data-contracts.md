@@ -104,7 +104,13 @@ required location/time. See [model status and limits](../models/README.md).
 ```json
 {
   "generated_at": "2026-10-10T06:10:00Z",
-  "exposed_population": {"estimate": 1200000, "low": 900000, "high": 1500000},
+  "exposed_population": {
+    "estimate": 1200000,
+    "low": 900000,
+    "high": 1500000,
+    "method": "Population cells inside corridor bands with band risk ≥ 0.30 (estimate). Low: threshold raised to 0.45. High: threshold lowered to 0.15. This is a threshold sensitivity range, not a statistical confidence interval.",
+    "data_available": true
+  },
   "sites": [
     {"rank": 1, "site_id": "s_0042", "name": "AIIMS Delhi", "type": "hospital",
      "lat": 28.567, "lon": 77.21, "occupancy": 2200,
@@ -113,6 +119,13 @@ required location/time. See [model status and limits](../models/README.md).
   ]
 }
 ```
+`exposed_population` fields:
+- `estimate`: integer >= 0, population in corridor bands with band risk >= configured threshold (default 0.30).
+- `low`: integer >= 0, conservative scenario with threshold raised by delta (default 0.45).
+- `high`: integer >= 0, liberal scenario with threshold lowered by delta (default 0.15).
+- `method`: human-readable description of the threshold sensitivity methodology, explicitly clarifying that this is a threshold sensitivity range rather than a statistical confidence interval.
+- `data_available`: boolean flag indicating whether population raster cells were available and processed (`true`) or absent (`false`), ensuring an unavailable population fallback is distinguishable from a calculated zero-exposure finding.
+
 
 ## `actions.json` (Saba)
 ```json

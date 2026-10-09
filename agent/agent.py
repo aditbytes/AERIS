@@ -97,9 +97,14 @@ def generate_action_plan(data_dir: Path | None = None) -> ActionsOutput:
         summary_parts.append("Elevated environmental emission sources detected in upwind agricultural corridor.")
 
     pop_str = f"{est_pop/1_000_000:.1f}M" if est_pop >= 1_000_000 else f"{est_pop:,}"
-    summary_parts.append(
-        f"Smoke corridor approaches NCR receptor communities in ~{max(0.5, min_eta):.1f} hours, exposing an estimated {pop_str} residents (range: {low_pop:,} - {high_pop:,})."
-    )
+    if pop_info.get("data_available") is False:
+        summary_parts.append(
+            f"Smoke corridor approaches NCR receptor communities in ~{max(0.5, min_eta):.1f} hours; population exposure calculation pending (population data unavailable)."
+        )
+    else:
+        summary_parts.append(
+            f"Smoke corridor approaches NCR receptor communities in ~{max(0.5, min_eta):.1f} hours, exposing an estimated {pop_str} residents (exposure range: {low_pop:,} - {high_pop:,})."
+        )
 
     top_facility_names = [s.get("name", "vulnerable sites") for s in ranked_sites[:2]]
     joined_names = " and ".join(top_facility_names) if top_facility_names else "vulnerable facilities"
