@@ -3,7 +3,7 @@
 <img src="docs/assets/logo.svg" alt="AERIS" width="520"/>
 
 **Source → Plume → Exposure → Action**<br>
-*An AI engine that finds where pollution comes from, predicts where it will move, and tells authorities what to do.*
+*An engine that groups satellite fire detections, models smoke transport, and supports response planning.*
 
 ![Track](https://img.shields.io/badge/Track-Air-1e88e5?style=flat-square)
 ![Hackathon](https://img.shields.io/badge/Environmental%20Hacks-Bharat%20Builds%20Tour-ed7100?style=flat-square)
@@ -19,15 +19,21 @@
 
 **AERIS** (*Air Exposure & Risk Intelligence System*) treats air pollution as a decision problem, not a reporting problem. Every October and November, crop-residue fires in Punjab and Haryana send smoke towards Delhi NCR, and the AQI only reports it after people are already breathing it.
 
-AERIS fuses satellite fire detections, ground air-quality stations, wind forecasts, and the locations of schools, hospitals and people. It answers four questions on one map, before the smoke arrives:
+AERIS combines satellite fire detections, ground air-quality readings, wind and weather, and the locations of schools, hospitals and people. It groups fires into **candidate source clusters**, estimates smoke transport with a simplified physics baseline, and connects modelled corridors to sites and response planning on a map, to support early decisions.
+
+Source labels and risk scores are uncalibrated heuristics; the implementation does not establish causal attribution, observed forecast accuracy, or guaranteed exposure/arrival times. Current modelling evidence and limits are documented in [`models/README.md`](models/README.md).
 
 ```
 🔥 Source            →  🌫️ Plume              →  👥 Exposure          →  🚨 Action
-who is burning,         where the smoke           which schools and        what each site and
-and how much            goes, and when            hospitals it hits        authority should do
+candidate fire          modelled smoke            schools and hospitals    prioritised site and
+clusters and strength   paths and arrival times   inside the corridor      authority responses
 ```
 
-> 🚫 **Real data only.** AERIS never ships demo, sample, mock or fabricated data. If a live source is down, the API serves the last real result marked `stale`, or returns `404 no_data`. It never fills in a default.
+> With sufficiently covered real inputs, AERIS produces candidate fire-source clusters, modelled corridors, site rankings and a response plan. Missing input or wind coverage produces an explicit error; unavailable weather is never invented.
+
+> 🚫 **Real production data only.** AERIS never publishes demo, sample, mock or fabricated data as live observations. If a live source is down, the API serves the last real result marked `stale`, or returns `404 no_data`. It never fills in a default.
+
+Numerical tests and optional ML training use separately labelled mathematical/`BASELINE_SIMULATED` scenarios; these are never published as live observations or historical calibration.
 
 ## 🌐 Live
 
@@ -40,7 +46,7 @@ The full pipeline runs on AWS every 30 minutes. Fires refresh every 15 minutes, 
 | Step | What AERIS does | Code |
 |------|-----------------|------|
 | 1. **Ingest** | Pulls VIIRS fire detections, PM2.5/PM10 station readings and a 48-hour wind and boundary-layer forecast on a schedule. Schools, hospitals and population are loaded once | `ingest/` |
-| 2. **Detect sources** | Clusters nearby fires into sources, with an FRP-weighted centre, emission strength, confidence and type (stubble burning or other fire) | `models/source_detection/` |
+| 2. **Detect sources** | Clusters nearby fires into candidate sources, with an FRP-weighted centre, an emission-strength proxy, heuristic confidence and type (stubble burning or other fire) | `models/source_detection/` |
 | 3. **Forecast the corridor** | Advects puffs from each source with the real forecast wind, giving time bands (0–2 h, 2–4 h, 4–8 h, 8–24 h) and a centreline with ETAs | `models/plume/` |
 | 4. **Rank exposure** | Intersects the corridor with schools, hospitals and the population grid. Scores each site by PM2.5 increase, ETA and vulnerability, and estimates the people exposed | `models/exposure/` |
 | 5. **Plan actions** | A Strands agent on Amazon Bedrock reads the results through tools and writes a prioritised plan for each site and for the authorities. Every site in the plan is checked against the ranking | `agent/` |
@@ -57,6 +63,8 @@ Pipeline run at **2026-10-08 16:14 UTC** (the numbers change every run; read the
 | 🏥 Top-ranked site | Janakpuri Super Speciality Hospital, Delhi: already inside the 0–2 h band |
 | 👥 People exposed (estimate) | 7,132,123 |
 | 🤖 Plan written by | Rules generator (Bedrock fallback; see Known limitations below) |
+
+These are outputs from a real-input pipeline run. The exposure estimate and arrival bands are modelled results, not measured forecast accuracy or confirmed exposure.
 
 ## 🏗️ Architecture (as deployed)
 
@@ -148,7 +156,7 @@ python3 scripts/local_api.py            # http://localhost:8000, same handler as
 ### 5. Test
 
 ```bash
-.venv/bin/python -m pytest              # 169 tests: ingest, models, agent, pipeline, api
+.venv/bin/python -m pytest              # ingest, models, agent, pipeline, api
 cd web && npm run build && npm run lint
 ```
 
@@ -194,14 +202,16 @@ Region of interest: Punjab, Haryana and Delhi NCR (bbox `73.5, 28.0, 77.5, 32.5`
 ## ⚠️ Known limitations
 
 - **The corridor is a fast heuristic, not a chemical transport model** (not WRF-Chem). Its spread, decay and scale constants are not yet calibrated against station history, and the exposed-population range is wide
+- **The calibration engine is ready, but historical calibration is blocked.** Valid event histories, background measurements and held-out observations are still needed; the current snapshots do not establish historical forecast accuracy. See [`models/RELEASE_AUDIT.json`](models/RELEASE_AUDIT.json)
+- **The optional ML surrogate is implemented locally and trained on `BASELINE_SIMULATED` physics outputs.** It has no real-observation validation and is not used by the production corridor pipeline, which remains physics-based. See [`models/training/README.md`](models/training/README.md)
 - **The Bedrock agent is wired up but currently falls back.** It tries Claude, then Amazon Nova, then a rules plan built from the same real data. Until Bedrock model access is sorted on the account, the plan comes from the rules generator. `actions.json` always names its `generator`
 - **Dashboard cleanup in progress:** a few panels still show static text or assumed multipliers. They are listed in [`docs/audit/data-authenticity.md`](docs/audit/data-authenticity.md) and being replaced with live values
-- Not yet used: SageMaker (waiting on an ML surrogate model) and Sentinel-5P satellite data
+- Not yet used: a SageMaker endpoint for the optional surrogate, and Sentinel-5P satellite data
 
 ## 🗺️ Roadmap
 
 - Calibrate the corridor against OpenAQ/CPCB history, and publish the parameters and error
-- Train an ML surrogate on SageMaker and serve it from a serverless endpoint
+- Evaluate and deploy the optional ML surrogate on SageMaker and serve it from a serverless endpoint
 - Confirm smoke with Sentinel-5P (NO₂, CO, aerosols), not only fires
 - Hindi summaries and SMS/WhatsApp alerts to school and hospital contacts
 - A history view: past forecasts against what stations measured
@@ -215,6 +225,7 @@ Region of interest: Punjab, Haryana and Delhi NCR (bbox `73.5, 28.0, 77.5, 32.5`
 | [`docs/work-split.md`](docs/work-split.md) | Who owns what; per-member tasks in [`docs/members/`](docs/members/) |
 | [`docs/aditya's_work/`](docs/aditya's_work/) | AWS build plan and completion report for each phase |
 | [`docs/audit/`](docs/audit/) | Project audit: work left, data authenticity, running cost, improvements |
+| [`models/README.md`](models/README.md) | Source detection, physics corridor, calibration readiness, optional ML surrogate and modelling evidence |
 | [`docs/demo-script.md`](docs/demo-script.md) | 3-minute demo video script |
 | [`docs/submission/`](docs/submission/) | Submission checklist and AWS Builder Center blog draft |
 

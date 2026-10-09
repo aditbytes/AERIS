@@ -1,6 +1,10 @@
 # Pritam Singh — Source Detection and Plume Corridor
 
-> ⚠️ **No demo data.** AERIS uses **only real data** from live sources. Do not create, hand-write, mock or hard-code sample, demo, placeholder or fabricated data — not in code, not in the UI, not in tests, and not as a "fallback". If a live source is unavailable, return an error and show an error state. The only offline files allowed are **real snapshots** that the fetchers captured from live sources into `data/live/` (each stamped with its source and fetch time). Tests may use small captured real API responses, labelled as such.
+This is the original assignment brief. Current implementation, release evidence
+and scientific limitations are in [models/README.md](../../models/README.md);
+unchecked items below are the original plan, not current completion status.
+
+> ⚠️ **No fabricated production data.** Use captured real feeds for the live pipeline and return errors for unavailable inputs. Isolated mathematical tests and explicitly labelled `BASELINE_SIMULATED` surrogate scenarios are permitted under Tasks 4–5; they must never enter `data/live/`, historical calibration or observational claims. See the [data policy](../data-contracts.md).
 
 You build the **"where is it coming from" and "where will it go"** steps. This is the core science of AERIS. Everything runs locally in plain Python, with no AWS account needed. Aditya deploys it (Lambda, and SageMaker if you deliver an ML model). Shared formats: [`../data-contracts.md`](../data-contracts.md).
 

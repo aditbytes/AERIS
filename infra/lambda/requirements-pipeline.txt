@@ -1,4 +1,6 @@
 # detect / corridor / rank / publish steps (boto3 comes from the Lambda runtime)
 shapely>=2.0.0
+pyproj>=3.6.0
 numpy>=1.26.0
+scikit-learn>=1.4.0
 pydantic>=2.0.0

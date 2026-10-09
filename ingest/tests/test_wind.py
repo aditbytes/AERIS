@@ -28,20 +28,57 @@ Tests:
 from __future__ import annotations
 
 import math
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from ingest.weather.fetch_wind import (
+    DEFAULT_FORECAST_DAYS,
+    _parse_point_hourly,
     build_grid,
     fetch_wind,
     wind_components,
 )
 
 
+@pytest.mark.parametrize("api_time,expected", [
+    ("2026-10-07T00:00", "2026-10-07T00:00:00Z"),
+    ("2026-10-07T00:00:00Z", "2026-10-07T00:00:00Z"),
+    ("2026-10-07T05:30:00+05:30", "2026-10-07T00:00:00Z"),
+])
+def test_wind_parser_utc_independent_of_host_timezone(monkeypatch, api_time, expected):
+    """Mathematical time conversion, zero vectors; not atmospheric observations."""
+    import ingest.weather.fetch_wind as fetch_wind_module
+
+    class NonUtcHostDatetime(datetime):
+        def astimezone(self, tz=None):
+            # Reproduce naive astimezone interpretation on a host at UTC+05:30,
+            # regardless of the platform where the regression test runs.
+            if self.tzinfo is None:
+                self = self.replace(tzinfo=timezone(timedelta(hours=5, minutes=30)))
+            return super().astimezone(tz)
+
+    monkeypatch.setattr(fetch_wind_module, "datetime", NonUtcHostDatetime)
+    result = _parse_point_hourly(0, 0, {"time": [api_time], "wind_speed_10m": [0],
+                                      "wind_direction_10m": [0], "boundary_layer_height": [0]})
+    assert result["hours"][0]["t"] == expected
+
+
 # ---------------------------------------------------------------------------
 # Wind-vector conversion — pure mathematical tests
 # ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("capture_hour", [0, 12, 23])
+def test_default_calendar_request_covers_pipeline_horizon_after_capture(capture_hour):
+    """Calendar arithmetic only, not a generated weather response or observation."""
+    from models.plume.corridor import DEFAULT_HOURS
+
+    midnight = datetime(2026, 10, 7, tzinfo=timezone.utc)
+    capture = midnight + timedelta(hours=capture_hour, minutes=59, seconds=59)
+    final_hourly_sample = midnight + timedelta(days=DEFAULT_FORECAST_DAYS, hours=-1)
+    assert final_hourly_sample >= capture + timedelta(hours=DEFAULT_HOURS)
 
 class TestWindComponents:
     """
@@ -154,13 +191,24 @@ _OM_SINGLE_POINT = {
 
 
 class TestFetchWind:
+    def test_default_buffer_is_sent_to_upstream(self):
+        # Reuse the existing format stub; this verifies request parameters only.
+        response = MagicMock()
+        response.json.return_value = _OM_SINGLE_POINT
+        with patch("ingest.weather.fetch_wind.get", return_value=response) as request:
+            fetch_wind(bbox=[73.5, 28.0, 73.5, 28.0])
+        params = request.call_args.kwargs["params"]
+        assert params["forecast_days"] == DEFAULT_FORECAST_DAYS
+        assert params["timezone"] == "UTC"
+
     def test_single_point_parsed(self):
-        with patch("ingest.weather.fetch_wind._fetch_batch", return_value=[_OM_SINGLE_POINT]):
+        with patch("ingest.weather.fetch_wind._fetch_batch", return_value=[_OM_SINGLE_POINT]) as batch:
             result = fetch_wind(
                 bbox=[73.5, 28.0, 73.5, 28.0],  # single point
                 step_deg=0.25,
                 forecast_days=2,
             )
+        assert batch.call_args.args[-1] == 2  # Explicit shorter requests remain supported.
         assert len(result["points"]) == 1
         point = result["points"][0]
         assert point["lat"] == pytest.approx(28.0)

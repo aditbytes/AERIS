@@ -1,0 +1,483 @@
+{
+  "audit_date": "2026-10-08",
+  "calibration": {
+    "available_pm25_observations": 59,
+    "deterministic_report_bytes": true,
+    "engine_status": "READY_FOR_VALID_HISTORY",
+    "exit_code": 1,
+    "fitted_parameters": null,
+    "holdout_status": "NOT_AVAILABLE",
+    "matched_events": 0,
+    "matched_observations": 0,
+    "matched_stations": 0,
+    "optimizer_executed": false,
+    "parameter_source": "BASELINE",
+    "params_json_created": false,
+    "reason": "MISSING_HISTORY: no normalized historical calibration manifest; MISSING_BACKGROUND_HISTORY: no independently observed pre-event station series; INSUFFICIENT_EVENTS: protected chronological holdout NOT_AVAILABLE",
+    "status": "BLOCKED_NO_VALID_HISTORICAL_DATA"
+  },
+  "commands": [
+    {
+      "AERIS_DATA_DIR": ".venv/release-audit/real-replay",
+      "command": [
+        "python",
+        "-m",
+        "models.source_detection.cluster",
+        "--live"
+      ],
+      "exit_code": 0,
+      "label": "source_cli_1"
+    },
+    {
+      "AERIS_DATA_DIR": ".venv/release-audit/real-replay",
+      "command": [
+        "python",
+        "-m",
+        "models.source_detection.cluster",
+        "--live"
+      ],
+      "exit_code": 0,
+      "label": "source_cli_2"
+    },
+    {
+      "AERIS_DATA_DIR": ".venv/release-audit/real-replay",
+      "command": [
+        "python",
+        "-m",
+        "models.plume.corridor",
+        "--live",
+        "--hours",
+        "2"
+      ],
+      "exit_code": 0,
+      "label": "plume_2h_cli_1"
+    },
+    {
+      "AERIS_DATA_DIR": ".venv/release-audit/real-replay",
+      "command": [
+        "python",
+        "-m",
+        "models.plume.corridor",
+        "--live",
+        "--hours",
+        "2"
+      ],
+      "exit_code": 0,
+      "label": "plume_2h_cli_2"
+    },
+    {
+      "AERIS_DATA_DIR": ".venv/release-audit/real-replay",
+      "command": [
+        "python",
+        "-m",
+        "models.plume.corridor",
+        "--live"
+      ],
+      "error": "Plume forecast failed: Requested 48 h forecast 2026-10-07T18:41:50.671283Z..2026-10-09T18:41:50.671283Z is outside real wind coverage 2026-10-06T18:30:00Z..2026-10-08T17:30:00Z; supply a covered explicit start/hours or refresh wind outside the model",
+      "exit_code": 1,
+      "label": "plume_default_48h_failure"
+    },
+    {
+      "AERIS_DATA_DIR": null,
+      "command": [
+        "python",
+        "-m",
+        "models.plume.calibrate",
+        "--report",
+        ".venv/release-audit/calibration-1.json"
+      ],
+      "error": "",
+      "exit_code": 1,
+      "label": "calibration_1"
+    },
+    {
+      "AERIS_DATA_DIR": null,
+      "command": [
+        "python",
+        "-m",
+        "models.plume.calibrate",
+        "--report",
+        ".venv/release-audit/calibration-2.json"
+      ],
+      "error": "",
+      "exit_code": 1,
+      "label": "calibration_2"
+    },
+    {
+      "AERIS_DATA_DIR": null,
+      "command": [
+        "python",
+        "-m",
+        "models.training.train",
+        "--data",
+        ".venv/task4-surrogate/dataset.json",
+        "--model-dir",
+        ".venv/release-audit/ml-model"
+      ],
+      "exit_code": 0,
+      "label": "ml_train"
+    },
+    {
+      "AERIS_DATA_DIR": null,
+      "command": [
+        "python",
+        "-m",
+        "models.training.evaluate",
+        "--data",
+        ".venv/task4-surrogate/dataset.json",
+        "--model-dir",
+        ".venv/release-audit/ml-model",
+        "--output",
+        ".venv/release-audit/ml-evaluation.json"
+      ],
+      "exit_code": 0,
+      "label": "ml_evaluate"
+    },
+    {
+      "AERIS_DATA_DIR": "data/live",
+      "command": [
+        "python",
+        "-m",
+        "models.plume.corridor",
+        "--live"
+      ],
+      "error": "Plume forecast failed: Requested 48 h forecast 2026-10-08T14:52:16.603976Z..2026-10-10T14:52:16.603976Z is outside real wind coverage 2026-10-06T18:30:00Z..2026-10-08T17:30:00Z; supply a covered explicit start/hours or refresh wind outside the model",
+      "exit_code": 1,
+      "label": "original_repository_default_plume_cli",
+      "output_path": "data/live/corridor.geojson",
+      "prior_valid_output_preserved": true
+    }
+  ],
+  "data_integrity": {
+    "generated_data_location": ".venv/release-audit",
+    "new_files_under_data": [],
+    "params_json_absent": true,
+    "protected_files": 19,
+    "sha256_unchanged": true,
+    "snapshot_sha256": {
+      "data/live/.gitkeep": "063804260e274c95b2fd21523c0a927a5b65a9eee73ebb0faebf5d4b99be8a3d",
+      "data/live/README.md": "aba9f62f2c9cf60cef7a06f9f837360564d7a2dafd953e1596a935d499e0fdd6",
+      "data/live/actions.json": "f390c18cb71ec1c5fc4ab85021feb2c3a3faa3c91427ce2c33bd2048adbc5003",
+      "data/live/aqi.json": "d94e8234ce56fec586fb09fba364732174a8649d4fbac314b3776dae0962b09c",
+      "data/live/corridor.geojson": "32f81bc4e31b03fdc2ea9282bc447da410b80c2d1a6a245d7767b60b10fbd603",
+      "data/live/fires.json": "5518f832f4a1554af4354597fb4b17309937440c426b6226b9a2193f01429b4c",
+      "data/live/india-boundary.geojson": "0cbd04d50e1b3d27cb12d576388568ec9eb8a8789683ba3158d29bf13218b366",
+      "data/live/population.json": "fa1a213838cae823bad5769f1a995b00df9909b5f782b71f9c889c66bb30ed64",
+      "data/live/ranked_sites.json": "8dc2b9ef5c7819006a9f5feed5cffffaa5934208a98f13cd1e081ba7b6299922",
+      "data/live/sites.geojson": "4862bf41e95d538d6389423969fb9da52386f45a4869670c122e91ad23c529bd",
+      "data/live/sources.json": "900b5925955635660d90295b2324083fc52a23a3596aaab9450f518a7221135a",
+      "data/live/wind.json": "b9bba4ad4e5d2bdd8fa4f6b8b77a267951fa9697a9db87545c0df3a741f6ca09",
+      "web/public/data/actions.json": "f390c18cb71ec1c5fc4ab85021feb2c3a3faa3c91427ce2c33bd2048adbc5003",
+      "web/public/data/aqi.json": "d94e8234ce56fec586fb09fba364732174a8649d4fbac314b3776dae0962b09c",
+      "web/public/data/corridor.geojson": "32f81bc4e31b03fdc2ea9282bc447da410b80c2d1a6a245d7767b60b10fbd603",
+      "web/public/data/india-boundary.geojson": "0cbd04d50e1b3d27cb12d576388568ec9eb8a8789683ba3158d29bf13218b366",
+      "web/public/data/ranked_sites.json": "8dc2b9ef5c7819006a9f5feed5cffffaa5934208a98f13cd1e081ba7b6299922",
+      "web/public/data/sources.json": "900b5925955635660d90295b2324083fc52a23a3596aaab9450f518a7221135a",
+      "web/public/data/wind.json": "b9bba4ad4e5d2bdd8fa4f6b8b77a267951fa9697a9db87545c0df3a741f6ca09"
+    }
+  },
+  "files_changed": [
+    "README.md",
+    "docs/data-contracts.md",
+    "docs/members/pritam-models.md",
+    "ingest/weather/fetch_wind.py",
+    "ingest/tests/test_wind.py",
+    "models/README.md",
+    "models/RELEASE_AUDIT.json",
+    "models/plume/README.md",
+    "models/training/README.md",
+    "models/training/tests/test_surrogate.py",
+    "pipeline/tests/test_steps.py"
+  ],
+  "git_actions": {
+    "commit": false,
+    "pr_state_change": false,
+    "push": false
+  },
+  "git_diff_check": {
+    "diagnostics": [
+      "warning: in the working copy of 'models/training/README.md', LF will be replaced by CRLF the next time Git touches it",
+      "warning: in the working copy of 'models/training/tests/test_surrogate.py', LF will be replaced by CRLF the next time Git touches it"
+    ],
+    "exit_code": 0,
+    "whitespace_problems": []
+  },
+  "integration_fixes": [
+    {
+      "default_forecast_days": 4,
+      "file": "ingest/weather/fetch_wind.py",
+      "previous_default_forecast_days": 2,
+      "problem": "Two calendar days cannot cover a 48-hour forecast from capture; three also fail after 23:00 because the last sample is final-day 23:00.",
+      "status": "FIXED",
+      "validation": "Calendar arithmetic across capture times and actual query wiring; explicit shorter requests preserved. No new weather fetch or archived-label changes."
+    }
+  ],
+  "lambda_dependency_inspection": {
+    "actual_build": "NOT_VERIFIED",
+    "deployment": "NOT_PERFORMED",
+    "imports": {
+      "agent": [
+        "pipeline/steps.py"
+      ],
+      "numpy": [
+        "models/plume/advect.py",
+        "models/plume/corridor.py",
+        "models/plume/tests/test_plume.py",
+        "models/source_detection/cluster.py",
+        "models/training/evaluate.py",
+        "models/training/features.py",
+        "models/training/generate.py",
+        "models/training/inference.py",
+        "models/training/predict.py",
+        "models/training/tests/test_surrogate.py",
+        "models/training/train.py"
+      ],
+      "pyproj": [
+        "models/plume/advect.py",
+        "models/plume/tests/test_plume.py"
+      ],
+      "pytest": [
+        "models/plume/tests/test_calibrate.py",
+        "models/plume/tests/test_plume.py",
+        "models/source_detection/tests/test_cluster.py",
+        "models/tests/test_corridor.py",
+        "models/training/tests/test_surrogate.py",
+        "pipeline/tests/test_contracts.py",
+        "pipeline/tests/test_steps.py"
+      ],
+      "shapely": [
+        "models/exposure/rank_sites.py",
+        "models/plume/corridor.py",
+        "models/plume/tests/test_plume.py",
+        "models/source_detection/tests/test_cluster.py"
+      ],
+      "sklearn": [
+        "models/source_detection/cluster.py",
+        "models/training/inference.py",
+        "models/training/train.py"
+      ],
+      "threadpoolctl": [
+        "models/training/inference.py",
+        "models/training/train.py"
+      ]
+    },
+    "runtime_target": "python3.12 / arm64",
+    "threadpoolctl_dependency": [
+      "threadpoolctl>=3.2.0",
+      "threadpoolctl>=3.2.0; extra == \"install\""
+    ]
+  },
+  "model_implementation_changes": [],
+  "network_fetches": 0,
+  "outside_model_integration_scope": [
+    "README.md",
+    "docs/data-contracts.md",
+    "ingest/weather/fetch_wind.py",
+    "ingest/tests/test_wind.py"
+  ],
+  "parameters": {
+    "baseline_without_artifact": "PASS",
+    "explicit_override_bypasses_invalid_artifact": "PASS",
+    "invalid_artifact_rejected": "PASS",
+    "precedence": "EXPLICIT > VALIDATED_CALIBRATED > BASELINE",
+    "validated_real_calibrated_artifact": "NOT_AVAILABLE; branch covered by existing isolated-validator mathematical tests, not a fabricated real calibration"
+  },
+  "pipeline": {
+    "ML_loader_not_called": true,
+    "corridor_features": 39,
+    "corridor_validator": [],
+    "default_48h_failure_preserves_output": true,
+    "detect_sources": 22,
+    "matches_cli_result": true,
+    "output_directory": ".venv/release-audit/pipeline-replay",
+    "sources_validator": []
+  },
+  "plume": {
+    "all_coordinates_finite_wgs84": true,
+    "all_shapely_valid": true,
+    "centerlines_match_simulated_mass_centers": true,
+    "centrelines": 22,
+    "default_48h_exit_code": 1,
+    "deterministic_cli_bytes": true,
+    "eta_matches_frames": true,
+    "forecast_end": "2026-10-07T20:41:50.671283Z",
+    "forecast_start": "2026-10-07T18:41:50.671283Z",
+    "geodesic_polygon_area_m2_max": 179999971.32585588,
+    "geodesic_polygon_area_m2_min": 15999999.999992395,
+    "model_capability_hours": 48,
+    "original_repository_default_cli": {
+      "exit_code": 1,
+      "forecast_reference": "2026-10-08T14:52:16.603976Z",
+      "original_source_count": 10,
+      "prior_valid_output_preserved": true
+    },
+    "output": ".venv/release-audit/real-replay/corridor.geojson",
+    "polygons": 17,
+    "prior_output_preserved_on_failure": true,
+    "puffs_at_terminal_frame": 44,
+    "real_observational_forecast_skill": "NOT_AVAILABLE",
+    "real_snapshot_validated_hours": 2,
+    "sha256": "56361a8363424131d890068291b06ddfbb122935fbf40837d79e3be5950a52d8",
+    "source_grid_cells_max": 1521,
+    "source_grid_cells_min": 210,
+    "temporal_hours_after_fire_capture": 22.802591310277776,
+    "validator": [],
+    "wind_capture": "2026-10-07T18:37:57.090632Z",
+    "wind_first": "2026-10-06T18:30:00+00:00",
+    "wind_grid_points": 323,
+    "wind_hourly_records": 15504,
+    "wind_last": "2026-10-08T17:30:00+00:00",
+    "wind_timestamp_provenance": "UNVERIFIED_ARCHIVE_LABELS_USED_LITERAL"
+  },
+  "release_decision": "READY_WITH_DOCUMENTED_LIMITATIONS",
+  "runtime": {
+    "PYTHON_3_12_RUNTIME": "NOT_VERIFIED",
+    "actual_python": "3.14.3",
+    "docker_available": false,
+    "python_312_grammar_files": 38,
+    "python_launcher": "NOT_EXECUTABLE; no Python 3.12 runtime verified",
+    "sam_available": false,
+    "software": {
+      "numpy": "2.4.3",
+      "pyproj": "3.8.0",
+      "scikit-learn": "1.8.0",
+      "shapely": "2.2.0",
+      "threadpoolctl": "3.6.0"
+    },
+    "syntax_errors": 0
+  },
+  "runtime_integration_changes": [
+    "ingest/weather/fetch_wind.py"
+  ],
+  "schema_version": 1,
+  "security": {
+    "credential_or_machine_path_findings": [],
+    "high_confidence_literal_secret_hits": [],
+    "owned_network_clients": [],
+    "production_files_scanned": 21,
+    "scope": "tracked owned models/pipeline/weather/Lambda declarations; values never printed"
+  },
+  "source_detection": {
+    "centroid_and_radius_independent_check": "PASS",
+    "classification": "HEURISTIC",
+    "clustered_fires": 151,
+    "detected_sources": 22,
+    "deterministic_cli_bytes": true,
+    "eligible_fires": 227,
+    "filtered_fires": 0,
+    "noise_fires": 76,
+    "output": ".venv/release-audit/real-replay/sources.json",
+    "raw_fires": 227,
+    "sha256": "2d0164faa44cf4d0c5119cfc3d756cae9e2c45ab99c3e66fd363bfc909dfa66c",
+    "types": {
+      "fire": 7,
+      "stubble_burning": 15
+    },
+    "validator": []
+  },
+  "stored_snapshot_validators": {
+    "corridor": [],
+    "note": "Existing 10-source/50-feature derived snapshots are preserved; not the fresh detector release demonstration.",
+    "sources": []
+  },
+  "surrogate": {
+    "MODEL_DEFAULT": "PHYSICS_BASELINE",
+    "MODEL_SURROGATE": "AVAILABLE_FOR_OPTIONAL_USE",
+    "REAL_OBSERVATIONAL_VALIDATION": "NOT_AVAILABLE",
+    "SURROGATE_VALIDATION": "BASELINE_SIMULATED",
+    "bias_ugm3": -0.7777978829559058,
+    "dataset_size": {
+      "test": 1600,
+      "train": 8000,
+      "validation": 1600
+    },
+    "deterministic_inference_bytes": true,
+    "mae_ugm3": 1.7852700330852673,
+    "missing_artifact_explicit_error": true,
+    "model_bytes": 792417,
+    "model_sha256": "caf81beb49f7759b172ec68070e13089e8e66e4df416a1c1fec59ef32f7cd499",
+    "reference_origin": {
+      "lat": 30.0,
+      "lon": 75.0
+    },
+    "retrained_pickle_matches_task4": true,
+    "rmse_ugm3": 6.8716391464413045,
+    "scope": "STEADY_WEATHER_SINGLE_SOURCE_HOURLY_EMISSIONS_POINT",
+    "scope_checks": {
+      "changing_pblh": {
+        "reason": "pblh_m must be a finite JSON number",
+        "status": "REJECTED"
+      },
+      "changing_wind": {
+        "reason": "u_ms must be a finite JSON number",
+        "status": "REJECTED"
+      },
+      "multiple_sources": {
+        "reason": "Steady-weather case requires exactly the documented inputs",
+        "status": "REJECTED"
+      },
+      "other_origin": {
+        "reason": "Steady-weather case requires exactly the documented inputs",
+        "status": "REJECTED"
+      },
+      "outside_coordinate_range": {
+        "reason": "crosswind_m outside supported range [-100000, 100000]",
+        "status": "REJECTED"
+      },
+      "over_12_hours": {
+        "reason": "forecast_hours outside supported range [1, 12]",
+        "status": "REJECTED"
+      },
+      "polygon_geometry": {
+        "reason": "Steady-weather case requires exactly the documented inputs",
+        "status": "REJECTED"
+      }
+    },
+    "worst_absolute_error_ugm3": 99.11438966910248
+  },
+  "tests": {
+    "full_suite": {
+      "failed": 0,
+      "passed": 455,
+      "seconds": 19.52,
+      "warnings": 2
+    },
+    "ingest/tests/test_wind.py": {
+      "failed": 0,
+      "passed": 24,
+      "seconds": 0.35,
+      "warnings": 1
+    },
+    "models/plume": {
+      "failed": 0,
+      "passed": 116,
+      "seconds": 4.68,
+      "warnings": 0
+    },
+    "models/source_detection": {
+      "failed": 0,
+      "passed": 90,
+      "seconds": 2.46,
+      "warnings": 0
+    },
+    "models/training": {
+      "failed": 0,
+      "passed": 73,
+      "seconds": 4.35,
+      "warnings": 1
+    }
+  },
+  "tracked_generated_artifacts": [],
+  "warnings": [
+    {
+      "category": "RequestsDependencyWarning",
+      "detail": "urllib3 (2.6.3) or chardet (7.3.0)/charset_normalizer (3.4.6) compatibility mismatch",
+      "status": "PRE_EXISTING_ENVIRONMENT"
+    },
+    {
+      "category": "joblib UserWarning",
+      "detail": "Missing physical-core probe command; uses logical-core count. Earlier Task 4 set LOKY_MAX_CPU_COUNT=1; release tests did not filter warnings or set that cap.",
+      "status": "EXISTING_WINDOWS_ENVIRONMENT_DIAGNOSTIC"
+    }
+  ]
+}

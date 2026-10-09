@@ -77,11 +77,18 @@ def detect_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
 
 
 def corridor_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    from models.plume.advect import parse_time
     from models.plume.corridor import predict_corridor
 
     sources = storage.read_json(_key(event, "sources", "sources"))
     wind = storage.read_json(_key(event, "wind", "wind"))
-    result = predict_corridor(sources, wind, forecast_hours=int((event or {}).get("forecast_hours", 24)))
+    forecast_start = (event or {}).get("forecast_start")
+    result = predict_corridor(
+        sources, wind,
+        hours=(event or {}).get("forecast_hours", 48),
+        start=parse_time(forecast_start, "forecast_start") if forecast_start is not None else None,
+        params=(event or {}).get("plume_params"),
+    )
     loc = storage.write_json("corridor", result, geojson=True)
     logger.info("corridor: %d features -> %s", len(result["features"]), loc)
     return {"location": loc, "features": len(result["features"])}
