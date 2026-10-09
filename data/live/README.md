@@ -147,7 +147,7 @@ python -m ingest.firms.handler        # → fires.json
 python -m ingest.weather.handler      # → wind.json
 python -m ingest.aqi.handler          # → aqi.json
 python -m ingest.sites.handler        # → sites.geojson
-python -m ingest.population.handler   # → population.json (downloads 829 MB first time)
+python -m ingest.population.handler   # → population.json (downloads ~18 MB first time)
 ```
 
 See `ingest/README.md` for full instructions.
