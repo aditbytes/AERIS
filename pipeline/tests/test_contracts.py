@@ -22,7 +22,7 @@ _FILES = {
 
 
 def _real(name):
-    return json.loads((_LIVE / _FILES[name]).read_text())
+    return json.loads((_LIVE / _FILES[name]).read_text(encoding="utf-8"))
 
 
 @pytest.mark.parametrize("name", list(_FILES))
