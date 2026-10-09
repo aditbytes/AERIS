@@ -785,9 +785,9 @@ class TestRealSnapshotIntegration:
 
     @pytest.fixture(scope="class")
     def live_inputs(self):
-        corridor = json.loads((_LIVE / "corridor.geojson").read_text())
-        sites = json.loads((_LIVE / "sites.geojson").read_text())
-        pop = json.loads((_LIVE / "population.json").read_text())
+        corridor = json.loads((_LIVE / "corridor.geojson").read_text(encoding="utf-8"))
+        sites = json.loads((_LIVE / "sites.geojson").read_text(encoding="utf-8"))
+        pop = json.loads((_LIVE / "population.json").read_text(encoding="utf-8"))
         return corridor, sites, pop
 
     @pytest.fixture(scope="class")
