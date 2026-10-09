@@ -1,0 +1,32 @@
+name: Self-hosted Windows diagnostic (temporary)
+
+# Scheduling probe only. Remove this workflow after the experiment.
+"on":
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  diagnostic:
+    name: Windows x64 runner scheduling probe
+    if: github.repository == 'sinhaaditya5/AERIS' && github.ref == 'refs/heads/feature/python312-lambda-verification'
+    runs-on: [self-hosted, windows, x64, aeris-windows-diagnostic]
+    timeout-minutes: 5
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      # No checkout, application imports, downloads, actions, or secrets.
+      - name: Print runner details and verify Python is available
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Write-Output ("Runner OS: " + $env:RUNNER_OS)
+          Write-Output ("Runner architecture: " + $env:RUNNER_ARCH)
+          if ($env:RUNNER_OS -ne 'Windows' -or $env:RUNNER_ARCH -ne 'X64') {
+            throw 'This diagnostic requires a Windows x64 runner.'
+          }
+          & python --version
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Python version check failed.'
+          }
+          Write-Output 'AERIS self-hosted runner diagnostic succeeded.'
