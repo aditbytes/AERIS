@@ -2,9 +2,12 @@
 # scripts/deploy.sh stages the Python packages (ingest, models, agent, pipeline,
 # api) next to this file beforehand (gitignored).
 # Lambda runtime already provides boto3.
+# Skip build-host bytecode: the scientific package otherwise exceeds Lambda's
+# 250 MiB uncompressed limit. Python imports source normally at runtime.
 
 PIP = python3 -m pip install -q -t "$(ARTIFACTS_DIR)" \
-	--platform manylinux2014_aarch64 --only-binary=:all: --python-version 3.12
+	--platform manylinux2014_aarch64 --only-binary=:all: --no-compile --python-version 3.12 \
+	--implementation cp --abi cp312
 
 build-FirmsFunction build-AqiFunction build-WeatherFunction build-SitesFunction:
 	mkdir -p "$(ARTIFACTS_DIR)"
