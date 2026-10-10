@@ -110,18 +110,41 @@ export default function MapExplorerView() {
     mapInitRef.current = true
 
     try {
+      const container = mapContainerRef.current
+
       const map = new Map({
         container: mapContainerRef.current,
         style: getStyleForMode(initialMode.current),
         center: [76.5, 30.0],
         zoom: 6.8,
-        minZoom: 3.8,   // Constrained bounds to South Asia / Indian subcontinent
-        maxZoom: 18,    // High resolution facility & plume inspection
-        maxBounds: [[58.0, 5.0], [100.0, 39.0]],
+        minZoom: 3.5,
+        maxZoom: 18,
+        maxBounds: [[52.0, 2.0], [104.0, 42.0]], // Comfortable elastic bounds
         pitch: initialMode.current === 'globe' ? 32 : 0,
         bearing: initialMode.current === 'globe' ? -6 : 0,
         attributionControl: { compact: true },
+        dragPan: {
+          inertia: true,
+          linearity: 0.28,
+          maxSpeed: 1400,
+          deceleration: 2500,
+        },
       })
+
+      const onMoveStart = () => container?.classList.add('map-moving')
+      const onMoveEnd = () => container?.classList.remove('map-moving')
+      const onZoom = () => {
+        if (!container) return
+        if (map.getZoom() >= 7.5) {
+          container.classList.add('map-zoomed-in')
+        } else {
+          container.classList.remove('map-zoomed-in')
+        }
+      }
+
+      map.on('movestart', onMoveStart)
+      map.on('moveend', onMoveEnd)
+      map.on('zoom', onZoom)
 
       map.on('error', (e) => {
         const msg = e.error?.message || ''
@@ -136,6 +159,7 @@ export default function MapExplorerView() {
       map.on('load', () => {
         setupMapLayers(map, initialMode.current)
         applyProjectionAndPitch(map, initialMode.current)
+        onZoom()
       })
     } catch (err) {
       console.warn('[AERIS MapExplorer] Constructor failed:', err)
@@ -408,16 +432,18 @@ export default function MapExplorerView() {
     mapRef.current?.flyTo({
       center,
       zoom,
-      speed: 1.2,
+      pitch: basemapMode === 'globe' ? 32 : 0,
+      bearing: basemapMode === 'globe' ? -6 : 0,
+      speed: 1.1,
       curve: 1.3,
+      essential: true,
     })
   }
 
   return (
     <div className={`map-explorer-container ${isFullscreen ? 'fullscreen' : ''}`}>
       <HeatmapControls data={heatmap.data} enabled={heatmap.enabled} onToggle={heatmap.setEnabled} opacity={heatmap.opacity} onOpacity={heatmap.setOpacity} onFit={webGlSupported ? heatmap.fit : undefined} bounds={webGlSupported ? heatmap.bounds : null} loading={loading} error={feedErrors.aqi} />
-      {/* ── Map Canvas Stage with Floating HUD Controls ───────────────────── */}
-      <div className="explorer-stage" onClick={() => isRegionsOpen && setIsRegionsOpen(false)}>
+      <div className="explorer-stage" onClick={() => { if (isRegionsOpen) setIsRegionsOpen(false); if (isLayerPanelOpen) setIsLayerPanelOpen(false); }}>
         {webGlSupported ? (
           <div ref={mapContainerRef} className="explorer-canvas" />
         ) : (

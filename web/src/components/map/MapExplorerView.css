@@ -858,6 +858,29 @@
   pointer-events: auto;
 }
 
+/* Regional LOD: Reveal source badges when zoomed in (zoom >= 7.5) */
+.map-zoomed-in .aeris-sensor-reticle .reticle-telemetry-hud {
+  opacity: 0.95;
+  transform: translateY(0) scale(0.96);
+  pointer-events: auto;
+}
+
+/* 60 FPS Pan Acceleration: pause keyframe loops and disable pointer event traps while moving */
+.map-moving .aeris-sensor-reticle {
+  pointer-events: none !important;
+  will-change: transform;
+}
+
+.map-moving .sensor-sonar-ring {
+  animation-play-state: paused !important;
+}
+
+.map-moving .explorer-facility-marker,
+.map-moving .explorer-station-marker {
+  pointer-events: none !important;
+  will-change: transform;
+}
+
 .hud-peak-tag {
   font-size: 7.5px;
   padding: 0 3px;

@@ -57,18 +57,41 @@ export default function MapContainer() {
     mapInitRef.current = true
 
     try {
+      const container = mapContainerRef.current
+
       const map = new Map({
         container: mapContainerRef.current,
         style: getStyleForMode(initialMode.current),
         center: [76.5, 30.0],
         zoom: 6.8,
-        minZoom: 3.8,   // Constrain bounds to South Asia / Indian subcontinent
-        maxZoom: 18,    // High resolution facility inspection
-        maxBounds: [[58.0, 5.0], [100.0, 39.0]],
+        minZoom: 3.5,
+        maxZoom: 18,
+        maxBounds: [[52.0, 2.0], [104.0, 42.0]], // Comfortable, elastic subcontinent bounds
         pitch: initialMode.current === 'globe' ? 32 : 0,
         bearing: initialMode.current === 'globe' ? -6 : 0,
         attributionControl: { compact: true },
+        dragPan: {
+          inertia: true,
+          linearity: 0.28,
+          maxSpeed: 1400,
+          deceleration: 2500,
+        },
       })
+
+      const onMoveStart = () => container?.classList.add('map-moving')
+      const onMoveEnd = () => container?.classList.remove('map-moving')
+      const onZoom = () => {
+        if (!container) return
+        if (map.getZoom() >= 7.5) {
+          container.classList.add('map-zoomed-in')
+        } else {
+          container.classList.remove('map-zoomed-in')
+        }
+      }
+
+      map.on('movestart', onMoveStart)
+      map.on('moveend', onMoveEnd)
+      map.on('zoom', onZoom)
 
       map.on('error', (e) => {
         const msg = e.error?.message || ''
@@ -83,6 +106,7 @@ export default function MapContainer() {
       map.on('load', () => {
         setupMapLayers(map, initialMode.current)
         applyProjectionAndPitch(map, initialMode.current)
+        onZoom()
       })
     } catch (err) {
       console.warn('[AERIS] MapLibre constructor failed, using SVG vector canvas:', err)
@@ -163,11 +187,13 @@ export default function MapContainer() {
         {
           padding: { top: 40, bottom: 40, left: 40, right: 40 },
           maxZoom: 9.5,
-          duration: 900,
+          duration: 1000,
+          pitch: basemapMode === 'globe' ? 32 : 0,
+          bearing: basemapMode === 'globe' ? -6 : 0,
         }
       )
     }
-  }, [sources, rankedSites, corridor])
+  }, [sources, rankedSites, corridor, basemapMode])
 
   // Fit bounds automatically on first data availability
   useEffect(() => {
@@ -317,7 +343,14 @@ export default function MapContainer() {
             </button>
             <button
               className="map-header-chip"
-              onClick={() => mapRef.current?.flyTo({ center: [78.9, 22.8], zoom: 4.4, speed: 1.2 })}
+              onClick={() => mapRef.current?.flyTo({
+                center: [78.9, 22.8],
+                zoom: 4.4,
+                pitch: basemapMode === 'globe' ? 32 : 0,
+                bearing: basemapMode === 'globe' ? -6 : 0,
+                speed: 1.1,
+                curve: 1.3,
+              })}
               title="Fit Entire India (repository boundary)"
               type="button"
             >
