@@ -1,95 +1,254 @@
-/* SourceBreakdown.css */
+/* SourceBreakdown.css — High-End Environmental Analytics Donut & Meter Widget */
+
 .source-breakdown {
-  padding: 10px 14px;
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   height: 100%;
   min-height: 0;
   overflow: hidden;
   position: relative;
+  border-radius: var(--radius-card, 12px);
+  background: var(--surface-card, #ffffff);
 }
 
 .source-breakdown-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.breakdown-title-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.breakdown-title-group .section-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-primary, #1e2924);
+  line-height: 1.2;
+  margin: 0;
+}
+
+.breakdown-sub {
+  font-size: 9.5px;
+  color: var(--text-tertiary, #6c8077);
+  white-space: nowrap;
+  margin-top: 1px;
 }
 
 .breakdown-mode-toggle {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 2px;
-  background: var(--surface-subtle);
-  border: 1px solid var(--border-subtle);
+  background: var(--surface-subtle, #f0f4f1);
+  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
   padding: 2px;
   border-radius: 6px;
+  flex-shrink: 0;
 }
 
 .mode-btn {
   border: none;
   background: transparent;
-  color: var(--text-tertiary);
+  color: var(--text-secondary, #4a5e56);
   font-family: inherit;
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
-  padding: 2px 6px;
+  padding: 2px 7px;
   border-radius: 4px;
   cursor: pointer;
-  transition: all 0.12s ease;
+  transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
 .mode-btn:hover {
-  color: var(--text-primary);
+  color: var(--text-primary, #1e2924);
 }
 
 .mode-btn.active {
   background: white;
-  color: var(--brand-dark);
+  color: var(--brand-dark, #22734f);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
+/* Donut & Legend Container */
 .breakdown-body {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 2px;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  margin-top: 3px;
 }
 
+.donut-chart-wrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.donut-svg {
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.04));
+}
+
+.donut-center-main {
+  font-family: Outfit, var(--font, sans-serif);
+  transition: fill 0.2s ease;
+}
+
+.donut-center-sub {
+  font-family: Outfit, var(--font, sans-serif);
+}
+
+/* Proportional Meter Legend */
 .breakdown-legend {
   list-style: none;
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2.5px;
+  padding: 0;
+  margin: 0;
 }
-
 
 .legend-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.legend-row:hover,
+.legend-row.hovered {
+  background: var(--surface-subtle, #f5f8f6);
+}
+
+.legend-label-col {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  flex: 1;
 }
 
 .legend-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
   flex-shrink: 0;
 }
 
 .legend-label {
-  font-size: 11.5px;
-  color: var(--text-secondary);
-  flex: 1;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-secondary, #4a5e56);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.legend-count {
+  color: var(--text-tertiary, #6c8077);
+  font-weight: 400;
+  font-size: 9px;
+}
+
+.legend-meter-col {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.legend-meter-track {
+  width: 36px;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.legend-meter-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .legend-pct {
-  font-size: 12px;
+  font-size: 10.5px;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--text-primary, #1e2924);
+  min-width: 44px;
+  text-align: right;
+  white-space: nowrap;
 }
 
-.mode-btn, .legend-label { color: #475569; }
-.source-breakdown-head { flex-wrap: wrap; gap: 6px; }
-.breakdown-body svg { flex-shrink: 0; }
-@media (max-width: 600px) { .breakdown-body { flex-wrap: wrap; } .breakdown-legend { min-width: 160px; } }
+/* Executive Metric Ticker */
+.source-breakdown-ticker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  background: var(--surface-subtle, #f8faf8);
+  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.06));
+  border-radius: 6px;
+  padding: 2.5px 8px;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.ticker-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  color: var(--text-secondary, #4a5e56);
+  white-space: nowrap;
+}
+
+.ticker-icon {
+  font-size: 9.5px;
+  line-height: 1;
+}
+
+.ticker-label {
+  color: var(--text-tertiary, #6c8077);
+}
+
+.ticker-val {
+  color: var(--brand-dark, #22734f);
+  font-weight: 700;
+}
+
+.ticker-district {
+  color: var(--text-tertiary, #6c8077);
+  font-size: 8.5px;
+}
+
+.ticker-divider {
+  width: 1px;
+  height: 10px;
+  background: rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .breakdown-body {
+    flex-wrap: wrap;
+  }
+  .breakdown-legend {
+    min-width: 160px;
+  }
+}

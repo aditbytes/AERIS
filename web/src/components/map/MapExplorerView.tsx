@@ -7,6 +7,7 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import {
   ChevronDown,
   Compass,
+  Info,
   Layers,
   Maximize2,
   Minimize2,
@@ -109,18 +110,40 @@ export default function MapExplorerView() {
     mapInitRef.current = true
 
     try {
+      const container = mapContainerRef.current
+
       const map = new Map({
         container: mapContainerRef.current,
         style: getStyleForMode(initialMode.current),
         center: [76.5, 30.0],
         zoom: 6.8,
-        minZoom: 3.8,   // Constrained bounds to South Asia / Indian subcontinent
-        maxZoom: 18,    // High resolution facility & plume inspection
-        maxBounds: [[58.0, 5.0], [100.0, 39.0]],
+        minZoom: 3.5,
+        maxZoom: 18,
+        maxBounds: [[52.0, 2.0], [104.0, 42.0]], // Comfortable elastic bounds
         pitch: initialMode.current === 'globe' ? 32 : 0,
         bearing: initialMode.current === 'globe' ? -6 : 0,
         attributionControl: { compact: true },
+        dragPan: {
+          linearity: 0.28,
+          maxSpeed: 1400,
+          deceleration: 2500,
+        },
       })
+
+      const onMoveStart = () => container?.classList.add('map-moving')
+      const onMoveEnd = () => container?.classList.remove('map-moving')
+      const onZoom = () => {
+        if (!container) return
+        if (map.getZoom() >= 7.5) {
+          container.classList.add('map-zoomed-in')
+        } else {
+          container.classList.remove('map-zoomed-in')
+        }
+      }
+
+      map.on('movestart', onMoveStart)
+      map.on('moveend', onMoveEnd)
+      map.on('zoom', onZoom)
 
       map.on('error', (e) => {
         const msg = e.error?.message || ''
@@ -135,6 +158,7 @@ export default function MapExplorerView() {
       map.on('load', () => {
         setupMapLayers(map, initialMode.current)
         applyProjectionAndPitch(map, initialMode.current)
+        onZoom()
       })
     } catch (err) {
       console.warn('[AERIS MapExplorer] Constructor failed:', err)
@@ -265,13 +289,14 @@ export default function MapExplorerView() {
 
           const riskLvl = getRiskLevel(site.risk_score)
           const riskText = riskLabel(riskLvl)
+          const isImminent = site.eta_hours < 8
           const el = document.createElement('div')
-          el.className = `explorer-site-marker site-${site.type} risk-${riskLvl}`
+          el.className = `explorer-site-marker site-${site.type} risk-${riskLvl} ${isImminent ? 'is-imminent' : 'is-background'}`
           el.innerHTML = `
             <span class="site-icon">${isSchool ? '🏫' : '🏥'}</span>
-            <span class="site-risk-tag">${riskText}</span>
+            <span class="site-risk-tag">${riskText}${isImminent ? ` · ~${site.eta_hours.toFixed(0)}h` : ''}</span>
           `
-          el.title = `${site.name} (${riskText} Risk)`
+          el.title = `${site.name} (${riskText} Risk · ~${site.eta_hours.toFixed(1)}h arrival)`
 
           el.setAttribute('role', 'button')
           el.tabIndex = 0
@@ -298,7 +323,7 @@ export default function MapExplorerView() {
             })
           })
 
-          const marker = new Marker({ element: el, anchor: 'bottom' })
+          const marker = new Marker({ element: el, anchor: 'center' })
             .setLngLat([site.lon, site.lat])
             .addTo(map)
 
@@ -407,17 +432,18 @@ export default function MapExplorerView() {
     mapRef.current?.flyTo({
       center,
       zoom,
-      speed: 1.2,
+      pitch: basemapMode === 'globe' ? 32 : 0,
+      bearing: basemapMode === 'globe' ? -6 : 0,
+      speed: 1.1,
       curve: 1.3,
+      essential: true,
     })
   }
 
   return (
     <div className={`map-explorer-container ${isFullscreen ? 'fullscreen' : ''}`}>
       <HeatmapControls data={heatmap.data} enabled={heatmap.enabled} onToggle={heatmap.setEnabled} opacity={heatmap.opacity} onOpacity={heatmap.setOpacity} onFit={webGlSupported ? heatmap.fit : undefined} bounds={webGlSupported ? heatmap.bounds : null} loading={loading} error={feedErrors.aqi} />
-      <p className="map-science-note">Uncalibrated model corridors · forecast start: {corridor?.forecast_start ?? 'unavailable'}. Time controls select cumulative bands; full centrelines and ETA markers remain as forecast context. Station observations are separate from modelled band peaks. Facility markers show up to 12 ranked sites after filtering; the facility table contains the full list.</p>
-      {/* ── Map Canvas Stage with Floating HUD Controls ───────────────────── */}
-      <div className="explorer-stage" onClick={() => isRegionsOpen && setIsRegionsOpen(false)}>
+      <div className="explorer-stage" onClick={() => { if (isRegionsOpen) setIsRegionsOpen(false); if (isLayerPanelOpen) setIsLayerPanelOpen(false); }}>
         {webGlSupported ? (
           <div ref={mapContainerRef} className="explorer-canvas" />
         ) : (
@@ -936,6 +962,14 @@ export default function MapExplorerView() {
             <Compass size={16} />
           </button>
         </div>
+      </div>
+
+      {/* Sleek Bottom Status Strip */}
+      <div className="explorer-footer-status">
+        <p className="map-science-note">
+          <Info size={11} className="science-note-icon" />
+          <span>Uncalibrated model corridors · forecast start: {corridor?.forecast_start ?? 'unavailable'}. Time controls select cumulative bands; full centrelines and ETA markers remain as forecast context. Station observations are separate from modelled band peaks. Facility markers show up to 12 ranked sites after filtering; the facility table contains the full list.</span>
+        </p>
       </div>
     </div>
   )

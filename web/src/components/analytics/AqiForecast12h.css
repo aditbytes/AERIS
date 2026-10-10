@@ -1,38 +1,459 @@
-/* AqiForecast12h.css — Atmospheric Plume Dispersion Forecast */
+/* AqiForecast12h.css — Atmospheric Plume Dispersion & AQI Intelligence Widget */
+
 .aqi-forecast {
-  padding: 10px 14px;
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  justify-content: space-between;
   height: 100%;
   min-height: 0;
   overflow: hidden;
   position: relative;
+  background: var(--surface-card, #ffffff);
+  border-radius: var(--radius-card, 12px);
 }
 
-.aqi-forecast .section-header {
+/* ── Header ───────────────────────────────────────────────────────────────── */
+.aqi-forecast-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
   margin-bottom: 2px;
 }
 
-.modeled-tag-badge {
-  font-size: 9.5px;
+.forecast-title-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.forecast-title-group .section-title {
+  font-size: 12.5px;
   font-weight: 700;
-  color: #7C2D12;
+  color: var(--text-primary, #1e2924);
+  line-height: 1.2;
+  margin: 0;
+}
+
+.modeled-tag-badge {
+  font-size: 8px;
+  font-weight: 800;
+  color: #C2410C;
   background: #FFEDD5;
   border: 1px solid #FED7AA;
-  padding: 1px 6px;
+  padding: 1px 5px;
   border-radius: 9999px;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
 }
 
-.aqi-forecast svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  min-height: 85px;
+.forecast-sub {
+  font-size: 9.5px;
+  color: var(--text-tertiary, #6c8077);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.forecast-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--surface-subtle, #f0f4f1);
+  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
+  padding: 2px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.forecast-mode-toggle .mode-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #4a5e56);
+  font-family: inherit;
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.forecast-mode-toggle .mode-btn:hover {
+  color: var(--text-primary, #1e2924);
+}
+
+.forecast-mode-toggle .mode-btn.active {
+  background: white;
+  color: var(--brand-dark, #22734f);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Primary Viewport: 0-24h Plume Trajectory ────────────────────────────── */
+.forecast-dispersion-body {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 10px;
+  align-items: center;
+  min-height: 0;
   flex: 1;
+}
+
+/* Left KPI Column */
+.dispersion-kpi-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.baseline-readout {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.readout-label {
+  font-size: 8.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-tertiary, #64748b);
+  letter-spacing: 0.3px;
+}
+
+.readout-val-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.readout-val {
+  font-family: Outfit, var(--font, sans-serif);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary, #0f172a);
+  line-height: 1;
+}
+
+.readout-unit {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-tertiary, #64748b);
+}
+
+.readout-tier-badge {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 8px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  margin-top: 1px;
+}
+
+.inversion-micro-pills {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
+}
+
+.micro-pill {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+  white-space: nowrap;
+  letter-spacing: 0.1px;
+}
+
+.micro-pill.peak-delta {
+  background: #FFF7ED;
+  color: #C2410C;
+  border: 1px solid #FFEDD5;
+}
+
+.micro-pill.trap-flag {
+  background: #F8FAFC;
+  color: #475569;
+  border: 1px solid #E2E8F0;
+}
+
+/* Right Chart Column */
+.dispersion-chart-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  height: 100%;
+  justify-content: center;
+}
+
+.spark-chart-container {
+  position: relative;
+  width: 100%;
+  height: 48px;
+  background: var(--surface-subtle, #f8fafc);
+  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.06));
+  border-radius: 6px;
+  overflow: hidden;
+  padding: 2px 4px 0 4px;
+}
+
+.dispersion-spark-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.spark-milestone-node circle {
+  transition: r 0.15s ease, stroke-width 0.15s ease;
+}
+
+.milestone-tooltip {
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  right: 6px;
+  background: rgba(15, 23, 42, 0.92);
+  color: #F8FAFC;
+  font-size: 7.5px;
+  font-weight: 600;
+  padding: 2px 5px;
+  border-radius: 4px;
+  pointer-events: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.chart-legend-row {
+  position: absolute;
+  top: 2px;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.legend-item {
+  font-size: 7px;
+  font-weight: 700;
+  color: #64748B;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.legend-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-dot.orange {
+  background: #EA580C;
+}
+
+.legend-dot.dash {
+  width: 7px;
+  height: 2px;
+  border-radius: 1px;
+  background: #CBD5E1;
+}
+
+/* Horizon Quick-Hop Pills */
+.horizon-sync-strip {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 1px;
+}
+
+.horizon-strip-label {
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--text-tertiary, #64748b);
+  margin-right: 2px;
+}
+
+.horizon-pill-btn {
+  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.1));
+  background: white;
+  color: var(--text-secondary, #475569);
+  font-family: inherit;
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  line-height: 1.2;
+}
+
+.horizon-pill-btn:hover {
+  background: var(--surface-subtle, #f1f5f9);
+  color: var(--text-primary, #0f172a);
+}
+
+.horizon-pill-btn.active {
+  background: var(--brand-dark, #22734f);
+  color: #FFFFFF;
+  border-color: var(--brand-dark, #22734f);
+  box-shadow: 0 1px 3px rgba(34, 115, 79, 0.25);
+}
+
+/* ── Secondary Viewport: Ground Stations Network ─────────────────────────── */
+.forecast-stations-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 0;
+  flex: 1;
+  justify-content: center;
+}
+
+.station-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.station-bar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.station-stacked-meter {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #E2E8F0;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.meter-seg {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.seg-severe { background: #7F1D1D; }
+.seg-verypoor { background: #DC2626; }
+.seg-poor { background: #EA580C; }
+.seg-moderate { background: #F59E0B; }
+.seg-satisfactory { background: #10B981; }
+
+.meter-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 7.5px;
+  color: var(--text-tertiary, #64748b);
+  font-weight: 600;
+  flex-wrap: wrap;
+}
+
+.m-leg {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.c-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.c-dot.satisfactory { background: #10B981; }
+.c-dot.moderate { background: #F59E0B; }
+.c-dot.poor { background: #EA580C; }
+.c-dot.verypoor { background: #DC2626; }
+
+.top-stations-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.top-station-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  background: var(--surface-subtle, #f8fafc);
+  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.06));
+  padding: 3px 5px;
+  border-radius: 5px;
+}
+
+.stn-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.stn-name {
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stn-pm25 {
+  font-size: 7px;
+  color: var(--text-tertiary, #64748b);
+}
+
+.stn-aqi-chip {
+  font-size: 7.5px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 3px;
+  white-space: nowrap;
+  letter-spacing: 0.1px;
+}
+
+/* ── Scientific Contract & Disclaimers Footer ────────────────────────────── */
+.aqi-contract-disclaimer {
+  margin-top: 3px;
+  padding: 3px 6px;
+  background: var(--surface-subtle, #f8fafc);
+  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.06));
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5px;
+  flex-shrink: 0;
+}
+
+.aqi-contract-disclaimer .panel-sub {
+  font-size: 8px;
+  line-height: 1.25;
+  color: var(--text-tertiary, #64748b);
+  margin: 0;
+}
+
+.aqi-contract-disclaimer .panel-sub strong {
+  color: var(--text-secondary, #334155);
 }

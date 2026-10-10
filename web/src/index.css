@@ -294,12 +294,12 @@ a:focus-visible, summary:focus-visible, textarea:focus-visible { outline: 2px so
 .feed-error-banner button { padding: 4px 10px; cursor: pointer; }
 .map-science-note { padding: 5px 12px; font-size: 11px; color: #4a5e56; background: #f8faf8; flex: 0 0 auto; overflow-wrap: anywhere; }
 .static-map-note { position: absolute; top: 25px; left: 12px; right: 12px; z-index: 1; font-size: 11px; color: #374151; background: #ffffffee; padding: 4px; }
-.map-area { min-height: 380px; }
+.map-area { min-height: 420px; }
 .map-header { flex-wrap: wrap; }
 .map-header-actions { flex-wrap: wrap; max-width: 100%; }
-.map-canvas-area { min-height: 200px; }
+.map-canvas-area { min-height: 280px; }
 .map-explorer-container { flex: 1; height: auto; min-height: 0; }
-.explorer-stage { min-height: 260px; }
+.explorer-stage { min-height: 280px; }
 @media(max-width: 1100px) {
   .map-floating-hud { position: relative; top: 0; left: 0; transform: none; flex-wrap: wrap; justify-content: center; border-radius: 0; width: 100%; gap: 4px; }
   .hud-divider { display: none; }

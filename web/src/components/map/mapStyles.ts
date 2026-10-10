@@ -120,30 +120,30 @@ export function setupMapLayers(map: Map, mode: BasemapMode) {
     })
   }
 
-  // Outer border halo
+  // Outer border halo - elegant cartographic styling
   if (!map.getLayer('india-border-halo')) {
     map.addLayer({
       id: 'india-border-halo',
       type: 'line',
       source: 'india-boundary',
       paint: {
-        'line-color': isDarkOrSat ? '#10B981' : '#22734F',
-        'line-width': isDarkOrSat ? 5.5 : 4.5,
-        'line-opacity': isDarkOrSat ? 0.45 : 0.35,
+        'line-color': isDarkOrSat ? '#94A3B8' : '#64748B',
+        'line-width': 3.0,
+        'line-opacity': isDarkOrSat ? 0.20 : 0.15,
       },
     })
   }
 
-  // Solid boundary line
+  // Solid boundary line - understated reference border
   if (!map.getLayer('india-border-line')) {
     map.addLayer({
       id: 'india-border-line',
       type: 'line',
       source: 'india-boundary',
       paint: {
-        'line-color': isDarkOrSat ? '#34D399' : '#164E35',
-        'line-width': isDarkOrSat ? 2.8 : 2.4,
-        'line-opacity': 0.98,
+        'line-color': isDarkOrSat ? '#CBD5E1' : '#475569',
+        'line-width': 1.2,
+        'line-opacity': 0.65,
       },
     })
   }
@@ -156,7 +156,7 @@ export function setupMapLayers(map: Map, mode: BasemapMode) {
     })
   }
 
-  // Plume fill layer with clear discrete color ramp for 0-2h, 2-4h, 4-8h, 8-24h bands
+  // Plume fill layer with natural atmospheric diffusion opacity decay downwind
   if (!map.getLayer('plume-fill')) {
     map.addLayer({
       id: 'plume-fill',
@@ -173,12 +173,20 @@ export function setupMapLayers(map: Map, mode: BasemapMode) {
           8, '#CA8A04',
           '#DC2626',
         ],
-        'fill-opacity': isDarkOrSat ? 0.72 : 0.62,
+        'fill-opacity': [
+          'match',
+          ['get', 'hour_from'],
+          0, isDarkOrSat ? 0.52 : 0.44,
+          2, isDarkOrSat ? 0.36 : 0.30,
+          4, isDarkOrSat ? 0.24 : 0.20,
+          8, isDarkOrSat ? 0.15 : 0.12,
+          isDarkOrSat ? 0.32 : 0.25,
+        ],
       },
     })
   }
 
-  // Plume boundary outline
+  // Plume boundary outline - soft atmospheric envelope rather than harsh rubber bands
   if (!map.getLayer('plume-line')) {
     map.addLayer({
       id: 'plume-line',
@@ -186,14 +194,14 @@ export function setupMapLayers(map: Map, mode: BasemapMode) {
       source: 'corridor',
       filter: ['==', ['get', 'kind'], 'band'],
       paint: {
-        'line-color': isDarkOrSat ? 'rgba(254, 226, 226, 0.75)' : '#991B1B',
-        'line-width': 1.2,
-        'line-opacity': 0.8,
+        'line-color': isDarkOrSat ? 'rgba(255, 255, 255, 0.30)' : 'rgba(185, 28, 28, 0.35)',
+        'line-width': 0.8,
+        'line-opacity': 0.45,
       },
     })
   }
 
-  // Plume centerline (dispersion trajectory vector)
+  // Plume centerline (dispersion trajectory vector) - sleek glowing airflow vector
   if (!map.getLayer('plume-centerline')) {
     map.addLayer({
       id: 'plume-centerline',
@@ -202,9 +210,9 @@ export function setupMapLayers(map: Map, mode: BasemapMode) {
       filter: ['==', ['get', 'kind'], 'centerline'],
       paint: {
         'line-color': '#FFFFFF',
-        'line-width': 2.2,
-        'line-dasharray': [4, 2],
-        'line-opacity': 0.95,
+        'line-width': 1.6,
+        'line-dasharray': [5, 3],
+        'line-opacity': 0.75,
       },
     })
   }
@@ -217,37 +225,42 @@ export function setupMapLayers(map: Map, mode: BasemapMode) {
     })
   }
 
+  // Waypoint pips along the dispersion corridor
   if (!map.getLayer('corridor-eta-circles')) {
     map.addLayer({
       id: 'corridor-eta-circles',
       type: 'circle',
       source: 'corridor-eta',
       paint: {
-        'circle-radius': 3.5,
-        'circle-color': '#FFFFFF',
-        'circle-stroke-width': 1.5,
+        'circle-radius': 2.8,
+        'circle-color': '#38BDF8',
+        'circle-stroke-width': 1.2,
         'circle-stroke-color': '#0F172A',
+        'circle-opacity': 0.9,
       },
     })
   }
 
+  // Collision-free ETA waypoint labels (+2h, +4h, etc. instead of cluttered raw IDs)
   if (!map.getLayer('corridor-eta-labels')) {
     map.addLayer({
       id: 'corridor-eta-labels',
       type: 'symbol',
       source: 'corridor-eta',
       layout: {
-        'text-field': ['get', 'label'],
+        'text-field': ['concat', '+', ['to-string', ['get', 'eta']], 'h'],
         'text-font': ['Open Sans Semibold'],
-        'text-size': 9.5,
-        'text-offset': [0, 1.2],
+        'text-size': 9,
+        'text-offset': [0, 1.1],
         'text-anchor': 'top',
-        'text-allow-overlap': true,
+        'text-allow-overlap': false,
+        'text-ignore-placement': false,
+        'text-padding': 8,
       },
       paint: {
-        'text-color': '#FFFFFF',
+        'text-color': '#F8FAFC',
         'text-halo-color': '#0F172A',
-        'text-halo-width': 2,
+        'text-halo-width': 1.8,
       },
     })
   }

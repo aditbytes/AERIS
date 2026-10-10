@@ -7,7 +7,7 @@
   grid-template-rows: 1fr;
   gap: 10px;
   height: auto;
-  min-height: 330px;
+  min-height: 420px;
   flex-shrink: 0;
   width: 100%;
   position: relative;
