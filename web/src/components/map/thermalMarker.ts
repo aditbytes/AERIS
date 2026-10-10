@@ -33,6 +33,8 @@ export function createThermalMarkerElement(
 
   const el = document.createElement('div')
   el.className = `aeris-sensor-reticle severity-${severity} ${isTransboundary ? 'is-transboundary' : 'is-india'} ${options?.isSelected ? 'is-selected' : ''} ${isPeak ? 'is-peak-cluster' : ''}`
+  el.style.width = `${dims.width}px`
+  el.style.height = `${dims.height}px`
   el.dataset.sourceId = src.id
   el.dataset.territory = src.territory || 'unknown'
   el.setAttribute('aria-label', `${src.id}: fire-derived source candidate, ${src.total_frp_mw.toFixed(1)} MW FRP`)

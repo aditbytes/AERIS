@@ -739,14 +739,18 @@
   align-items: center;
   justify-content: center;
   user-select: none;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), z-index 0.2s;
+  /* Never transition transform on MapLibre root marker element */
   z-index: 10;
 }
 
 .aeris-sensor-reticle:hover,
 .aeris-sensor-reticle.is-selected {
-  transform: scale(1.22) translateY(-3px);
   z-index: 60;
+}
+
+.aeris-sensor-reticle:hover .reticle-anchor,
+.aeris-sensor-reticle.is-selected .reticle-anchor {
+  transform: scale(1.18);
 }
 
 .reticle-anchor {
@@ -754,6 +758,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Calibrated Sonar Radar Pings */
@@ -868,7 +875,6 @@
 /* 60 FPS Pan Acceleration: pause keyframe loops and disable pointer event traps while moving */
 .map-moving .aeris-sensor-reticle {
   pointer-events: none !important;
-  will-change: transform;
 }
 
 .map-moving .sensor-sonar-ring {
@@ -876,9 +882,10 @@
 }
 
 .map-moving .explorer-facility-marker,
-.map-moving .explorer-station-marker {
+.map-moving .explorer-site-marker,
+.map-moving .explorer-station-marker,
+.map-moving .explorer-aqi-station-marker {
   pointer-events: none !important;
-  will-change: transform;
 }
 
 .hud-peak-tag {
@@ -958,7 +965,8 @@
   padding: 3px 6px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Never transition transform or all on MapLibre root marker element */
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
 .explorer-site-marker.is-imminent {
@@ -973,9 +981,13 @@
 }
 
 .explorer-site-marker:hover {
-  transform: scale(1.15) translateY(-2px);
   opacity: 1;
+  box-shadow: 0 0 0 2.5px rgba(34, 115, 79, 0.35), 0 6px 16px rgba(0, 0, 0, 0.2);
   z-index: 50;
+}
+
+.explorer-site-marker:hover .site-icon {
+  transform: scale(1.22);
 }
 
 .explorer-site-marker.risk-high {
@@ -984,6 +996,8 @@
 
 .site-icon {
   font-size: 12px;
+  display: inline-block;
+  transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .site-risk-tag {
@@ -1007,11 +1021,12 @@
   border: 1.5px solid white;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
   cursor: pointer;
-  transition: transform 0.15s ease;
+  /* Never transition transform on MapLibre root marker element */
+  transition: box-shadow 0.15s ease;
 }
 
 .explorer-aqi-station-marker:hover {
-  transform: scale(1.25);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.6), 0 4px 14px rgba(0, 0, 0, 0.35);
   z-index: 50;
 }
 
@@ -1109,12 +1124,13 @@
   border: 1.5px solid white;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.30);
   cursor: pointer;
-  transition: transform 0.15s ease;
+  /* Never transition transform on MapLibre root marker element */
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
   white-space: nowrap;
 }
 
 .explorer-aqi-cluster-marker:hover {
-  transform: scale(1.22);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.7), 0 6px 18px rgba(0, 0, 0, 0.40);
   z-index: 60;
 }
 

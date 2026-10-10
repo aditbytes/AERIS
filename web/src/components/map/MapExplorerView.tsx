@@ -323,7 +323,7 @@ export default function MapExplorerView() {
             })
           })
 
-          const marker = new Marker({ element: el, anchor: 'bottom' })
+          const marker = new Marker({ element: el, anchor: 'center' })
             .setLngLat([site.lon, site.lat])
             .addTo(map)
 
