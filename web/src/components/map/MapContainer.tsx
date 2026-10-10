@@ -322,8 +322,8 @@ export default function MapContainer() {
   }, [flyToLocation, webGlSupported])
 
   const activeSourcesCount = sources?.sources.filter(s => isValidSubcontinentCoord(s.lat, s.lon) && (scopeFilter === 'all' || s.territory === 'india')).length ?? 0
-  const windSpeedKmh = wind?.points?.[0]?.hours?.[0]?.speed_ms ? (wind.points[0].hours[0].speed_ms * 3.6).toFixed(0) : '18'
-  const earliestEta = etaHours != null ? etaHours.toFixed(1) : (rankedSites?.sites?.[0]?.eta_hours?.toFixed(1) ?? '3.2')
+  const windSpeedKmh = wind?.points?.[0]?.hours?.[0]?.speed_ms != null ? (wind.points[0].hours[0].speed_ms * 3.6).toFixed(0) : null
+  const earliestEta = etaHours != null ? etaHours.toFixed(1) : (rankedSites?.sites?.[0]?.eta_hours != null ? rankedSites.sites[0].eta_hours.toFixed(1) : null)
 
   return (
     <div className="map-wrapper card">
@@ -399,7 +399,7 @@ export default function MapContainer() {
         <div className="storyline-node origin" title="Active fire clusters identified by thermal satellite detections">
           <span className="story-step-badge">1. Origin</span>
           <div className="story-step-text">
-            <strong className="story-headline">🔥 {activeSourcesCount} Fires</strong>
+            <strong className="story-headline">🔥 {sources ? `${activeSourcesCount} Fires` : '—'}</strong>
             <span className="story-sub">Punjab &amp; Regional</span>
           </div>
         </div>
@@ -409,7 +409,7 @@ export default function MapContainer() {
         <div className="storyline-node flow" title="Transport velocity along southeasterly wind corridor">
           <span className="story-step-badge">2. Flow</span>
           <div className="story-step-text">
-            <strong className="story-headline">💨 {windSpeedKmh} km/h</strong>
+            <strong className="story-headline">💨 {windSpeedKmh != null ? `${windSpeedKmh} km/h` : '—'}</strong>
             <span className="story-sub">SE Airflow Vector</span>
           </div>
         </div>
@@ -419,7 +419,7 @@ export default function MapContainer() {
         <div className="storyline-node impact" title="Projected smoke arrival at downwind NCR schools and hospitals">
           <span className="story-step-badge">3. Impact</span>
           <div className="story-step-text">
-            <strong className="story-headline">⚠️ NCR ~{earliestEta}h ETA</strong>
+            <strong className="story-headline">{earliestEta != null ? `⚠️ NCR ~${earliestEta}h ETA` : '⚠️ ETA Unavailable'}</strong>
             <span className="story-sub">Downwind Receptors</span>
           </div>
         </div>
