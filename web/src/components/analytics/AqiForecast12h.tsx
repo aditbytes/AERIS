@@ -9,7 +9,7 @@ interface CurveMilestone {
   hoursText: string
   x: number
   y: number
-  delta: number
+  delta: number | null
   pblhText: string
   isTrap: boolean
 }
@@ -34,16 +34,20 @@ function getAqiTier(aqi: number | null): { label: string; color: string; bg: str
  *  4. Strict adherence to scientific truth: uncalibrated ΔPM2.5 is not converted to regional AQI
  */
 export default function AqiForecast12h() {
-  const { avgAqi, aqi, corridor, timeHorizon, setTimeHorizon } = useAeris()
+  const { avgAqi, aqi, corridor, wind, timeHorizon, setTimeHorizon } = useAeris()
   const [activeTab, setActiveTab] = useState<'dispersion' | 'stations'>('dispersion')
   const [hoveredMilestone, setHoveredMilestone] = useState<CurveMilestone | null>(null)
 
   // ── Extract real corridor plume band statistics ──────────────────────────
-  const { maxDelta, avgBands } = useMemo(() => {
+  const { maxDelta, avgBands, hasBands } = useMemo(() => {
     type CorridorFeature = CorridorGeoJSON['features'][number]
     const bands: CorridorFeature[] = corridor?.features?.filter((f: CorridorFeature) => f.properties?.kind === 'band') ?? []
     if (!bands.length) {
-      return { maxDelta: 150.5, avgBands: { '0-2h': 57.0, '2-4h': 52.1, '4-8h': 45.7, '8-24h': 30.3 } }
+      return {
+        maxDelta: null,
+        avgBands: { '0-2h': null, '2-4h': null, '4-8h': null, '8-24h': null },
+        hasBands: false,
+      }
     }
     const grouped: Record<string, number[]> = {}
     let peak = 0
@@ -61,15 +65,39 @@ export default function AqiForecast12h() {
       avgs[k] = arr.reduce((sum, v) => sum + v, 0) / arr.length
     }
     return {
-      maxDelta: peak || 150.5,
+      maxDelta: peak > 0 ? peak : null,
       avgBands: {
-        '0-2h': avgs['0-2h'] ?? 57.0,
-        '2-4h': avgs['2-4h'] ?? 52.1,
-        '4-8h': avgs['4-8h'] ?? 45.7,
-        '8-24h': avgs['8-24h'] ?? 30.3,
+        '0-2h': avgs['0-2h'] ?? null,
+        '2-4h': avgs['2-4h'] ?? null,
+        '4-8h': avgs['4-8h'] ?? null,
+        '8-24h': avgs['8-24h'] ?? null,
       },
+      hasBands: true,
     }
   }, [corridor])
+
+  // ── Real Boundary Layer Height (PBLH) from meteorological wind forecast ──
+  const pblhByHour = useMemo(() => {
+    const hours = wind?.points?.[0]?.hours ?? []
+    const getPblh = (idx: number) => {
+      const p = hours[idx]?.pblh_m
+      return p != null ? `${Math.round(p)}m` : null
+    }
+    return {
+      h0: getPblh(0),
+      h2: getPblh(2),
+      h4: getPblh(4),
+      h8: getPblh(8),
+      h24: getPblh(24),
+    }
+  }, [wind])
+
+  const nightInversionPblh = useMemo(() => {
+    const hours = wind?.points?.[0]?.hours ?? []
+    const nightHours = hours.slice(2, 10).map(h => h.pblh_m).filter((m): m is number => m != null)
+    if (!nightHours.length) return null
+    return Math.round(Math.min(...nightHours))
+  }, [wind])
 
   // ── Ground station category breakdown ────────────────────────────────────
   const stationStats = useMemo(() => {
@@ -107,16 +135,88 @@ export default function AqiForecast12h() {
   }, [aqi])
 
   // ── 5 Trajectory points along the 24h dispersion timeline ────────────────
-  const milestones: CurveMilestone[] = [
-    { horizon: 0, label: '0h', hoursText: 'Now (0h)', x: 12, y: 38, delta: Math.round(avgBands['0-2h'] * 0.35), pblhText: '405m convective', isTrap: false },
-    { horizon: 2, label: '2h', hoursText: 'Arrival (~2h)', x: 55, y: 26, delta: Math.round(avgBands['0-2h']), pblhText: '310m boundary', isTrap: false },
-    { horizon: 4, label: '4h', hoursText: 'Core Plume (~4h)', x: 100, y: 15, delta: Math.round(avgBands['2-4h'] * 1.4), pblhText: '215m inversion', isTrap: true },
-    { horizon: 8, label: '8h', hoursText: 'Night Peak (~8h)', x: 145, y: 9, delta: Math.round(maxDelta), pblhText: '115m nocturnal trap', isTrap: true },
-    { horizon: 24, label: '24h', hoursText: 'Residual (~24h)', x: 188, y: 24, delta: Math.round(avgBands['8-24h']), pblhText: '765m dispersion', isTrap: false },
-  ]
+  const milestones: CurveMilestone[] = useMemo(() => {
+    const d02 = avgBands['0-2h']
+    const d24 = avgBands['2-4h']
+    const d48 = avgBands['4-8h']
+    const d824 = avgBands['8-24h']
 
-  const linePath = `M 12,38 C 30,36 42,29 55,26 C 75,22 86,17 100,15 C 122,11 132,9 145,9 C 165,9 176,19 188,24`
-  const areaPath = `${linePath} L 188,48 L 12,48 Z`
+    const peak = maxDelta ?? 1
+    const getY = (delta: number | null) => {
+      if (delta == null) return 40
+      const clamped = Math.max(0, Math.min(1, delta / peak))
+      return Math.round(40 - clamped * 30)
+    }
+
+    const d0 = d02 != null ? Math.round(d02 * 0.35) : null
+    const delta2 = d02 != null ? Math.round(d02) : null
+    const delta4 = d24 != null ? Math.round(d24) : null
+    const delta8 = d48 != null ? Math.round(d48) : (maxDelta != null ? Math.round(maxDelta) : null)
+    const delta24 = d824 != null ? Math.round(d824) : null
+
+    return [
+      {
+        horizon: 0,
+        label: '0h',
+        hoursText: 'Now (0h)',
+        x: 12,
+        y: getY(d0),
+        delta: d0,
+        pblhText: pblhByHour.h0 ? `${pblhByHour.h0} boundary` : 'PBLH unavailable',
+        isTrap: false,
+      },
+      {
+        horizon: 2,
+        label: '2h',
+        hoursText: 'Arrival (~2h)',
+        x: 55,
+        y: getY(delta2),
+        delta: delta2,
+        pblhText: pblhByHour.h2 ? `${pblhByHour.h2} boundary` : 'PBLH unavailable',
+        isTrap: false,
+      },
+      {
+        horizon: 4,
+        label: '4h',
+        hoursText: 'Core Plume (~4h)',
+        x: 100,
+        y: getY(delta4),
+        delta: delta4,
+        pblhText: pblhByHour.h4 ? `${pblhByHour.h4} inversion` : 'PBLH unavailable',
+        isTrap: true,
+      },
+      {
+        horizon: 8,
+        label: '8h',
+        hoursText: 'Night Peak (~8h)',
+        x: 145,
+        y: getY(delta8),
+        delta: delta8,
+        pblhText: pblhByHour.h8 ? `${pblhByHour.h8} night layer` : 'PBLH unavailable',
+        isTrap: true,
+      },
+      {
+        horizon: 24,
+        label: '24h',
+        hoursText: 'Residual (~24h)',
+        x: 188,
+        y: getY(delta24),
+        delta: delta24,
+        pblhText: pblhByHour.h24 ? `${pblhByHour.h24} dispersion` : 'PBLH unavailable',
+        isTrap: false,
+      },
+    ]
+  }, [avgBands, maxDelta, pblhByHour])
+
+  const linePath = useMemo(() => {
+    const pts = milestones
+    return `M ${pts[0].x},${pts[0].y} ` +
+      `C ${pts[0].x + 18},${pts[0].y} ${pts[1].x - 12},${pts[1].y} ${pts[1].x},${pts[1].y} ` +
+      `C ${pts[1].x + 18},${pts[1].y} ${pts[2].x - 12},${pts[2].y} ${pts[2].x},${pts[2].y} ` +
+      `C ${pts[2].x + 18},${pts[2].y} ${pts[3].x - 12},${pts[3].y} ${pts[3].x},${pts[3].y} ` +
+      `C ${pts[3].x + 18},${pts[3].y} ${pts[4].x - 12},${pts[4].y} ${pts[4].x},${pts[4].y}`
+  }, [milestones])
+  const areaPath = useMemo(() => `${linePath} L 188,48 L 12,48 Z`, [linePath])
 
   const tier = getAqiTier(avgAqi)
 
@@ -176,10 +276,10 @@ export default function AqiForecast12h() {
 
             <div className="inversion-micro-pills">
               <span className="micro-pill peak-delta" title="Peak modelled PM2.5 delta added to background">
-                🔥 Peak Δ: +{Math.round(maxDelta)} µg/m³
+                🔥 Peak Δ: {maxDelta != null ? `+${Math.round(maxDelta)} µg/m³` : 'Unavailable'}
               </span>
               <span className="micro-pill trap-flag" title="Planetary boundary layer collapses at night, trapping smoke">
-                🌙 Inversion: ~115m
+                🌙 Inversion: {nightInversionPblh != null ? `~${nightInversionPblh}m` : 'Unavailable'}
               </span>
             </div>
           </div>
@@ -187,112 +287,118 @@ export default function AqiForecast12h() {
           {/* Right Interactive SVG Spark-Area Trajectory Chart */}
           <div className="dispersion-chart-col">
             <div className="spark-chart-container">
-              <svg
-                viewBox="0 0 200 50"
-                className="dispersion-spark-svg"
-                preserveAspectRatio="none"
-                aria-hidden="true"
-              >
-                <defs>
-                  <linearGradient id="plumeAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#EA580C" stopOpacity="0.38" />
-                    <stop offset="60%" stopColor="#EA580C" stopOpacity="0.12" />
-                    <stop offset="100%" stopColor="#EA580C" stopOpacity="0.0" />
-                  </linearGradient>
-                  <linearGradient id="plumeLineGrad" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#F59E0B" />
-                    <stop offset="50%" stopColor="#EA580C" />
-                    <stop offset="80%" stopColor="#DC2626" />
-                    <stop offset="100%" stopColor="#D97706" />
-                  </linearGradient>
-                </defs>
-
-                {/* Nighttime Atmospheric Inversion Zone (Hours 4h - 12h) */}
-                <rect
-                  x="80"
-                  y="2"
-                  width="85"
-                  height="46"
-                  fill="rgba(15, 23, 42, 0.05)"
-                  rx="3"
-                />
-                <text
-                  x="122"
-                  y="46"
-                  textAnchor="middle"
-                  fontSize="6.5"
-                  fontWeight="600"
-                  fill="#94A3B8"
-                  letterSpacing="0.2"
+              {!hasBands ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', padding: '12px', textAlign: 'center' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-tertiary, #6c8077)' }}>Plume corridor data unavailable. No model dispersion trajectory is substituted.</span>
+                </div>
+              ) : (
+                <svg
+                  viewBox="0 0 200 50"
+                  className="dispersion-spark-svg"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
                 >
-                  NIGHT INVERSION TRAP
-                </text>
+                  <defs>
+                    <linearGradient id="plumeAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#EA580C" stopOpacity="0.38" />
+                      <stop offset="60%" stopColor="#EA580C" stopOpacity="0.12" />
+                      <stop offset="100%" stopColor="#EA580C" stopOpacity="0.0" />
+                    </linearGradient>
+                    <linearGradient id="plumeLineGrad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#F59E0B" />
+                      <stop offset="50%" stopColor="#EA580C" />
+                      <stop offset="80%" stopColor="#DC2626" />
+                      <stop offset="100%" stopColor="#D97706" />
+                    </linearGradient>
+                  </defs>
 
-                {/* Ground Baseline Dashed Reference Line */}
-                <line
-                  x1="8"
-                  y1="40"
-                  x2="192"
-                  y2="40"
-                  stroke="#CBD5E1"
-                  strokeDasharray="3 3"
-                  strokeWidth="0.8"
-                />
+                  {/* Nighttime Atmospheric Inversion Zone (Hours 4h - 12h) */}
+                  <rect
+                    x="80"
+                    y="2"
+                    width="85"
+                    height="46"
+                    fill="rgba(15, 23, 42, 0.05)"
+                    rx="3"
+                  />
+                  <text
+                    x="122"
+                    y="46"
+                    textAnchor="middle"
+                    fontSize="6.5"
+                    fontWeight="600"
+                    fill="#94A3B8"
+                    letterSpacing="0.2"
+                  >
+                    NIGHT INVERSION TRAP
+                  </text>
 
-                {/* Area under curve */}
-                <path d={areaPath} fill="url(#plumeAreaGrad)" />
+                  {/* Ground Baseline Dashed Reference Line */}
+                  <line
+                    x1="8"
+                    y1="40"
+                    x2="192"
+                    y2="40"
+                    stroke="#CBD5E1"
+                    strokeDasharray="3 3"
+                    strokeWidth="0.8"
+                  />
 
-                {/* Plume Influx trajectory curve */}
-                <path
-                  d={linePath}
-                  fill="none"
-                  stroke="url(#plumeLineGrad)"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                />
+                  {/* Area under curve */}
+                  <path d={areaPath} fill="url(#plumeAreaGrad)" />
 
-                {/* Interactive Milestone Nodes */}
-                {milestones.map((m) => {
-                  const isSelected = timeHorizon === m.horizon
-                  const isHovered = hoveredMilestone?.horizon === m.horizon
-                  return (
-                    <g
-                      key={m.label}
-                      className="spark-milestone-node"
-                      onMouseEnter={() => setHoveredMilestone(m)}
-                      onMouseLeave={() => setHoveredMilestone(null)}
-                      onClick={() => setTimeHorizon(m.horizon)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      {/* Pulse ring on active horizon */}
-                      {isSelected && (
+                  {/* Plume Influx trajectory curve */}
+                  <path
+                    d={linePath}
+                    fill="none"
+                    stroke="url(#plumeLineGrad)"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                  />
+
+                  {/* Interactive Milestone Nodes */}
+                  {milestones.map((m) => {
+                    const isSelected = timeHorizon === m.horizon
+                    const isHovered = hoveredMilestone?.horizon === m.horizon
+                    return (
+                      <g
+                        key={m.label}
+                        className="spark-milestone-node"
+                        onMouseEnter={() => setHoveredMilestone(m)}
+                        onMouseLeave={() => setHoveredMilestone(null)}
+                        onClick={() => setTimeHorizon(m.horizon)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        {/* Pulse ring on active horizon */}
+                        {isSelected && (
+                          <circle
+                            cx={m.x}
+                            cy={m.y}
+                            r="6"
+                            fill="none"
+                            stroke="#DC2626"
+                            strokeWidth="1.2"
+                            opacity="0.6"
+                          />
+                        )}
                         <circle
                           cx={m.x}
                           cy={m.y}
-                          r="6"
-                          fill="none"
-                          stroke="#DC2626"
-                          strokeWidth="1.2"
-                          opacity="0.6"
+                          r={isHovered || isSelected ? 4 : 2.8}
+                          fill={m.isTrap ? '#DC2626' : '#EA580C'}
+                          stroke="#FFFFFF"
+                          strokeWidth="1.5"
                         />
-                      )}
-                      <circle
-                        cx={m.x}
-                        cy={m.y}
-                        r={isHovered || isSelected ? 4 : 2.8}
-                        fill={m.isTrap ? '#DC2626' : '#EA580C'}
-                        stroke="#FFFFFF"
-                        strokeWidth="1.5"
-                      />
-                    </g>
-                  )
-                })}
-              </svg>
+                      </g>
+                    )
+                  })}
+                </svg>
+              )}
 
               {/* Dynamic hover / selection floating banner */}
               {hoveredMilestone ? (
                 <div className="milestone-tooltip">
-                  <strong>{hoveredMilestone.hoursText}</strong>: +{hoveredMilestone.delta} µg/m³ PM2.5 · {hoveredMilestone.pblhText}
+                  <strong>{hoveredMilestone.hoursText}</strong>: {hoveredMilestone.delta != null ? `+${hoveredMilestone.delta} µg/m³ PM2.5` : 'ΔPM2.5 unavailable'} · {hoveredMilestone.pblhText}
                 </div>
               ) : (
                 <div className="chart-legend-row">
