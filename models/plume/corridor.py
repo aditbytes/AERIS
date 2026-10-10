@@ -8,7 +8,7 @@ import logging
 import math
 import os
 import tempfile
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -263,6 +263,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--start", help="Aware ISO-8601 forecast reference (default: latest input capture)")
     parser.add_argument("--params", type=Path, help="JSON object of PlumeParams overrides; not assumed calibrated")
     parser.add_argument("--output", type=Path, help="Output path (default: corridor.geojson beside local inputs)")
+    parser.add_argument("--provenance-output", type=Path, help="Optional hash-bound companion metadata; keeps corridor.geojson unchanged")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO)
     data_dir = Path(os.environ.get("AERIS_DATA_DIR", "data/live"))
@@ -280,17 +281,41 @@ def main(argv: list[str] | None = None) -> None:
         if isinstance(params, dict) and "schema_version" in params:
             from models.plume.parameters import validate_document
             params = validate_document(params)
+        loaded = None
+        if args.provenance_output is not None:
+            from models.plume.parameters import load_parameters
+
+            loaded = load_parameters(params)
+            params = loaded.params
         result = predict_corridor(sources, wind, hours=args.hours, params=params,
                                   start=parse_time(args.start, "start") if args.start else None)
         problems = check_corridor(result)
         if problems:
             raise ValueError(f"corridor.geojson contract validation failed: {problems}")
         body = json.dumps(result, indent=2, allow_nan=False) + "\n"
+        metadata = None
+        if args.provenance_output is not None:
+            from models.common.provenance import prepare_manifest
+
+            metadata = prepare_manifest(
+                path=args.provenance_output, output=output, body=body.replace("\n", os.linesep), kind="corridor",
+                inputs={"sources": sources_path, "wind": wind_path},
+                model_version="lagrangian-puff-v1", model_code=Path(__file__),
+                parameters=asdict(loaded.params), parameter_source=loaded.provenance,
+                semantics={"pm25_delta_ugm3": "SOURCE_BAND_GRID_TIME_PEAK_NOT_RECEPTOR_CONCENTRATION",
+                           "concentration_units": "ug/m3",
+                           "risk": "UNCALIBRATED_RELATIVE_SCORE_NOT_HEALTH_PROBABILITY",
+                           "parameter_calibration": loaded.metadata.get("status") if loaded.metadata else "NOT_ESTABLISHED",
+                           "receptor_estimates": "USE_CONCENTRATION_AT_WITH_VALIDATED_HISTORY"})
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=output.parent,
                                          prefix=output.name + ".", suffix=".tmp", delete=False) as handle:
             temporary = Path(handle.name)
             handle.write(body)
         temporary.replace(output)
+        if metadata is not None:
+            from models.plume.parameters import atomic_json
+
+            atomic_json(args.provenance_output, metadata)
     except (OSError, ValueError) as exc:
         parser.exit(1, f"Plume forecast failed: {exc}\n")
     finally:

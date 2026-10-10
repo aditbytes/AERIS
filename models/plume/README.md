@@ -1,5 +1,30 @@
 # Lagrangian plume corridor baseline
 
+The 2026-10-10 risk hardening adds optional companion provenance without changing
+the puff equations, peak statistic or GeoJSON schema. See
+[the remediation report](../../docs/audits/hardcoded-data/2026-10-10/contributor-work-tally/PRITAM_RISK_REMEDIATION.md)
+for the current assessment; earlier verification counts remain historical.
+
+The local CLI accepts `--provenance-output <separate-file.json>`. Use an isolated
+`--output` path and genuinely covered `--start`/`--hours`; this does not relax wind
+coverage or supply missing weather. The companion binds actual source/wind/output
+bytes, code hash, parameters, parameter source, capture times and forecast start.
+It explicitly labels each band's concentration as the source-wide maximum over
+sampled grid cells and hourly frames, including disconnected polygons. This is
+not a uniform or facility-local concentration; `risk` is not a health probability.
+Use `concentration_at()` and eligible independent history for receptor validation.
+
+`python -m models.common.provenance data/live/corridor.geojson --kind corridor`
+labels the exact preserved archive `ARCHIVED_LEGACY`. The
+[hash registry](../ARCHIVED_OUTPUTS.json) discloses the removed floor formulas and
+the absence of a recorded original input/parameter binding. A new calculation
+using archived sources records that lineage in its companion rather than
+silently presenting it as fresh detection output. Other unbound files remain
+unknown. Companions establish byte binding, not external-source authentication,
+calibration or forecast skill. Existing pipeline/API/UI integrations still need
+to consume these disclosures before operational use. Companion and output writes
+are separate; always verify the binding before consuming a pair.
+
 This is a simplified Lagrangian puff/advection baseline.
 It is not WRF-Chem and is not a full atmospheric chemistry model.
 
