@@ -2,6 +2,8 @@
  * AqiKpiCard — real regional average AQI from OpenAQ / CPCB stations
  */
 import { useAeris } from '@/services/dataContext'
+import { getFeedFreshness } from '@/services/api'
+import { useClock } from '@/components/status/useClock'
 
 function aqiCategory(val: number): string {
   if (val <= 50) return 'Good'
@@ -14,38 +16,19 @@ function aqiCategory(val: number): string {
 
 export default function AqiKpiCard() {
   const { avgAqi, aqi } = useAeris()
+  const now = useClock()
 
   // Real station AQI distribution for the mini sparkline (zero fabricated fallback)
-  const stationAqis = aqi?.stations
-    ? aqi.stations
-        .map(s => s.aqi)
-        .filter((v): v is number => typeof v === 'number' && v > 0)
-        .slice(0, 10)
-    : []
+  const reporting = aqi?.stations.filter(station => station.aqi != null && Number.isFinite(station.aqi) && station.aqi >= 0) ?? []
+  const stationAqis = reporting.map(station => station.aqi!).slice(0, 10)
 
   const displayAqi = avgAqi ?? '—'
   const category = avgAqi != null ? aqiCategory(avgAqi) : 'No data'
 
-  // Find latest observation timestamp among reporting stations
-  const latestObservedRaw = aqi?.stations.find(s => !!s.observed_at)?.observed_at ?? null
-  let observedLabel = ''
-  let isStale = false
-
-  if (latestObservedRaw) {
-    try {
-      const obsDate = new Date(latestObservedRaw)
-      const genDate = aqi?.generated_at ? new Date(aqi.generated_at) : new Date()
-      const diffHours = (genDate.getTime() - obsDate.getTime()) / (1000 * 60 * 60)
-      isStale = diffHours > 24
-
-      observedLabel = obsDate.toLocaleDateString('en-IN', {
-        day: 'numeric',
-        month: 'short',
-      })
-    } catch {
-      // Ignore
-    }
-  }
+  const observationStates = reporting.map(station => getFeedFreshness('aqi', station.observed_at, now))
+  const isStale = observationStates.some(state => state.status === 'stale')
+  const unknownAge = reporting.length === 0 || observationStates.some(state => state.status === 'unknown')
+  const ageLabel = isStale ? 'Archived observations' : unknownAge ? 'Observation age unknown' : 'Recent observations'
 
   const w = 80, h = 28
   const maxVal = Math.max(...stationAqis, 300)
@@ -63,7 +46,7 @@ export default function AqiKpiCard() {
   return (
     <div
       className="metric-card aqi-card card"
-      title={`Observed Ground Station Average across ${stationAqis.length} sensors: ${displayAqi} (${category}). The downwind plume peak is modeled separately.`}
+      title={`Observed station average across ${reporting.length} reporting stations: ${displayAqi} (${category}). ${ageLabel}. This is not an exposure estimate or plume attribution.`}
     >
       <div className="metric-icon" style={{ background: 'rgba(255,255,255,0.15)' }}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round">
@@ -71,9 +54,9 @@ export default function AqiKpiCard() {
         </svg>
       </div>
       <div className="metric-body">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
-          <span className="metric-label" style={{ marginBottom: 0 }}>Ground Sensor Avg</span>
-          {isStale && (
+        <div className="aqi-label-row">
+          <span className="metric-label" style={{ marginBottom: 0 }}>Observed AQI average</span>
+          {(isStale || unknownAge) && (
             <span
               style={{
                 fontSize: '9px',
@@ -82,11 +65,11 @@ export default function AqiKpiCard() {
                 background: 'rgba(234, 179, 8, 0.3)',
                 padding: '1px 5px',
                 borderRadius: '4px',
-                whiteSpace: 'nowrap',
+                whiteSpace: 'normal',
               }}
-              title={`OpenAQ station feed observed on ${observedLabel || 'prior date'} (>24h old)`}
+              title="Age is measured from station observations against the current clock, independently of file generation."
             >
-              ⚠ Stale ({observedLabel})
+              {ageLabel}
             </span>
           )}
         </div>

@@ -128,3 +128,8 @@
   color: var(--text-tertiary);
   line-height: 1.3;
 }
+
+.reduction-label, .bar-label, .whatif-info-tag { color: #475569; }
+.bar-value { color: #334155 !important; }
+.whatif-header { flex-wrap: wrap; }
+.whatif-bars { min-height: 80px; }

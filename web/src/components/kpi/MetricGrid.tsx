@@ -94,7 +94,7 @@ export default function MetricGrid() {
   const sourceFRPs = sortedSources.slice(0, 6).map(s => s.total_frp_mw)
 
   // 2. Population & Active Scenario metrics
-  const exposure   = rankedSites?.exposed_population
+  const exposure   = rankedSites?.exposed_population.data_available === false ? undefined : rankedSites?.exposed_population
   const rawExposed = exposure?.estimate ?? 0
   const exposedDisplay = activeExposedPopulation != null ? formatPopulation(activeExposedPopulation) : '—'
 
@@ -107,13 +107,13 @@ export default function MetricGrid() {
     },
     partial: {
       label: 'Partial Intervene',
-      deltaText: '↓ 35% Shielded*',
+      deltaText: 'Assumed −35%',
       deltaClass: 'delta-down',
       tooltip: 'Assumed scenario multiplier: 35% reduction via schools and hospitals protective measures (not model output).',
     },
     full: {
       label: 'Full Intervene',
-      deltaText: '↓ 55% Averted*',
+      deltaText: 'Assumed −55%',
       deltaClass: 'delta-down',
       tooltip: 'Assumed scenario multiplier: 55% reduction via comprehensive NCR-wide intervention (not model output).',
     },
@@ -141,14 +141,14 @@ export default function MetricGrid() {
           </svg>
         </div>
         <div className="metric-body">
-          <span className="metric-label">Active Pollution Sources</span>
+          <span className="metric-label">Source Candidates</span>
           <div className="metric-value-row">
-            <span className="metric-value">{sourceCount || '—'}</span>
+            <span className="metric-value">{sources ? sourceCount : '—'}</span>
             <span
               className="delta delta-up"
               title={topSource ? `Top source: ${topSource.district || topSource.type} contributes ${topFrpShare}% of total regional FRP (${topSource.total_frp_mw.toFixed(0)} MW)` : undefined}
             >
-              {topSource ? `Top: ${topFrpShare}% FRP` : 'Live Hotspots'}
+              {topSource ? `Top: ${topFrpShare}% FRP` : sources ? 'No candidates' : 'Unavailable'}
             </span>
           </div>
         </div>
@@ -166,7 +166,7 @@ export default function MetricGrid() {
         </div>
         <div className="metric-body">
           <span className="metric-label" title={exposure ? `Threshold Sensitivity Range: ${formatPopulation(exposure.low)} – ${formatPopulation(exposure.high)}` : 'No exposure estimate available'}>
-            Exposed · {scenarioMeta.label}
+            Population estimate · {scenarioMeta.label}
           </span>
           <div className="metric-value-row">
             <span className="metric-value">{exposedDisplay}</span>
@@ -176,7 +176,7 @@ export default function MetricGrid() {
           </div>
         </div>
         <div className="metric-chart" title="Comparison across No Action, Partial, and Full Intervene scenarios">
-          <ScenarioSparkline activeScenario={interventionScenario} values={scenarioBars} />
+          {exposure && <ScenarioSparkline activeScenario={interventionScenario} values={scenarioBars} />}
         </div>
       </div>
 
@@ -188,9 +188,9 @@ export default function MetricGrid() {
           </svg>
         </div>
         <div className="metric-body">
-          <span className="metric-label">High-Risk Critical Receptors</span>
+          <span className="metric-label">Ranked Critical Receptors</span>
           <div className="metric-value-row">
-            <span className="metric-value">{siteCount || '—'}</span>
+            <span className="metric-value">{rankedSites ? siteCount : '—'}</span>
             <span
               className="delta delta-up"
               style={{ background: '#FFF4EC', color: '#B45309', border: '1px solid #FDE68A' }}
