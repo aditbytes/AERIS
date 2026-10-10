@@ -51,7 +51,7 @@ import os
 from datetime import datetime, timezone
 from typing import Any
 
-from ingest.common.http import UpstreamError, get
+from ingest.common.http import UpstreamError, get, scrub
 
 logger = logging.getLogger(__name__)
 
@@ -119,15 +119,80 @@ def _parse_acq_time(acq_date: str, acq_time: str) -> str:
     return dt.isoformat().replace("+00:00", "Z")
 
 
+_REQUIRED_FIRMS_COLUMNS = {"latitude", "longitude", "acq_date", "acq_time"}
+
+
+def _is_provider_error_text(text: str) -> bool:
+    """
+    Detect obvious plain-text, HTML, or structured error messages from FIRMS.
+    """
+    stripped = text.strip()
+    if not stripped:
+        return True
+    first_line = stripped.splitlines()[0].strip()
+    lower_first = first_line.lower()
+
+    # HTML / XML error pages (from proxies, firewalls, or gateways)
+    if stripped.startswith("<") or lower_first.startswith("<!doctype"):
+        return True
+
+    # Common plain-text error phrases from NASA or API gateways
+    error_indicators = (
+        "you don't",
+        "error",
+        "exception",
+        "unauthorized",
+        "forbidden",
+        "denied",
+        "invalid key",
+        "invalid map_key",
+        "bad request",
+        "gateway timeout",
+        "service unavailable",
+        "rate limit",
+        "too many requests",
+    )
+    if any(ind in lower_first for ind in error_indicators):
+        return True
+
+    return False
+
+
 def _parse_csv(raw_csv: str, source_name: str) -> list[dict[str, Any]]:
     """
     Parse the FIRMS CSV text into a list of normalised fire dicts.
 
-    Returns an empty list for empty or header-only responses.
-    Raises ValueError on unrecognised CSV structure.
+    Returns an empty list for valid header-only responses (0 detections).
+    Raises ValueError on unrecognised CSV structure, missing columns, or provider errors.
     """
-    reader = csv.DictReader(io.StringIO(raw_csv.strip()))
-    # Normalise field names: strip whitespace
+    stripped = raw_csv.strip()
+    if not stripped:
+        raise ValueError(f"Empty response body for {source_name}")
+
+    if _is_provider_error_text(stripped):
+        clean_msg = scrub(stripped.splitlines()[0])
+        raise ValueError(f"Provider returned error response for {source_name}: {clean_msg}")
+
+    reader = csv.DictReader(io.StringIO(stripped))
+    if not reader.fieldnames:
+        raise ValueError(f"No CSV header found in response for {source_name}")
+
+    # Normalise header column names: strip whitespace and lowercase
+    header_cols = {k.strip().lower() for k in reader.fieldnames if k}
+    if not _REQUIRED_FIRMS_COLUMNS.issubset(header_cols):
+        missing = sorted(_REQUIRED_FIRMS_COLUMNS - header_cols)
+        raise ValueError(
+            f"Missing required FIRMS columns {missing} for {source_name}. "
+            f"Header was: {[k.strip() for k in reader.fieldnames if k]}"
+        )
+
+    # Must contain at least one brightness column and frp
+    if not (("bright_ti4" in header_cols or "brightness" in header_cols) and "frp" in header_cols):
+        raise ValueError(
+            f"Header lacks brightness or frp columns for {source_name}. "
+            f"Header was: {[k.strip() for k in reader.fieldnames if k]}"
+        )
+
     rows = []
     for row in reader:
         row = {k.strip(): v.strip() for k, v in row.items()}
@@ -275,13 +340,13 @@ def fetch_fires(
             continue
 
         text = resp.text
-        # FIRMS returns an error message (not CSV) when the key is invalid
-        if text.strip().startswith("You don't") or "error" in text[:50].lower():
-            logger.error("[FIRMS] API returned error for %s: %.200s", source, text)
+
+        try:
+            fires = _parse_csv(text, source)
+        except ValueError as exc:
+            logger.error("[FIRMS] Error or invalid response for %s: %s", source, exc)
             sources_failed.append(source)
             continue
-
-        fires = _parse_csv(text, source)
         logger.info("[FIRMS] %s: parsed %d detections.", source, len(fires))
 
         # Apply confidence filter

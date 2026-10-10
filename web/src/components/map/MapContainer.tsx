@@ -431,7 +431,7 @@ export default function MapContainer() {
         <div className="storyline-node origin" title="Active fire clusters identified by thermal satellite detections">
           <span className="story-step-badge">1. Origin</span>
           <div className="story-step-text">
-            <strong className="story-headline">🔥 {activeSourcesCount} Fires</strong>
+            <strong className="story-headline">🔥 {sources ? `${activeSourcesCount} Fires` : '—'}</strong>
             <span className="story-sub">Punjab &amp; Regional</span>
           </div>
         </div>

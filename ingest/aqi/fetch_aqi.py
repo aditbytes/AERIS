@@ -6,6 +6,7 @@ Air-quality fetcher: OpenAQ v3 (primary) + data.gov.in CPCB (backup).
 Output schema → docs/data-contracts.md (`aqi.json`):
   {
     "generated_at": "<ISO-8601 UTC>",
+    "source":      "<str>",
     "stations": [
       {
         "id":          "<str>",
@@ -195,7 +196,11 @@ def _fetch_location_latest(
         return []
 
 
-def fetch_openaq(bbox: list[float], key: str) -> list[dict[str, Any]]:
+def fetch_openaq(
+    bbox: list[float],
+    key: str,
+    raise_on_error: bool = False,
+) -> list[dict[str, Any]]:
     """
     Fetch PM2.5 readings from OpenAQ v3 for all recently-active stations in bbox.
 
@@ -205,7 +210,7 @@ def fetch_openaq(bbox: list[float], key: str) -> list[dict[str, Any]]:
       3. For each active PM2.5 sensor, GET /v3/sensors/{id}/measurements?limit=1&datetime_from=7d-ago
       4. Normalise to aqi.json contract
 
-    Returns a list of station dicts. Returns empty list on error.
+    Returns a list of station dicts. Returns empty list on error (unless raise_on_error=True).
     """
     if not key:
         logger.warning("[OpenAQ] No API key; skipping OpenAQ fetch.")
@@ -216,6 +221,8 @@ def fetch_openaq(bbox: list[float], key: str) -> list[dict[str, Any]]:
         locations = _fetch_openaq_locations(bbox, key, param_id=PARAM_ID_PM25)
     except UpstreamError as exc:
         logger.error("[OpenAQ] Failed to fetch locations: %s", exc)
+        if raise_on_error:
+            raise
         return []
 
     if not locations:
@@ -340,13 +347,17 @@ def fetch_openaq(bbox: list[float], key: str) -> list[dict[str, Any]]:
 _NCR_STATES = {"delhi", "haryana", "uttar pradesh", "rajasthan", "punjab"}
 
 
-def fetch_cpcb(bbox: list[float], key: str) -> list[dict[str, Any]]:
+def fetch_cpcb(
+    bbox: list[float],
+    key: str,
+    raise_on_error: bool = False,
+) -> list[dict[str, Any]]:
     """
     Fetch real-time AQI readings from data.gov.in CPCB dataset.
 
     Filters to stations roughly inside the project bbox.
     Returns a list of normalised station dicts.
-    Returns an empty list on error or if no key provided.
+    Returns an empty list on error (unless raise_on_error=True) or if no key provided.
     """
     if not key:
         logger.warning("[CPCB] No DATA_GOV_IN_KEY; skipping CPCB fetch.")
@@ -368,6 +379,8 @@ def fetch_cpcb(bbox: list[float], key: str) -> list[dict[str, Any]]:
         )
     except UpstreamError as exc:
         logger.error("[CPCB] Failed to fetch: %s", exc)
+        if raise_on_error:
+            raise
         return []
 
     try:
@@ -505,26 +518,58 @@ def fetch_aqi(
 
     generated_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
+    openaq_stations: list[dict[str, Any]] = []
+    cpcb_stations: list[dict[str, Any]] = []
+    sources_failed: list[str] = []
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-        f_openaq = executor.submit(fetch_openaq, bbox, openaq_key)
-        f_cpcb = executor.submit(fetch_cpcb, bbox, cpcb_key)
-        openaq_stations = f_openaq.result()
-        cpcb_stations = f_cpcb.result()
+        f_openaq = executor.submit(fetch_openaq, bbox, openaq_key, raise_on_error=True)
+        f_cpcb = executor.submit(fetch_cpcb, bbox, cpcb_key, raise_on_error=True)
+        try:
+            openaq_stations = f_openaq.result()
+        except UpstreamError as exc:
+            logger.error("[OpenAQ] Upstream failure: %s", exc)
+            sources_failed.append("OpenAQ")
+        except Exception as exc:
+            logger.error("[OpenAQ] Unexpected failure: %s", exc)
+            sources_failed.append("OpenAQ")
+
+        try:
+            cpcb_stations = f_cpcb.result()
+        except UpstreamError as exc:
+            logger.error("[CPCB] Upstream failure: %s", exc)
+            sources_failed.append("CPCB/data.gov.in")
+        except Exception as exc:
+            logger.error("[CPCB] Unexpected failure: %s", exc)
+            sources_failed.append("CPCB/data.gov.in")
 
     # Combine: OpenAQ first, then CPCB records not already covered
     combined = openaq_stations + cpcb_stations
 
+    contributing: list[str] = []
+    if openaq_stations:
+        contributing.append("OpenAQ")
+    if cpcb_stations:
+        contributing.append("CPCB/data.gov.in")
+
+    source_label = "+".join(contributing) if contributing else "none"
+
     result: dict[str, Any] = {
         "generated_at": generated_at,
+        "source": source_label,
         "stations": combined,
         "data_status": "READINGS_AVAILABLE" if any(any(s.get(k) is not None for k in ("pm25", "pm10", "aqi")) for s in combined) else "UNAVAILABLE_OR_EMPTY",
         "sources_with_readings": [name for name, readings in (("OpenAQ", openaq_stations), ("CPCB/data.gov.in", cpcb_stations)) if readings],
         "coverage_complete": None,  # An empty helper result does not distinguish no data from failure.
     }
+    if sources_failed:
+        result["sources_failed"] = sources_failed
+
     logger.info(
-        "[AQI] Total stations: %d (OpenAQ: %d, CPCB: %d)",
+        "[AQI] Total stations: %d (OpenAQ: %d, CPCB: %d, source: %s)",
         len(combined),
         len(openaq_stations),
         len(cpcb_stations),
+        source_label,
     )
     return result
