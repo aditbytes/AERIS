@@ -325,3 +325,154 @@ class TestFetchAqi:
         assert "generated_at" in result
         assert "stations" in result
         assert isinstance(result["stations"], list)
+
+
+# ---------------------------------------------------------------------------
+# Regression tests: failure handling and data-integrity (added 2026-10-10)
+# ---------------------------------------------------------------------------
+
+class TestAqiFailureHandling:
+    """Regression tests for AQI failure modes identified in the audit."""
+
+    def test_both_sources_unavailable_returns_empty_stations(self):
+        """Both OpenAQ and CPCB fail → stations list is empty (not fabricated data).
+        The handler/CLI is responsible for rejecting and preserving existing data."""
+        from ingest.common.http import UpstreamError
+
+        with patch("ingest.aqi.fetch_aqi.get", side_effect=UpstreamError("AQI", 503, "down")):
+            result = fetch_aqi(
+                bbox=[73.5, 28.0, 77.5, 32.5],
+                openaq_key="k",
+                cpcb_key="k",
+            )
+        assert result["stations"] == []
+        assert "generated_at" in result
+
+    def test_openaq_succeeds_cpcb_fails_returns_openaq_only(self):
+        """OpenAQ returns data; CPCB fails → only OpenAQ stations in result."""
+        from ingest.common.http import UpstreamError
+
+        def mock_get(url, **kwargs):
+            if "openaq" in url or "api.openaq" in url:
+                resp = MagicMock()
+                if "/latest" in url:
+                    resp.json.return_value = _OAQ_LOCATION_LATEST_RESP
+                else:
+                    resp.json.return_value = _OAQ_LOCATIONS_RESP
+                return resp
+            raise UpstreamError("CPCB", 500, "server error")
+
+        with patch("ingest.aqi.fetch_aqi.get", side_effect=mock_get):
+            result = fetch_aqi(
+                bbox=[73.5, 28.0, 77.5, 32.5],
+                openaq_key="k",
+                cpcb_key="k",
+            )
+        assert len(result["stations"]) >= 1
+        sources = {s["source"] for s in result["stations"]}
+        assert "OpenAQ" in sources
+        assert "CPCB/data.gov.in" not in sources
+
+    def test_cpcb_succeeds_openaq_fails_returns_cpcb_only(self):
+        """CPCB returns data; OpenAQ fails → only CPCB stations in result."""
+        from ingest.common.http import UpstreamError
+
+        def mock_get(url, **kwargs):
+            if "openaq" in url or "api.openaq" in url:
+                raise UpstreamError("OpenAQ", 503, "unavailable")
+            resp = MagicMock()
+            resp.json.return_value = _CPCB_RESP
+            return resp
+
+        with patch("ingest.aqi.fetch_aqi.get", side_effect=mock_get):
+            result = fetch_aqi(
+                bbox=[73.5, 28.0, 77.5, 32.5],
+                openaq_key="k",
+                cpcb_key="k",
+            )
+        sources = {s["source"] for s in result["stations"]}
+        assert "CPCB/data.gov.in" in sources
+        assert "OpenAQ" not in sources
+
+    def test_cpcb_record_without_coordinates_excluded(self):
+        """CPCB records missing lat/lon must not appear in the station list.
+        Coordinate-less records cannot be placed on the geospatial map."""
+        cpcb_resp_no_coords = {
+            "records": [
+                {
+                    "state": "Delhi",
+                    "city": "Delhi",
+                    "station": "No-Coords Station",
+                    # lat/lon intentionally absent
+                    "pollutant_id": "PM2.5",
+                    "pollutant_avg": "150.0",
+                    "last_update": "07-10-2026 05:30:00",
+                }
+            ]
+        }
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = cpcb_resp_no_coords
+        with patch("ingest.aqi.fetch_aqi.get", return_value=mock_resp):
+            stations = fetch_cpcb([73.5, 28.0, 77.5, 32.5], key="k")
+        assert stations == [], (
+            "Stations without coordinates must be excluded from the dataset"
+        )
+
+    def test_cpcb_record_out_of_bbox_excluded(self):
+        """CPCB records with coordinates outside the bbox must be excluded."""
+        cpcb_resp_out_of_bbox = {
+            "records": [
+                {
+                    "state": "Tamil Nadu",
+                    "city": "Chennai",
+                    "station": "Chennai Central",
+                    "latitude": "13.082",
+                    "longitude": "80.275",
+                    "pollutant_id": "PM2.5",
+                    "pollutant_avg": "45.0",
+                    "last_update": "07-10-2026 05:30:00",
+                }
+            ]
+        }
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = cpcb_resp_out_of_bbox
+        with patch("ingest.aqi.fetch_aqi.get", return_value=mock_resp):
+            stations = fetch_cpcb([73.5, 28.0, 77.5, 32.5], key="k")
+        assert stations == [], "Stations outside bbox must be excluded"
+
+    def test_station_lat_lon_are_floats_not_null(self):
+        """After the coordinate fix, every returned station must have float lat/lon."""
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = _CPCB_RESP
+        with patch("ingest.aqi.fetch_aqi.get", return_value=mock_resp):
+            stations = fetch_cpcb([73.5, 28.0, 77.5, 32.5], key="k")
+        for s in stations:
+            assert isinstance(s["lat"], float), f"lat is {type(s['lat'])}, expected float"
+            assert isinstance(s["lon"], float), f"lon is {type(s['lon'])}, expected float"
+
+    def test_both_sources_return_empty_valid_response(self):
+        """Both sources respond but have no data for bbox → empty stations, no error."""
+        def mock_get(url, **kwargs):
+            resp = MagicMock()
+            if "openaq" in url or "api.openaq" in url:
+                resp.json.return_value = {"results": []}
+            else:
+                resp.json.return_value = {"records": []}
+            return resp
+
+        with patch("ingest.aqi.fetch_aqi.get", side_effect=mock_get):
+            result = fetch_aqi(
+                bbox=[73.5, 28.0, 77.5, 32.5],
+                openaq_key="k",
+                cpcb_key="k",
+            )
+        assert result["stations"] == []
+
+    def test_cpcb_malformed_json_skips_gracefully(self):
+        """Malformed CPCB JSON → empty list, no exception propagated."""
+        mock_resp = MagicMock()
+        mock_resp.json.side_effect = ValueError("not json")
+        with patch("ingest.aqi.fetch_aqi.get", return_value=mock_resp):
+            stations = fetch_cpcb([73.5, 28.0, 77.5, 32.5], key="k")
+        assert stations == []
+

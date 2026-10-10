@@ -236,3 +236,79 @@ class TestBuildPopulation:
 
         total = sum(c["pop"] for c in result["cells"])
         assert total == 99999
+
+
+# ---------------------------------------------------------------------------
+# Regression tests: failure handling (added 2026-10-10)
+# ---------------------------------------------------------------------------
+
+class TestBuildPopulationFailureHandling:
+    """Regression tests for population failure modes identified in the audit."""
+
+    def test_download_failure_raises_not_silent_empty(self):
+        """If the GeoTIFF download fails, build_population must raise, not
+        return empty cells. Writing empty cells with a fresh timestamp would
+        overwrite a valid existing snapshot with fabricated zero population."""
+        with patch("pathlib.Path.exists", return_value=False), \
+             patch(
+                 "ingest.population.build_population._download_worldpop",
+                 side_effect=RuntimeError("Network error: connection refused"),
+             ):
+            with pytest.raises(Exception):
+                build_population(bbox=[73.5, 28.0, 77.5, 32.5])
+
+    def test_rasterio_read_failure_raises_not_silent_empty(self):
+        """If rasterio raises an unexpected error during clipping, it must
+        propagate rather than silently returning empty cells."""
+        with patch("pathlib.Path.exists", return_value=True), \
+             patch(
+                 "ingest.population.build_population._clip_and_extract",
+                 side_effect=RuntimeError("rasterio GDAL error"),
+             ):
+            with pytest.raises(RuntimeError, match="rasterio GDAL error"):
+                build_population(bbox=[73.5, 28.0, 77.5, 32.5])
+
+    def test_empty_cells_from_no_population_area_is_valid(self):
+        """An empty cells list from a region with no population data is not
+        an error — it is a valid (zero-population) observation."""
+        with patch("pathlib.Path.exists", return_value=True), \
+             patch(
+                 "ingest.population.build_population._clip_and_extract",
+                 return_value=[],
+             ):
+            result = build_population(bbox=[73.5, 28.0, 77.5, 32.5])
+        assert result["cells"] == []
+        assert "generated_at" in result
+
+    def test_output_cells_match_extracted_values_exactly(self):
+        """build_population must pass through the cell values from the raster
+        without modification (no clamping, rounding to preset buckets, etc.)."""
+        distinct_cells = [
+            {"lat": 28.1, "lon": 73.6, "pop": 7777},
+            {"lat": 28.2, "lon": 73.7, "pop": 3333},
+            {"lat": 28.3, "lon": 73.8, "pop": 11111},
+        ]
+        with patch("pathlib.Path.exists", return_value=True), \
+             patch(
+                 "ingest.population.build_population._clip_and_extract",
+                 return_value=distinct_cells,
+             ):
+            result = build_population(bbox=[73.5, 28.0, 77.5, 32.5])
+
+        assert result["cells"] == distinct_cells
+
+    def test_source_provenance_preserved(self):
+        """Every result must carry source provenance (WorldPop URL, DOI, year)."""
+        with patch("pathlib.Path.exists", return_value=True), \
+             patch(
+                 "ingest.population.build_population._clip_and_extract",
+                 return_value=[{"lat": 28.5, "lon": 77.0, "pop": 5000}],
+             ):
+            result = build_population(bbox=[73.5, 28.0, 77.5, 32.5])
+
+        src = result["source"]
+        assert "url" in src, "source must include url"
+        assert "doi" in src, "source must include doi for attribution"
+        assert "year" in src, "source must include dataset year"
+        assert src["year"] == 2020
+

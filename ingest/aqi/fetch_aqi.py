@@ -362,19 +362,18 @@ def fetch_cpcb(bbox: list[float], key: str) -> list[dict[str, Any]]:
             lat_raw = rec.get("latitude") or rec.get("lat")
             lon_raw = rec.get("longitude") or rec.get("lon")
 
-            # Skip if no coordinates
+            # Reject records without valid coordinates: a station with null lat/lon
+            # cannot be placed in the geospatial dataset and would cause downstream
+            # failures (spatial intersection, map rendering). State-only filtering
+            # is not sufficient to produce a usable geospatial record.
             if lat_raw is None or lon_raw is None:
-                # Spatial filter by state instead
-                if not any(st in state for st in _NCR_STATES):
-                    continue
-                lat = None
-                lon = None
-            else:
-                lat = float(lat_raw)
-                lon = float(lon_raw)
-                # Bbox filter
-                if not (s <= lat <= n and w <= lon <= e):
-                    continue
+                logger.debug("[CPCB] Skipping record without coordinates: %s", station_name)
+                continue
+            lat = float(lat_raw)
+            lon = float(lon_raw)
+            # Bbox filter
+            if not (s <= lat <= n and w <= lon <= e):
+                continue
 
             pm25_raw = rec.get("pollutant_avg") if rec.get("pollutant_id", "").upper() == "PM2.5" else None
             pm10_raw = rec.get("pollutant_avg") if rec.get("pollutant_id", "").upper() == "PM10" else None

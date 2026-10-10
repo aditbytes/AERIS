@@ -252,6 +252,7 @@ def fetch_fires(
     generated_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     all_fires: list[dict[str, Any]] = []
     sources_used: list[str] = []
+    sources_failed: list[str] = []
 
     for source in sources:
         url = _build_url(key, source, bbox, day_range)
@@ -263,13 +264,14 @@ def fetch_fires(
             resp = get(url, source_name=f"FIRMS/{source}", timeout=30)
         except UpstreamError as exc:
             logger.error("[FIRMS] Failed to fetch %s: %s", source, exc)
-            # Continue with other sources; report failure in metadata
+            sources_failed.append(source)
             continue
 
         text = resp.text
         # FIRMS returns an error message (not CSV) when the key is invalid
         if text.strip().startswith("You don't") or "error" in text[:50].lower():
             logger.error("[FIRMS] API returned error for %s: %.200s", source, text)
+            sources_failed.append(source)
             continue
 
         fires = _parse_csv(text, source)
@@ -286,6 +288,16 @@ def fetch_fires(
         all_fires.extend(kept)
         sources_used.append(source)
 
+    # If every requested source failed, raise so callers (handler/CLI) do not
+    # write a misleading empty snapshot with a fresh success timestamp.
+    if sources_failed and not sources_used:
+        raise UpstreamError(
+            "FIRMS",
+            None,
+            f"All FIRMS sources failed: {', '.join(sources_failed)}. "
+            "No data written; existing snapshot preserved.",
+        )
+
     # Assign IDs
     for i, fire in enumerate(all_fires, start=1):
         fire["id"] = f"f_{i:04d}"
@@ -297,5 +309,12 @@ def fetch_fires(
         "bbox": bbox,
         "fires": all_fires,
     }
+    if sources_failed:
+        result["sources_failed"] = sources_failed
+        logger.warning(
+            "[FIRMS] Partial result: %d source(s) failed: %s",
+            len(sources_failed),
+            sources_failed,
+        )
     logger.info("[FIRMS] Total: %d fires from %s.", len(all_fires), source_label)
     return result

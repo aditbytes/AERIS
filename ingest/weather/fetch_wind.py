@@ -287,6 +287,8 @@ def fetch_wind(
     # Split grid into batches ≤ MAX_LOCATIONS_PER_CALL
     batches = [grid[i : i + MAX_LOCATIONS_PER_CALL] for i in range(0, len(grid), MAX_LOCATIONS_PER_CALL)]
     all_points: list[dict[str, Any]] = []
+    batches_succeeded = 0
+    batches_failed = 0
 
     for batch_idx, batch in enumerate(batches, start=1):
         lats = [p[0] for p in batch]
@@ -297,8 +299,10 @@ def fetch_wind(
             raw_list = _fetch_batch(lats, lons, forecast_days)
         except UpstreamError as exc:
             logger.error("[Wind] Batch %d failed: %s", batch_idx, exc)
+            batches_failed += 1
             continue
 
+        batches_succeeded += 1
         for i, raw_point in enumerate(raw_list):
             lat, lon = batch[i]
             hourly = raw_point.get("hourly") or {}
@@ -308,10 +312,22 @@ def fetch_wind(
     if not all_points:
         raise UpstreamError("Open-Meteo", None, "No wind data retrieved for any grid point.")
 
+    coverage_complete = batches_failed == 0
+    if batches_failed:
+        logger.warning(
+            "[Wind] Partial coverage: %d/%d batch(es) failed. %d grid points retrieved.",
+            batches_failed, len(batches), len(all_points),
+        )
     logger.info("[Wind] Parsed %d grid points.", len(all_points))
 
-    return {
+    result: dict[str, Any] = {
         "generated_at": generated_at,
         "source": "Open-Meteo GFS",
+        "coverage_complete": coverage_complete,
         "points": all_points,
     }
+    if batches_failed:
+        result["batches_total"] = len(batches)
+        result["batches_succeeded"] = batches_succeeded
+        result["batches_failed"] = batches_failed
+    return result

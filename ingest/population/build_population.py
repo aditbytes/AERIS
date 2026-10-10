@@ -250,8 +250,10 @@ def build_population(
     except ImportError:
         raise
     except Exception as e:
-        logger.warning("[WorldPop] Failed upstream data: %s", e)
-        cells = []
+        # Propagate — caller (CLI/handler) must decide whether to overwrite
+        # an existing valid snapshot. Writing empty cells from a failed
+        # download is a confirmed defect (data authenticity rule).
+        raise
 
     if not cells:
         logger.warning("[WorldPop] No populated cells found in bbox %s.", bbox)

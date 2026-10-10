@@ -172,20 +172,23 @@ class TestFetchFires:
                 with pytest.raises(EnvironmentError, match="FIRMS_MAP_KEY"):
                     fetch_fires(key="")
 
-    def test_upstream_error_propagates(self):
+    def test_upstream_error_all_sources_fail_raises(self):
+        """When every requested source fails, fetch_fires must raise UpstreamError.
+        This prevents writing a misleading empty snapshot with a fresh timestamp."""
         from ingest.common.http import UpstreamError
         with patch("ingest.firms.fetch_fires.get", side_effect=UpstreamError("FIRMS", 502, "Bad Gateway")):
-            # Should not raise — error is logged, result has 0 fires
-            result = fetch_fires(key="test_key_placeholder", sources=["VIIRS_NOAA21_NRT"])
-        assert result["fires"] == []
-        assert "NASA FIRMS" in result["source"]
+            with pytest.raises(UpstreamError, match="All FIRMS sources failed"):
+                fetch_fires(key="test_key_placeholder", sources=["VIIRS_NOAA21_NRT"])
 
-    def test_api_error_message_returns_zero_fires(self):
+    def test_api_error_message_all_sources_fail_raises(self):
+        """FIRMS API-level error (invalid key) counts as source failure.
+        Single-source call → all sources failed → must raise UpstreamError."""
+        from ingest.common.http import UpstreamError
         mock_resp = MagicMock()
         mock_resp.text = "You don't have permission to access this resource."
         with patch("ingest.firms.fetch_fires.get", return_value=mock_resp):
-            result = fetch_fires(key="test_key_placeholder", sources=["VIIRS_NOAA21_NRT"])
-        assert result["fires"] == []
+            with pytest.raises(UpstreamError, match="All FIRMS sources failed"):
+                fetch_fires(key="test_key_placeholder", sources=["VIIRS_NOAA21_NRT"])
 
     def test_successful_parse_assigns_ids(self):
         mock_resp = MagicMock()
@@ -221,3 +224,108 @@ class TestFetchFires:
             assert isinstance(f["lat"], float)
             assert isinstance(f["lon"], float)
             assert isinstance(f["frp_mw"], float)
+
+
+# ---------------------------------------------------------------------------
+# Regression tests: failure handling (added 2026-10-10)
+# ---------------------------------------------------------------------------
+
+class TestFetchFiresFailureHandling:
+    """Regression tests verifying correct failure, partial-success, and
+    data-integrity behaviour of fetch_fires."""
+
+    def test_all_sources_fail_raises_upstream_error(self):
+        """All sources fail → UpstreamError raised; no empty snapshot written."""
+        from ingest.common.http import UpstreamError
+
+        def always_fail(url, **kwargs):
+            raise UpstreamError("FIRMS", 503, "Service Unavailable")
+
+        with patch("ingest.firms.fetch_fires.get", side_effect=always_fail):
+            with pytest.raises(UpstreamError, match="All FIRMS sources failed"):
+                fetch_fires(
+                    key="test_key_placeholder",
+                    sources=["VIIRS_NOAA21_NRT", "VIIRS_NOAA20_NRT"],
+                )
+
+    def test_partial_success_one_fails_one_succeeds(self):
+        """One source fails, one succeeds → result returned with sources_failed metadata."""
+        good_resp = MagicMock()
+        good_resp.text = FIXTURE_VIIRS_CSV
+        from ingest.common.http import UpstreamError
+
+        call_count = {"n": 0}
+
+        def mixed_response(url, **kwargs):
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                raise UpstreamError("FIRMS", 502, "Bad Gateway")
+            return good_resp
+
+        with patch("ingest.firms.fetch_fires.get", side_effect=mixed_response):
+            result = fetch_fires(
+                key="test_key_placeholder",
+                sources=["VIIRS_NOAA21_NRT", "VIIRS_NOAA20_NRT"],
+            )
+
+        assert len(result["fires"]) == 2  # 2 nominal/high from fixture
+        assert "sources_failed" in result
+        assert "VIIRS_NOAA21_NRT" in result["sources_failed"]
+        assert "NASA FIRMS" in result["source"]
+
+    def test_genuine_empty_response_no_error(self):
+        """Upstream returns valid CSV with header only → fires=[], no raise."""
+        mock_resp = MagicMock()
+        mock_resp.text = FIXTURE_EMPTY_CSV
+        with patch("ingest.firms.fetch_fires.get", return_value=mock_resp):
+            result = fetch_fires(key="test_key_placeholder", sources=["VIIRS_NOAA21_NRT"])
+        assert result["fires"] == []
+        assert "sources_failed" not in result, "Empty response is not a failure"
+
+    def test_timeout_error_counts_as_failure(self):
+        """Timeout → treated as source failure; all sources fail → raises."""
+        from requests.exceptions import ReadTimeout
+        from ingest.common.http import UpstreamError
+
+        with patch(
+            "ingest.firms.fetch_fires.get",
+            side_effect=UpstreamError("FIRMS", None, "Connection error after 3 attempts"),
+        ):
+            with pytest.raises(UpstreamError, match="All FIRMS sources failed"):
+                fetch_fires(key="test_key_placeholder", sources=["VIIRS_NOAA21_NRT"])
+
+    def test_partial_result_does_not_include_failed_source_in_source_label(self):
+        """source field must only name sources that actually returned data."""
+        from ingest.common.http import UpstreamError
+        good_resp = MagicMock()
+        good_resp.text = FIXTURE_VIIRS_CSV
+        call_count = {"n": 0}
+
+        def mixed_response(url, **kwargs):
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                raise UpstreamError("FIRMS", 502, "err")
+            return good_resp
+
+        with patch("ingest.firms.fetch_fires.get", side_effect=mixed_response):
+            result = fetch_fires(
+                key="test_key_placeholder",
+                sources=["VIIRS_NOAA21_NRT", "VIIRS_NOAA20_NRT"],
+            )
+        # Only the source that succeeded should appear in "source"
+        assert "VIIRS_NOAA21_NRT" not in result["source"]
+        assert "VIIRS_NOAA20_NRT" in result["source"]
+
+    def test_result_always_has_bbox(self):
+        """bbox must always reflect the requested bbox, not a fabricated value."""
+        mock_resp = MagicMock()
+        mock_resp.text = FIXTURE_VIIRS_CSV
+        custom_bbox = [74.0, 29.0, 76.0, 31.0]
+        with patch("ingest.firms.fetch_fires.get", return_value=mock_resp):
+            result = fetch_fires(
+                key="test_key_placeholder",
+                sources=["VIIRS_NOAA21_NRT"],
+                bbox=custom_bbox,
+            )
+        assert result["bbox"] == custom_bbox
+

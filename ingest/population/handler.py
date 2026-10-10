@@ -53,7 +53,13 @@ def _cli() -> None:
     )
     args = parser.parse_args()
     bbox = [float(x) for x in args.bbox.split(",")]
-    result = build_population(bbox=bbox, force_download=args.force_download)
+    try:
+        result = build_population(bbox=bbox, force_download=args.force_download)
+    except Exception as exc:
+        import sys
+        print(f"ERROR: {exc}", file=sys.stderr)
+        print("No data written; existing snapshot preserved.", file=sys.stderr)
+        sys.exit(1)
     out = storage.write_json("population", result)
     total_pop = sum(c["pop"] for c in result["cells"])
     print(f"Wrote {out} ({len(result['cells'])} cells, total pop {total_pop:,})")
