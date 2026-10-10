@@ -329,3 +329,129 @@ class TestFetchFiresFailureHandling:
             )
         assert result["bbox"] == custom_bbox
 
+
+# ---------------------------------------------------------------------------
+# AUD-02 Regression tests: robust error detection (added 2026-10-10)
+# ---------------------------------------------------------------------------
+
+class TestFirmsRobustErrorDetection:
+    """Validate that NASA FIRMS API errors are detected reliably across varied
+    error text phrasings, HTTP statuses, and non-CSV formats."""
+
+    def test_known_nasa_permission_denied_detected(self):
+        """Known NASA plain-text permission error with HTTP 200 must be caught."""
+        from ingest.common.http import UpstreamError
+        mock_resp = MagicMock()
+        mock_resp.text = (
+            "You don't have permission to access "
+            "/api/area/csv/test_key/VIIRS_NOAA21_NRT/73.5,28.0,77.5,32.5/1 on this server."
+        )
+        with patch("ingest.firms.fetch_fires.get", return_value=mock_resp):
+            with pytest.raises(UpstreamError, match="All FIRMS sources failed"):
+                fetch_fires(key="test_key_placeholder", sources=["VIIRS_NOAA21_NRT"])
+
+    def test_alternative_error_wording_detected(self):
+        """Alternative provider error message with HTTP 200 must be caught."""
+        from ingest.common.http import UpstreamError
+        mock_resp = MagicMock()
+        mock_resp.text = "Unauthorized: MAP_KEY is inactive, expired, or invalid."
+        with patch("ingest.firms.fetch_fires.get", return_value=mock_resp):
+            with pytest.raises(UpstreamError, match="All FIRMS sources failed"):
+                fetch_fires(key="test_key_placeholder", sources=["VIIRS_NOAA21_NRT"])
+
+    def test_plain_text_gateway_error_detected(self):
+        """Gateway or proxy error returned with HTTP 200 must be caught."""
+        from ingest.common.http import UpstreamError
+        mock_resp = MagicMock()
+        mock_resp.text = "Gateway Timeout: upstream NASA server did not respond within 30 seconds."
+        with patch("ingest.firms.fetch_fires.get", return_value=mock_resp):
+            with pytest.raises(UpstreamError, match="All FIRMS sources failed"):
+                fetch_fires(key="test_key_placeholder", sources=["VIIRS_NOAA21_NRT"])
+
+    def test_html_error_page_detected(self):
+        """HTML error page returned with HTTP 200 must be caught."""
+        from ingest.common.http import UpstreamError
+        mock_resp = MagicMock()
+        mock_resp.text = "<!DOCTYPE html><html><body><h1>502 Bad Gateway</h1></body></html>"
+        with patch("ingest.firms.fetch_fires.get", return_value=mock_resp):
+            with pytest.raises(UpstreamError, match="All FIRMS sources failed"):
+                fetch_fires(key="test_key_placeholder", sources=["VIIRS_NOAA21_NRT"])
+
+    def test_empty_response_body_detected(self):
+        """Empty response body (missing CSV header) must be caught as failure."""
+        from ingest.common.http import UpstreamError
+        mock_resp = MagicMock()
+        mock_resp.text = "   \n  "
+        with patch("ingest.firms.fetch_fires.get", return_value=mock_resp):
+            with pytest.raises(UpstreamError, match="All FIRMS sources failed"):
+                fetch_fires(key="test_key_placeholder", sources=["VIIRS_NOAA21_NRT"])
+
+    def test_malformed_csv_header_detected(self):
+        """CSV with unrelated headers must be treated as upstream error, not empty fires."""
+        from ingest.common.http import UpstreamError
+        mock_resp = MagicMock()
+        mock_resp.text = "device_id,temperature,status\n1,300,ok\n"
+        with patch("ingest.firms.fetch_fires.get", return_value=mock_resp):
+            with pytest.raises(UpstreamError, match="All FIRMS sources failed"):
+                fetch_fires(key="test_key_placeholder", sources=["VIIRS_NOAA21_NRT"])
+
+    def test_csv_missing_required_columns_detected(self):
+        """CSV missing mandatory columns (e.g. acq_date, frp) must be caught."""
+        from ingest.common.http import UpstreamError
+        mock_resp = MagicMock()
+        mock_resp.text = "latitude,longitude,scan,track\n30.5,75.2,0.3,0.3\n"
+        with patch("ingest.firms.fetch_fires.get", return_value=mock_resp):
+            with pytest.raises(UpstreamError, match="All FIRMS sources failed"):
+                fetch_fires(key="test_key_placeholder", sources=["VIIRS_NOAA21_NRT"])
+
+    def test_http_4xx_counts_as_failure(self):
+        """HTTP 403 Forbidden raises UpstreamError and fails source."""
+        from ingest.common.http import UpstreamError
+        with patch("ingest.firms.fetch_fires.get", side_effect=UpstreamError("FIRMS", 403, "Forbidden")):
+            with pytest.raises(UpstreamError, match="All FIRMS sources failed"):
+                fetch_fires(key="test_key_placeholder", sources=["VIIRS_NOAA21_NRT"])
+
+    def test_http_5xx_counts_as_failure(self):
+        """HTTP 500 Internal Server Error raises UpstreamError and fails source."""
+        from ingest.common.http import UpstreamError
+        with patch("ingest.firms.fetch_fires.get", side_effect=UpstreamError("FIRMS", 500, "Internal Server Error")):
+            with pytest.raises(UpstreamError, match="All FIRMS sources failed"):
+                fetch_fires(key="test_key_placeholder", sources=["VIIRS_NOAA21_NRT"])
+
+    def test_credentials_not_exposed_in_exception(self):
+        """Secrets must not leak into exception message or logged error."""
+        from ingest.common.http import UpstreamError
+        secret_key = "a" * 32
+        mock_resp = MagicMock()
+        mock_resp.text = f"You don't have permission to access /api/area/csv/{secret_key}/VIIRS/1"
+        with patch("ingest.firms.fetch_fires.get", return_value=mock_resp):
+            try:
+                fetch_fires(key=secret_key, sources=["VIIRS_NOAA21_NRT"])
+            except UpstreamError as exc:
+                assert secret_key not in str(exc), "Secret key leaked into exception message"
+
+    def test_one_source_fails_with_plain_error_one_succeeds(self):
+        """One source returns plain-text error, one returns valid CSV → partial success."""
+        good_resp = MagicMock()
+        good_resp.text = FIXTURE_VIIRS_CSV
+        bad_resp = MagicMock()
+        bad_resp.text = "Unauthorized: MAP_KEY expired."
+
+        call_count = {"n": 0}
+
+        def mock_get(url, **kwargs):
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                return bad_resp
+            return good_resp
+
+        with patch("ingest.firms.fetch_fires.get", side_effect=mock_get):
+            result = fetch_fires(
+                key="test_key_placeholder",
+                sources=["VIIRS_NOAA21_NRT", "VIIRS_NOAA20_NRT"],
+            )
+
+        assert len(result["fires"]) == 2
+        assert "sources_failed" in result
+        assert "VIIRS_NOAA21_NRT" in result["sources_failed"]
+        assert "VIIRS_NOAA20_NRT" in result["source"]

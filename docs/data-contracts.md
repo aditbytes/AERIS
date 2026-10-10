@@ -28,9 +28,11 @@ sites.geojson, population.json ────────────────�
 ```json
 {
   "generated_at": "2026-10-10T06:00:00Z",
+  "source": "OpenAQ+CPCB/data.gov.in",
   "stations": [
     {"id": "DL_ANAND_VIHAR", "name": "Anand Vihar", "lat": 28.647, "lon": 77.316,
-     "pm25": 182.0, "pm10": 310.0, "aqi": 342, "observed_at": "2026-10-10T05:30:00Z"}
+     "pm25": 182.0, "pm10": 310.0, "aqi": 342, "observed_at": "2026-10-10T05:30:00Z",
+     "source": "CPCB/data.gov.in"}
   ]
 }
 ```
