@@ -54,7 +54,7 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: var(--brand-forest-light);
+  background: var(--brand-light);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -144,8 +144,8 @@
 }
 
 .modal-tab.active {
-  color: var(--brand-forest-primary);
-  border-bottom-color: var(--brand-forest-primary);
+  color: var(--brand-primary);
+  border-bottom-color: var(--brand-primary);
 }
 
 .modal-body {
@@ -164,7 +164,7 @@
   padding: 14px 16px;
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
-  background: var(--surface-card-subtle);
+  background: var(--surface-subtle);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -193,7 +193,7 @@
   padding: 2px 7px;
   border-radius: 6px;
   background: #FEE2E2;
-  color: #DC2626;
+  color: #991B1B;
 }
 
 .action-facility-icon {
@@ -213,7 +213,7 @@
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #EA580C;
+  color: #9A3412;
   font-weight: 600;
   background: #FFF7ED;
   padding: 2px 8px;
@@ -246,9 +246,9 @@
   font-size: 12px;
   font-weight: 600;
   border-radius: 6px;
-  border: 1px solid var(--brand-forest-primary);
+  border: 1px solid var(--brand-primary);
   background: white;
-  color: var(--brand-forest-primary);
+  color: var(--brand-primary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -258,18 +258,18 @@
 }
 
 .dispatch-btn:hover {
-  background: var(--brand-forest-light);
+  background: var(--brand-light);
 }
 
 .dispatch-btn.dispatched {
   background: #ECFDF5;
-  color: #059669;
+  color: #475569;
   border-color: #A7F3D0;
 }
 
 .authority-card {
   background: white;
-  border-left: 4px solid var(--brand-forest-primary);
+  border-left: 4px solid var(--brand-primary);
 }
 
 .authority-name {
@@ -298,10 +298,25 @@
 
 .modal-footer-note {
   font-size: 12px;
-  color: #9CA3AF;
+  color: #4A5E56;
 }
 
 .modal-footer-actions {
   display: flex;
   gap: 10px;
+}
+
+.modal-body { min-height: 0; }
+.modal-title-row, .modal-footer, .modal-footer-actions, .action-card-top, .action-footer { flex-wrap: wrap; }
+.action-target-info { min-width: 0; flex-wrap: wrap; }
+.action-who, .action-reason, .summary-banner-text { overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .modal-backdrop { padding: 8px; }
+  .modal-container { max-height: calc(100dvh - 16px); }
+  .modal-header, .modal-body, .modal-footer { padding: 12px; }
+  .modal-summary-banner { margin: 12px 12px 0; }
+  .modal-tabs { padding: 12px 12px 0; gap: 4px; }
+  .modal-tab { padding: 6px; }
+  .modal-header-left { gap: 8px; flex: 1; min-width: 0; }
+  .modal-icon-badge { display: none; }
 }

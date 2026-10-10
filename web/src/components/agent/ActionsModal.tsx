@@ -1,23 +1,47 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { X, Download, ShieldCheck, AlertCircle, Building2, School, Clock, CheckCircle2 } from 'lucide-react'
 import { useAeris } from '@/services/dataContext'
 import './ActionsModal.css'
+import { actionKey, useActionChecklist } from './actionChecklist'
+import { downloadText } from '@/components/views/csv'
 
 export default function ActionsModal() {
   const { actions, showActionsModal, setShowActionsModal } = useAeris()
   const [activeTab, setActiveTab] = useState<'sites' | 'authority'>('sites')
-  const [dispatched, setDispatched] = useState<Record<string, boolean>>({})
+  const { checked, toggle } = useActionChecklist()
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const closeRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!showActionsModal || !actions) return
+    const opener = document.activeElement as HTMLElement | null
+    const background = Array.from(document.querySelectorAll<HTMLElement>('.sidebar, .main-content'))
+    const priorInert = background.map(element => element.inert)
+    background.forEach(element => { element.inert = true })
+    closeRef.current?.focus()
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); setShowActionsModal(false); return }
+      if (event.key !== 'Tab') return
+      const focusable = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled]), select, textarea, [tabindex="0"]') ?? [])
+      const first = focusable[0], last = focusable[focusable.length - 1]
+      if (!first) { event.preventDefault(); dialogRef.current?.focus(); return }
+      if (event.shiftKey && (document.activeElement === first || !dialogRef.current?.contains(document.activeElement))) { event.preventDefault(); last.focus() }
+      else if (!event.shiftKey && (document.activeElement === last || !dialogRef.current?.contains(document.activeElement))) { event.preventDefault(); first.focus() }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      background.forEach((element, index) => { element.inert = priorInert[index] })
+      if (opener?.isConnected) opener.focus()
+    }
+  }, [showActionsModal, actions, setShowActionsModal])
 
   if (!showActionsModal || !actions) return null
-
-  const handleDispatch = (id: string) => {
-    setDispatched(prev => ({ ...prev, [id]: true }))
-  }
 
   const exportAdvisory = () => {
     const lines = [
       '========================================================================',
-      '               AERIS AI EMERGENCY AIR QUALITY ADVISORY',
+      '               AERIS MODEL-INFORMED ADVISORY — NOT AN OFFICIAL ORDER',
       '========================================================================',
       `Issued: ${actions.generated_at}`,
       '',
@@ -25,32 +49,26 @@ export default function ActionsModal() {
       actions.summary,
       '',
       '------------------------------------------------------------------------',
-      'SITE-SPECIFIC PREVENTIVE DIRECTIVES:',
+      'SITE-SPECIFIC RECOMMENDATIONS:',
       '------------------------------------------------------------------------',
       ...actions.actions.map(
         a => `[Priority #${a.priority}] To: ${a.who}\nAction: ${a.action}\nDeadline: In ${a.deadline_hours}h | Reason: ${a.reason}\n`
       ),
       '------------------------------------------------------------------------',
-      'REGULATORY & AUTHORITY DIRECTIVES:',
+      'AUTHORITY RECOMMENDATIONS:',
       '------------------------------------------------------------------------',
       ...actions.authority_actions.map(
-        a => `Authority: ${a.who}\nMandate: ${a.action}\nReason: ${a.reason}\n`
+        a => `Authority: ${a.who}\nRecommendation: ${a.action}\nReason: ${a.reason}\n`
       ),
       '========================================================================',
     ]
 
-    const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `AERIS_Advisory_${new Date().toISOString().slice(0, 10)}.txt`
-    a.click()
-    URL.revokeObjectURL(url)
+    downloadText(`AERIS_Advisory_${new Date().toISOString().slice(0, 10)}.txt`, lines.join('\n'), 'text/plain;charset=utf-8')
   }
 
   return (
     <div className="modal-backdrop" onClick={() => setShowActionsModal(false)}>
-      <div className="modal-container card" onClick={e => e.stopPropagation()}>
+      <div ref={dialogRef} className="modal-container card" role="dialog" aria-modal="true" aria-labelledby="actions-modal-title" aria-describedby="actions-modal-description" tabIndex={-1} onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="modal-header">
           <div className="modal-header-left">
@@ -59,13 +77,14 @@ export default function ActionsModal() {
             </div>
             <div>
               <div className="modal-title-row">
-                <h2 className="modal-title">AERIS Action Directives</h2>
-                <span className="badge-active">Verified Live Data</span>
+                <h2 id="actions-modal-title" className="modal-title">AERIS Action Recommendations</h2>
+                <span className="badge-active">Model-informed advisory</span>
               </div>
-              <p className="modal-subtitle">Prioritized interventions generated by the AERIS Strands Agent</p>
+              <p id="actions-modal-description" className="modal-subtitle">Local checklist only. Marking an action sends no alert or official order. Model risk is uncalibrated.</p>
             </div>
           </div>
           <button
+            ref={closeRef}
             className="icon-btn modal-close-btn"
             onClick={() => setShowActionsModal(false)}
             aria-label="Close modal"
@@ -85,14 +104,16 @@ export default function ActionsModal() {
           <button
             className={`modal-tab ${activeTab === 'sites' ? 'active' : ''}`}
             onClick={() => setActiveTab('sites')}
+            aria-pressed={activeTab === 'sites'}
           >
             Institutional Actions ({actions.actions.length})
           </button>
           <button
             className={`modal-tab ${activeTab === 'authority' ? 'active' : ''}`}
             onClick={() => setActiveTab('authority')}
+            aria-pressed={activeTab === 'authority'}
           >
-            Regulatory Directives ({actions.authority_actions.length})
+            Authority Recommendations ({actions.authority_actions.length})
           </button>
         </div>
 
@@ -101,10 +122,11 @@ export default function ActionsModal() {
           {activeTab === 'sites' ? (
             <div className="actions-card-list">
               {actions.actions.map(item => {
-                const isDispatched = !!dispatched[item.site_id]
+                const id = actionKey(actions.generated_at, item)
+                const isDispatched = !!checked[id]
                 const isHospital = item.who.toLowerCase().includes('hospital') || item.who.toLowerCase().includes('medical')
                 return (
-                  <div key={item.site_id} className="action-detail-card">
+                  <div key={id} className="action-detail-card">
                     <div className="action-card-top">
                       <div className="action-target-info">
                         <span className="action-priority-tag">#{item.priority} Priority</span>
@@ -127,14 +149,15 @@ export default function ActionsModal() {
                       </div>
                       <button
                         className={`dispatch-btn ${isDispatched ? 'dispatched' : ''}`}
-                        onClick={() => handleDispatch(item.site_id)}
+                        onClick={() => toggle(id)}
+                        aria-pressed={isDispatched}
                       >
                         {isDispatched ? (
                           <>
-                            <CheckCircle2 size={13} /> Dispatched
+                            <CheckCircle2 size={13} /> Marked locally
                           </>
                         ) : (
-                          'Dispatch Alert'
+                          'Mark reviewed locally'
                         )}
                       </button>
                     </div>
@@ -148,7 +171,7 @@ export default function ActionsModal() {
                 <div key={idx} className="action-detail-card authority-card">
                   <div className="action-card-top">
                     <span className="authority-name">{item.who}</span>
-                    <span className="authority-scope-tag">Regulatory Mandate</span>
+                    <span className="authority-scope-tag">Advisory</span>
                   </div>
                   <div className="action-instruction">{item.action}</div>
                   <div className="action-reason">
@@ -163,7 +186,7 @@ export default function ActionsModal() {
         {/* Footer */}
         <div className="modal-footer">
           <div className="modal-footer-note">
-            Directives automatically updated every 15 minutes as new wind & plume vectors arrive.
+            Snapshot: {actions.generated_at}. Use Refresh data for updates; no automatic dispatch.
           </div>
           <div className="modal-footer-actions">
             <button className="btn-secondary" onClick={exportAdvisory}>
