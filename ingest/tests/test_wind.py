@@ -262,3 +262,72 @@ class TestFetchWind:
             expected_v = -speed * math.cos(dir_rad)
             assert h["u_ms"] == pytest.approx(expected_u, abs=1e-3)
             assert h["v_ms"] == pytest.approx(expected_v, abs=1e-3)
+
+
+# ---------------------------------------------------------------------------
+# Regression tests: partial coverage handling (added 2026-10-10)
+# ---------------------------------------------------------------------------
+
+class TestWindCoverageHandling:
+    """Regression tests verifying partial-batch failure is surfaced correctly."""
+
+    def test_complete_grid_has_coverage_complete_true(self):
+        """All batches succeed → coverage_complete must be True."""
+        with patch("ingest.weather.fetch_wind._fetch_batch", return_value=[_OM_SINGLE_POINT]):
+            result = fetch_wind(bbox=[73.5, 28.0, 73.5, 28.0], step_deg=0.25)
+        assert result["coverage_complete"] is True
+        assert "batches_failed" not in result
+
+    def test_one_batch_fails_coverage_complete_false(self):
+        """One batch fails, another succeeds → coverage_complete=False, metadata present."""
+        from ingest.common.http import UpstreamError
+        call_count = {"n": 0}
+
+        def mixed_batch(lats, lons, forecast_days):
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                raise UpstreamError("Open-Meteo", 503, "batch 1 failed")
+            return [_OM_SINGLE_POINT]
+
+        # Use a bbox that generates 2 batches by setting MAX_LOCATIONS_PER_CALL low
+        with patch("ingest.weather.fetch_wind._fetch_batch", side_effect=mixed_batch), \
+             patch("ingest.weather.fetch_wind.MAX_LOCATIONS_PER_CALL", 1):
+            result = fetch_wind(bbox=[73.5, 28.0, 73.75, 28.0], step_deg=0.25)
+
+        assert result["coverage_complete"] is False
+        assert result["batches_failed"] >= 1
+        assert result["batches_succeeded"] >= 1
+        assert len(result["points"]) >= 1
+
+    def test_all_batches_fail_raises_upstream_error(self):
+        """All batches fail → UpstreamError raised (no partial empty snapshot)."""
+        from ingest.common.http import UpstreamError
+        with patch(
+            "ingest.weather.fetch_wind._fetch_batch",
+            side_effect=UpstreamError("Open-Meteo", 503, "down"),
+        ):
+            with pytest.raises(UpstreamError):
+                fetch_wind(bbox=[73.5, 28.0, 73.5, 28.0], step_deg=0.25)
+
+    def test_partial_coverage_does_not_fabricate_missing_points(self):
+        """Points from failed batches must not appear in the output as zero/null values."""
+        from ingest.common.http import UpstreamError
+        call_count = {"n": 0}
+        expected_count = 0
+
+        def mixed_batch(lats, lons, forecast_days):
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                # First batch: 1 point succeeds
+                nonlocal expected_count
+                expected_count = len(lats)
+                return [_OM_SINGLE_POINT] * len(lats)
+            raise UpstreamError("Open-Meteo", 503, "failed")
+
+        with patch("ingest.weather.fetch_wind._fetch_batch", side_effect=mixed_batch), \
+             patch("ingest.weather.fetch_wind.MAX_LOCATIONS_PER_CALL", 1):
+            result = fetch_wind(bbox=[73.5, 28.0, 73.75, 28.0], step_deg=0.25)
+
+        # Only points from successful batches must appear
+        assert len(result["points"]) == expected_count
+

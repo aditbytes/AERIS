@@ -84,8 +84,16 @@ def _cli() -> None:
 
     bbox = [float(x) for x in args.bbox.split(",")]
     sources = [s.strip() for s in args.sources.split(",")]
-    result = fetch_fires(bbox=bbox, day_range=args.days, sources=sources)
+    from ingest.common.http import UpstreamError
+    try:
+        result = fetch_fires(bbox=bbox, day_range=args.days, sources=sources)
+    except UpstreamError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        print("No data written; existing snapshot preserved.", file=sys.stderr)
+        sys.exit(1)
     out = storage.write_json("fires", result)
+    if result.get("sources_failed"):
+        print(f"WARNING: partial result — failed sources: {result['sources_failed']}")
     print(f"Wrote {out} ({len(result['fires'])} fires)")
 
 

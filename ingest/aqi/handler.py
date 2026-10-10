@@ -53,6 +53,11 @@ def _cli() -> None:
     args = parser.parse_args()
     bbox = [float(x) for x in args.bbox.split(",")]
     result = fetch_aqi(bbox=bbox)
+    if not result["stations"]:
+        import sys
+        print("ERROR: No AQI stations returned from either source.", file=sys.stderr)
+        print("No data written; existing snapshot preserved.", file=sys.stderr)
+        sys.exit(1)
     out = storage.write_json("aqi", result)
     print(f"Wrote {out} ({len(result['stations'])} stations)")
 
