@@ -1,0 +1,832 @@
+[
+  {
+    "file": "LICENSE",
+    "lines": 21,
+    "bytes": 1084,
+    "provenance_or_claim_lines": [
+      1,
+      8
+    ]
+  },
+  {
+    "file": "README.md",
+    "lines": 243,
+    "bytes": 15058,
+    "provenance_or_claim_lines": [
+      14,
+      24,
+      34,
+      36,
+      69,
+      71,
+      94,
+      198,
+      204,
+      205,
+      206,
+      213,
+      228
+    ]
+  },
+  {
+    "file": "agent/prompts/system.md",
+    "lines": 47,
+    "bytes": 2929,
+    "provenance_or_claim_lines": [
+      9,
+      21
+    ]
+  },
+  {
+    "file": "data/live/README.md",
+    "lines": 159,
+    "bytes": 4812,
+    "provenance_or_claim_lines": [
+      5,
+      121,
+      131,
+      133
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/README.md",
+    "lines": 64,
+    "bytes": 4279,
+    "provenance_or_claim_lines": [
+      3
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-1-foundation/01-account-credits-budgets.md",
+    "lines": 20,
+    "bytes": 1177,
+    "provenance_or_claim_lines": [
+      3,
+      5
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-1-foundation/02-iam-and-secrets.md",
+    "lines": 22,
+    "bytes": 1142,
+    "provenance_or_claim_lines": [
+      3,
+      5
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-1-foundation/03-s3-buckets.md",
+    "lines": 18,
+    "bytes": 953,
+    "provenance_or_claim_lines": [
+      3,
+      5
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-1-foundation/04-storage-interface.md",
+    "lines": 24,
+    "bytes": 1076,
+    "provenance_or_claim_lines": [
+      3,
+      5
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-1-foundation/05-iac-skeleton.md",
+    "lines": 14,
+    "bytes": 903,
+    "provenance_or_claim_lines": [
+      3,
+      5
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-1-foundation/COMPLETION.md",
+    "lines": 132,
+    "bytes": 6885,
+    "provenance_or_claim_lines": [
+      3,
+      11,
+      50
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-1-foundation/README.md",
+    "lines": 15,
+    "bytes": 1099,
+    "provenance_or_claim_lines": [
+      3
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-2-ingestion/01-fetcher-lambdas.md",
+    "lines": 14,
+    "bytes": 867,
+    "provenance_or_claim_lines": [
+      3,
+      5
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-2-ingestion/02-eventbridge-schedules.md",
+    "lines": 17,
+    "bytes": 778,
+    "provenance_or_claim_lines": [
+      3,
+      5
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-2-ingestion/03-secrets-in-lambdas.md",
+    "lines": 11,
+    "bytes": 676,
+    "provenance_or_claim_lines": [
+      3,
+      5
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-2-ingestion/04-failure-visibility.md",
+    "lines": 11,
+    "bytes": 779,
+    "provenance_or_claim_lines": [
+      3,
+      5
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-2-ingestion/05-step-functions-pipeline.md",
+    "lines": 13,
+    "bytes": 849,
+    "provenance_or_claim_lines": [
+      3,
+      5
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-2-ingestion/COMPLETION.md",
+    "lines": 74,
+    "bytes": 5585,
+    "provenance_or_claim_lines": [
+      3,
+      62,
+      65
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-2-ingestion/README.md",
+    "lines": 15,
+    "bytes": 948,
+    "provenance_or_claim_lines": [
+      3
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-3-models-agent-api/01-detection-corridor-lambda.md",
+    "lines": 12,
+    "bytes": 792,
+    "provenance_or_claim_lines": [
+      3,
+      5
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-3-models-agent-api/02-sagemaker.md",
+    "lines": 13,
+    "bytes": 902,
+    "provenance_or_claim_lines": [
+      3,
+      5
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-3-models-agent-api/03-exposure-ranking-lambda.md",
+    "lines": 11,
+    "bytes": 701,
+    "provenance_or_claim_lines": [
+      3,
+      5
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-3-models-agent-api/04-bedrock-strands-agent.md",
+    "lines": 14,
+    "bytes": 1022,
+    "provenance_or_claim_lines": [
+      3,
+      5
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-3-models-agent-api/05-api-gateway.md",
+    "lines": 20,
+    "bytes": 968,
+    "provenance_or_claim_lines": [
+      3,
+      5
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-3-models-agent-api/06-cloudfront-website.md",
+    "lines": 12,
+    "bytes": 748,
+    "provenance_or_claim_lines": [
+      3,
+      5
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-3-models-agent-api/COMPLETION.md",
+    "lines": 141,
+    "bytes": 12666,
+    "provenance_or_claim_lines": [
+      3,
+      7,
+      9,
+      25,
+      68,
+      69,
+      121
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-3-models-agent-api/README.md",
+    "lines": 16,
+    "bytes": 972,
+    "provenance_or_claim_lines": [
+      3
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-4-hardening-submission/01-observability.md",
+    "lines": 11,
+    "bytes": 608,
+    "provenance_or_claim_lines": [
+      3,
+      5
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-4-hardening-submission/02-smoke-test.md",
+    "lines": 13,
+    "bytes": 769,
+    "provenance_or_claim_lines": [
+      3,
+      5,
+      13
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-4-hardening-submission/03-stale-data-handling.md",
+    "lines": 13,
+    "bytes": 771,
+    "provenance_or_claim_lines": [
+      3,
+      5
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-4-hardening-submission/04-integration-and-review.md",
+    "lines": 10,
+    "bytes": 642,
+    "provenance_or_claim_lines": [
+      3,
+      5
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-4-hardening-submission/05-submission-deliverables.md",
+    "lines": 10,
+    "bytes": 865,
+    "provenance_or_claim_lines": [
+      3,
+      5,
+      9,
+      10
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-4-hardening-submission/06-teardown-and-cost.md",
+    "lines": 12,
+    "bytes": 748,
+    "provenance_or_claim_lines": [
+      3,
+      5
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-4-hardening-submission/COMPLETION.md",
+    "lines": 100,
+    "bytes": 7863,
+    "provenance_or_claim_lines": [
+      3,
+      7,
+      67,
+      68,
+      99
+    ]
+  },
+  {
+    "file": "docs/aditya's_work/phase-4-hardening-submission/README.md",
+    "lines": 16,
+    "bytes": 963,
+    "provenance_or_claim_lines": [
+      3
+    ]
+  },
+  {
+    "file": "docs/api-list.md",
+    "lines": 125,
+    "bytes": 8010,
+    "provenance_or_claim_lines": [
+      14,
+      17
+    ]
+  },
+  {
+    "file": "docs/audit/README.md",
+    "lines": 54,
+    "bytes": 4586,
+    "provenance_or_claim_lines": [
+      3,
+      27,
+      29,
+      30
+    ]
+  },
+  {
+    "file": "docs/audit/aditya-work-done.md",
+    "lines": 76,
+    "bytes": 6346,
+    "provenance_or_claim_lines": [
+      3,
+      60
+    ]
+  },
+  {
+    "file": "docs/audit/aeris-explained-hinglish.md",
+    "lines": 54,
+    "bytes": 3507,
+    "provenance_or_claim_lines": []
+  },
+  {
+    "file": "docs/audit/data-authenticity.md",
+    "lines": 70,
+    "bytes": 10575,
+    "provenance_or_claim_lines": [
+      3,
+      11,
+      14,
+      23,
+      26,
+      28,
+      37,
+      57,
+      60,
+      68,
+      69
+    ]
+  },
+  {
+    "file": "docs/audit/improvements.md",
+    "lines": 59,
+    "bytes": 4780,
+    "provenance_or_claim_lines": [
+      3,
+      13,
+      34,
+      46,
+      59
+    ]
+  },
+  {
+    "file": "docs/audit/python312-lambda-verification.md",
+    "lines": 135,
+    "bytes": 14690,
+    "provenance_or_claim_lines": [
+      84,
+      95,
+      99,
+      103,
+      133
+    ]
+  },
+  {
+    "file": "docs/audit/running-cost.md",
+    "lines": 70,
+    "bytes": 4596,
+    "provenance_or_claim_lines": [
+      3
+    ]
+  },
+  {
+    "file": "docs/audit/work-left.md",
+    "lines": 82,
+    "bytes": 7209,
+    "provenance_or_claim_lines": [
+      3,
+      14,
+      48,
+      60,
+      64,
+      77,
+      82
+    ]
+  },
+  {
+    "file": "docs/data-contracts.md",
+    "lines": 147,
+    "bytes": 6995,
+    "provenance_or_claim_lines": [
+      3,
+      81,
+      98,
+      142
+    ]
+  },
+  {
+    "file": "docs/demo-script.md",
+    "lines": 99,
+    "bytes": 7587,
+    "provenance_or_claim_lines": [
+      23,
+      67,
+      72,
+      88
+    ]
+  },
+  {
+    "file": "docs/members/aditya-aws.md",
+    "lines": 110,
+    "bytes": 7518,
+    "provenance_or_claim_lines": [
+      3,
+      93,
+      94
+    ]
+  },
+  {
+    "file": "docs/members/meenal-data-exposure.md",
+    "lines": 125,
+    "bytes": 8452,
+    "provenance_or_claim_lines": [
+      3,
+      40,
+      80
+    ]
+  },
+  {
+    "file": "docs/members/pritam-models.md",
+    "lines": 110,
+    "bytes": 8344,
+    "provenance_or_claim_lines": [
+      7,
+      23,
+      44,
+      62,
+      64,
+      72,
+      79,
+      109
+    ]
+  },
+  {
+    "file": "docs/members/saba-agent-ui.md",
+    "lines": 111,
+    "bytes": 8108,
+    "provenance_or_claim_lines": [
+      3,
+      51,
+      52,
+      57,
+      95
+    ]
+  },
+  {
+    "file": "docs/self-hosted-windows-diagnostic.md",
+    "lines": 219,
+    "bytes": 12223,
+    "provenance_or_claim_lines": [
+      186,
+      188
+    ]
+  },
+  {
+    "file": "docs/submission/README.md",
+    "lines": 22,
+    "bytes": 1867,
+    "provenance_or_claim_lines": [
+      3,
+      7,
+      8,
+      11,
+      12
+    ]
+  },
+  {
+    "file": "docs/submission/aws-builder-blog.md",
+    "lines": 67,
+    "bytes": 6539,
+    "provenance_or_claim_lines": [
+      5,
+      11,
+      59
+    ]
+  },
+  {
+    "file": "docs/work-split.md",
+    "lines": 97,
+    "bytes": 6244,
+    "provenance_or_claim_lines": [
+      3,
+      37,
+      57
+    ]
+  },
+  {
+    "file": "file and folder structure.md",
+    "lines": 73,
+    "bytes": 3795,
+    "provenance_or_claim_lines": [
+      17
+    ]
+  },
+  {
+    "file": "ingest/README.md",
+    "lines": 147,
+    "bytes": 3937,
+    "provenance_or_claim_lines": [
+      142,
+      145
+    ]
+  },
+  {
+    "file": "models/README.md",
+    "lines": 247,
+    "bytes": 15342,
+    "provenance_or_claim_lines": [
+      20,
+      29,
+      32,
+      33,
+      34,
+      62,
+      81,
+      100,
+      114,
+      116,
+      120,
+      121,
+      125,
+      141,
+      149,
+      150,
+      167,
+      173,
+      198
+    ]
+  },
+  {
+    "file": "models/plume/CALIBRATION_INVENTORY.md",
+    "lines": 278,
+    "bytes": 17930,
+    "provenance_or_claim_lines": [
+      1,
+      8,
+      9,
+      10,
+      11,
+      14,
+      20,
+      29,
+      40,
+      59,
+      91,
+      100,
+      108,
+      112,
+      113,
+      114,
+      116,
+      146,
+      148,
+      149,
+      202,
+      207,
+      211,
+      212,
+      226,
+      227,
+      235,
+      241,
+      247,
+      251,
+      254,
+      257,
+      259,
+      271,
+      273,
+      275
+    ]
+  },
+  {
+    "file": "models/plume/README.md",
+    "lines": 646,
+    "bytes": 37637,
+    "provenance_or_claim_lines": [
+      6,
+      10,
+      11,
+      75,
+      76,
+      144,
+      171,
+      196,
+      226,
+      227,
+      228,
+      229,
+      245,
+      246,
+      247,
+      259,
+      267,
+      287,
+      298,
+      301,
+      312,
+      322,
+      349,
+      358,
+      361,
+      365,
+      368,
+      369,
+      370,
+      371,
+      374,
+      375,
+      382,
+      389,
+      392,
+      396,
+      402,
+      407,
+      409,
+      411,
+      412,
+      419,
+      424,
+      427,
+      431,
+      432,
+      447,
+      448,
+      449,
+      450,
+      451,
+      454,
+      465,
+      525,
+      558,
+      563,
+      566,
+      568,
+      572,
+      578,
+      579,
+      584,
+      585,
+      587,
+      594,
+      612,
+      618,
+      624,
+      631,
+      632,
+      641
+    ]
+  },
+  {
+    "file": "models/source_detection/README.md",
+    "lines": 372,
+    "bytes": 20652,
+    "provenance_or_claim_lines": [
+      49,
+      115,
+      126,
+      142,
+      157,
+      165,
+      191,
+      194,
+      218,
+      232,
+      235,
+      239,
+      256,
+      297,
+      327,
+      336,
+      346,
+      364
+    ]
+  },
+  {
+    "file": "models/training/README.md",
+    "lines": 235,
+    "bytes": 14104,
+    "provenance_or_claim_lines": [
+      5,
+      11,
+      12,
+      27,
+      56,
+      57,
+      75,
+      79,
+      85,
+      100,
+      101,
+      131,
+      142,
+      152,
+      168,
+      198,
+      200,
+      201,
+      212,
+      221,
+      225,
+      226
+    ]
+  },
+  {
+    "file": "web/FRONTEND_AUDIT.md",
+    "lines": 210,
+    "bytes": 25132,
+    "provenance_or_claim_lines": [
+      7,
+      16,
+      30,
+      32,
+      48,
+      51,
+      57,
+      59,
+      61,
+      65,
+      67,
+      71,
+      73,
+      97,
+      107,
+      116
+    ]
+  },
+  {
+    "file": "web/MANUAL_COMMIT_PLAN.md",
+    "lines": 438,
+    "bytes": 16227,
+    "provenance_or_claim_lines": [
+      36,
+      58,
+      88,
+      100,
+      112,
+      152,
+      179,
+      205,
+      230,
+      238,
+      240,
+      254,
+      257,
+      282,
+      285,
+      305,
+      334,
+      358,
+      381,
+      404,
+      428,
+      438
+    ]
+  },
+  {
+    "file": "web/README.md",
+    "lines": 51,
+    "bytes": 6992,
+    "provenance_or_claim_lines": [
+      21,
+      27,
+      31,
+      33,
+      42,
+      43,
+      49,
+      51
+    ]
+  }
+]

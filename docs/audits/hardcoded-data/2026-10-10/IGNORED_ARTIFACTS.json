@@ -1,0 +1,73 @@
+[
+  {
+    "file": ".venv/task4-surrogate/dataset.json",
+    "bytes": 6397544,
+    "sha256": "234f0930667e15434ab2ca71d2ac0e6a5043b38851193978608591f5817a7855",
+    "audit_status": "json_metadata_read",
+    "ignored": true,
+    "reachability": "development",
+    "top_level_keys": [
+      "feature_names",
+      "generation_protocol",
+      "origin",
+      "physics",
+      "reference_time",
+      "schema_version",
+      "scope",
+      "seed",
+      "splits",
+      "training_data_type"
+    ],
+    "lines": 215656
+  },
+  {
+    "file": ".venv/task4-surrogate/model/metadata.json",
+    "bytes": 90706,
+    "sha256": "c2e24cd8a6b3d511fc227c7fce9912fcb9cde9f7e33222e6eaca44d8107493ec",
+    "audit_status": "json_metadata_read",
+    "ignored": true,
+    "reachability": "development",
+    "top_level_keys": [
+      "MODEL_DEFAULT",
+      "MODEL_SURROGATE",
+      "REAL_OBSERVATIONAL_VALIDATION",
+      "SURROGATE_VALIDATION",
+      "dataset_sha256",
+      "dataset_size",
+      "feature_names",
+      "feature_ranges",
+      "feature_units",
+      "fit_scenario_ids",
+      "generation_protocol",
+      "generation_seed",
+      "hyperparameters",
+      "model_bytes",
+      "model_sha256",
+      "model_type",
+      "physics",
+      "physics_version",
+      "reference_origin",
+      "reference_time",
+      "scenario_counts",
+      "schema_version",
+      "scope",
+      "seed",
+      "software_versions",
+      "split_sha256",
+      "target_name",
+      "target_units",
+      "training_data_type",
+      "validation_metrics",
+      "validation_scenario_ids"
+    ],
+    "lines": 1378
+  },
+  {
+    "file": ".venv/task4-surrogate/model/model.pkl",
+    "bytes": 792417,
+    "sha256": "caf81beb49f7759b172ec68070e13089e8e66e4df416a1c1fec59ef32f7cd499",
+    "audit_status": "opaque_pickle_not_loaded",
+    "ignored": true,
+    "reachability": "development"
+  }
+]

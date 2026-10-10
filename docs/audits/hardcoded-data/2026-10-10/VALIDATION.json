@@ -1,0 +1,276 @@
+{
+  "interpreter": "C:\\Users\\LENOVO\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+  "python_version": "3.14.3",
+  "checks": [
+    {
+      "check": "original_first_party_bytes",
+      "passed": true,
+      "detail": {
+        "checked": 346,
+        "changed_paths": []
+      }
+    },
+    {
+      "check": "ignored_ml_artifacts",
+      "passed": true,
+      "detail": {
+        "checked": 3,
+        "changed_paths": []
+      }
+    },
+    {
+      "check": "head",
+      "passed": true,
+      "detail": "7cf0572049d69b550cbb42d7e74cf5472d521793"
+    },
+    {
+      "check": "branch",
+      "passed": true,
+      "detail": "feature/frontend-audit-heatmap"
+    },
+    {
+      "check": "index_bytes",
+      "passed": true,
+      "detail": "546fada5ee1210f54bfcbae2f3181dbdee8ac053b5f201bd907ef67c7baf6b90"
+    },
+    {
+      "check": "tracked_inventory",
+      "passed": true,
+      "detail": 297
+    },
+    {
+      "check": "tracked_worktree_diff",
+      "passed": true,
+      "detail": "No tracked working-tree changes"
+    },
+    {
+      "check": "staged_diff",
+      "passed": true,
+      "detail": "Nothing staged"
+    },
+    {
+      "check": "local_refs",
+      "passed": true,
+      "detail": {
+        "checked": 17,
+        "symbolic_alias_excluded": "origin/HEAD"
+      }
+    },
+    {
+      "check": "origin_head_alias",
+      "passed": true,
+      "detail": "Existing symbolic alias targets cached origin/main"
+    },
+    {
+      "check": "reachable_commit_count",
+      "passed": true,
+      "detail": 220
+    },
+    {
+      "check": "remote_configuration",
+      "passed": true,
+      "detail": "Existing origin URL unchanged"
+    },
+    {
+      "check": "new_file_scope",
+      "passed": true,
+      "detail": {
+        "new_files": 41,
+        "outside_audit": []
+      }
+    },
+    {
+      "check": "unique_finding_ids",
+      "passed": true,
+      "detail": 352
+    },
+    {
+      "check": "unique_declaration_rows",
+      "passed": true,
+      "detail": 352
+    },
+    {
+      "check": "unique_literal_positions",
+      "passed": true,
+      "detail": 20829
+    },
+    {
+      "check": "existing_files_and_line_spans",
+      "passed": true,
+      "detail": {
+        "checked": 352,
+        "invalid": []
+      }
+    },
+    {
+      "check": "literal_count_reconciliation",
+      "passed": true,
+      "detail": 20829
+    },
+    {
+      "check": "classification",
+      "passed": true,
+      "detail": "One category, status, and reachability per row"
+    },
+    {
+      "check": "counts_category",
+      "passed": true,
+      "detail": {
+        "E": 84,
+        "B": 61,
+        "D": 146,
+        "C": 43,
+        "A": 17,
+        "F": 1
+      }
+    },
+    {
+      "check": "counts_severity",
+      "passed": true,
+      "detail": {
+        "Medium": 38,
+        "Low": 16,
+        "Informational": 283,
+        "High": 15
+      }
+    },
+    {
+      "check": "counts_status",
+      "passed": true,
+      "detail": {
+        "risk": 51,
+        "intentional": 290,
+        "defect": 11
+      }
+    },
+    {
+      "check": "counts_reachability",
+      "passed": true,
+      "detail": {
+        "artifact": 6,
+        "development": 54,
+        "runtime": 235,
+        "test": 57
+      }
+    },
+    {
+      "check": "counts_author",
+      "passed": true,
+      "detail": {
+        "Aditya": 41,
+        "MeenalSinha": 36,
+        "Pritam Singh": 52,
+        "Aditya; MeenalSinha; Pritam Singh": 1,
+        "Aditya; MeenalSinha": 1,
+        "Aditya; Pritam Singh": 1,
+        "Saba Saeed": 45,
+        "Unknown/unattributed": 175
+      }
+    },
+    {
+      "check": "selected_constants_count",
+      "passed": true,
+      "detail": 585
+    },
+    {
+      "check": "selected_records_count",
+      "passed": true,
+      "detail": 253659
+    },
+    {
+      "check": "selected_coordinates_count",
+      "passed": true,
+      "detail": 230196
+    },
+    {
+      "check": "selected_endpoints_count",
+      "passed": true,
+      "detail": 39
+    },
+    {
+      "check": "selected_thresholds_count",
+      "passed": true,
+      "detail": 163
+    },
+    {
+      "check": "selected_mock_responses_count",
+      "passed": true,
+      "detail": 11
+    },
+    {
+      "check": "selected_synthetic_datasets_count",
+      "passed": true,
+      "detail": 21
+    },
+    {
+      "check": "selected_static_outputs_count",
+      "passed": true,
+      "detail": 1452
+    },
+    {
+      "check": "file_inventory_count",
+      "passed": true,
+      "detail": 349
+    },
+    {
+      "check": "source_denominator",
+      "passed": true,
+      "detail": 193
+    },
+    {
+      "check": "attribution_rows",
+      "passed": true,
+      "detail": 352
+    },
+    {
+      "check": "introduction_commit_file_evidence",
+      "passed": true,
+      "detail": {
+        "attributed_findings": 177,
+        "invalid": []
+      }
+    },
+    {
+      "check": "staging_copy_bytes",
+      "passed": true,
+      "detail": 49
+    },
+    {
+      "check": "publication_copy_bytes",
+      "passed": true,
+      "detail": 7
+    },
+    {
+      "check": "unique_live_dataset_volume",
+      "passed": true,
+      "detail": {
+        "datasets": 10,
+        "bytes": 23307913
+      }
+    },
+    {
+      "check": "historical_findings_separate",
+      "passed": true,
+      "detail": 5
+    },
+    {
+      "check": "git_diff_check",
+      "passed": true,
+      "detail": {
+        "exit_code": 0
+      }
+    },
+    {
+      "check": "new_audit_whitespace",
+      "passed": true,
+      "detail": {
+        "checked_files": 41,
+        "problems": []
+      }
+    }
+  ],
+  "passed": 42,
+  "failed": 0,
+  "git_status": "?? docs/audits/hardcoded-data/2026-10-10/AUDIT_FILES.md\n?? docs/audits/hardcoded-data/2026-10-10/BASELINE.json\n?? docs/audits/hardcoded-data/2026-10-10/CENSUS.json\n?? docs/audits/hardcoded-data/2026-10-10/CONTRIBUTOR_ATTRIBUTION.csv\n?? docs/audits/hardcoded-data/2026-10-10/DATASET_INVENTORY.json\n?? docs/audits/hardcoded-data/2026-10-10/DATA_PROVENANCE.md\n?? docs/audits/hardcoded-data/2026-10-10/DOCUMENT_REVIEW.json\n?? docs/audits/hardcoded-data/2026-10-10/EXCLUDED_REVIEW_ROWS.json\n?? docs/audits/hardcoded-data/2026-10-10/EXECUTIVE_SUMMARY.md\n?? docs/audits/hardcoded-data/2026-10-10/FILE_INVENTORY.csv\n?? docs/audits/hardcoded-data/2026-10-10/FINDINGS.csv\n?? docs/audits/hardcoded-data/2026-10-10/FORK_COMPARISON.md\n?? docs/audits/hardcoded-data/2026-10-10/HEATMAP_PROBE.json\n?? docs/audits/hardcoded-data/2026-10-10/HISTORICAL_EVIDENCE.json\n?? docs/audits/hardcoded-data/2026-10-10/HISTORICAL_FINDINGS.csv\n?? docs/audits/hardcoded-data/2026-10-10/IGNORED_ARTIFACTS.json\n?? docs/audits/hardcoded-data/2026-10-10/LITERAL_OCCURRENCES.csv\n?? docs/audits/hardcoded-data/2026-10-10/LOCAL_REF_COMPARISON.json\n?? docs/audits/hardcoded-data/2026-10-10/MANUAL_VERIFICATION.md\n?? docs/audits/hardcoded-data/2026-10-10/METHODOLOGY.md\n?? docs/audits/hardcoded-data/2026-10-10/METRICS.json\n?? docs/audits/hardcoded-data/2026-10-10/PROBE_RESULTS.json\n?? docs/audits/hardcoded-data/2026-10-10/REMOTE_METADATA.json\n?? docs/audits/hardcoded-data/2026-10-10/SECRET_SCAN.json\n?? docs/audits/hardcoded-data/2026-10-10/STAGING_COPY_VERIFICATION.json\n?? docs/audits/hardcoded-data/2026-10-10/VALIDATION.json\n?? docs/audits/hardcoded-data/2026-10-10/VALIDATION.md\n?? docs/audits/hardcoded-data/2026-10-10/assemble_findings.py\n?? docs/audits/hardcoded-data/2026-10-10/heatmap_probe.cjs\n?? docs/audits/hardcoded-data/2026-10-10/inventory.py\n?? docs/audits/hardcoded-data/2026-10-10/literal_scan.cjs\n?? docs/audits/hardcoded-data/2026-10-10/review_corrections.json\n?? docs/audits/hardcoded-data/2026-10-10/reviewed_backend.json\n?? docs/audits/hardcoded-data/2026-10-10/reviewed_docs.json\n?? docs/audits/hardcoded-data/2026-10-10/reviewed_findings.json\n?? docs/audits/hardcoded-data/2026-10-10/reviewed_frontend.json\n?? docs/audits/hardcoded-data/2026-10-10/reviewed_science.json\n?? docs/audits/hardcoded-data/2026-10-10/reviewed_science_history.json\n?? docs/audits/hardcoded-data/2026-10-10/secret_scan.py\n?? docs/audits/hardcoded-data/2026-10-10/validate_audit.py\n?? docs/audits/hardcoded-data/2026-10-10/verification_probes.py",
+  "note": "Does not authenticate external observations, licenses, personal identities, arbitrary secrets, or remote deployment."
+}

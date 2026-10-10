@@ -1,0 +1,10 @@
+{
+  "repository": "sinhaaditya5/AERIS",
+  "checked_at_utc": "2026-10-10T10:04:03.3211160Z",
+  "forks_count": 0,
+  "returned_forks": [],
+  "remote_main_sha": "f5ead137364c4cb33a25c2b3a70629d851bbec45",
+  "remote_feature_branch_http_status": 404,
+  "local_origin_main_sha": "f5e4689d59b410d3621bb65ac6f3f35b896faa4d",
+  "note": "Public GitHub REST metadata only. No authenticated CLI, fetch or local ref change. Remote main differs from cached origin/main; remote feature branch unavailable."
+}

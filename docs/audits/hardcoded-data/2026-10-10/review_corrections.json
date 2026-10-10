@@ -1,0 +1,297 @@
+{
+  "WEB-003": {
+    "value_description": "Freshness budgets of 90 minutes for ordinary feeds and 3 hours for wind, with five-minute future tolerance."
+  },
+  "WEB-005": {
+    "value_description": "Default two-hour horizon, dashboard tab, no intervention, satellite basemap, and 1280 px sidebar breakpoint; versioned local preferences."
+  },
+  "WEB-006": {
+    "value_description": "Assumed intervention factors of 0.65 for partial and 0.45 for full intervention affect displayed population, not backend transport."
+  },
+  "WEB-007": {
+    "value_description": "A separate declaration of 0.65/0.45 intervention multipliers and a fixed 55% reduction supplies three scenario records."
+  },
+  "WEB-008": {
+    "value_description": "A third declaration of 0.65/0.45 scenario factors drives comparative miniature bars."
+  },
+  "WEB-009": {
+    "value_description": "Minimum ETA considers only the first three ranked facilities, although downstream labels imply the minimum across ranked sites."
+  },
+  "WEB-011": {
+    "value_description": "Five AQI category boundaries (50, 100, 200, 300, 400) and six category labels."
+  },
+  "WEB-012": {
+    "value_description": "Timezone-bearing timestamp requirement, finite WGS84 latitude/longitude bounds, and nonnegative values."
+  },
+  "WEB-013": {
+    "value_description": "Risk display thresholds of 0.85, 0.65, and 0.40 classify model scores into four relative priority labels."
+  },
+  "WEB-014": {
+    "value_description": "FRP visualization thresholds of 200 and 50 MW select three marker tiers."
+  },
+  "WEB-015": {
+    "value_description": "FRP chart thresholds of 200, 100, and 50 MW classify four radiative-power bins."
+  },
+  "WEB-016": {
+    "value_description": "Heuristic confidence display cutoff of 0.8 determines count and badge; the score is labelled uncalibrated."
+  },
+  "WEB-017": {
+    "value_description": "FRP filter slider from 0 to 500 MW in 25 MW steps."
+  },
+  "WEB-018": {
+    "value_description": "FRP display bar uses a fixed 700 MW normalization and a 100% cap."
+  },
+  "WEB-019": {
+    "value_description": "Observed sample grid has fixed 0.1 degree cells and a 90-minute stale policy."
+  },
+  "WEB-020": {
+    "value_description": "Six Viridis display bands with boundaries at 10, 25, 50, 100, and 200 micrograms/m3."
+  },
+  "WEB-021": {
+    "value_description": "Five-minute future observation tolerance and newest valid reading per station ID; the first record is retained at equal timestamps."
+  },
+  "WEB-022": {
+    "value_description": "Grid math separately hardcodes a factor of 10 despite the exported HEATMAP_CELL_DEGREES=0.1 declaration; index clamps are 1799/899."
+  },
+  "WEB-023": {
+    "value_description": "MapLibre separately embeds five PM2.5 band breakpoints and six colors, duplicating the canonical PM25_SCALE."
+  },
+  "WEB-024": {
+    "value_description": "Heatmap defaults off with opacity 0.7; controls permit opacity from 0.2 to 1 in 0.1 steps."
+  },
+  "WEB-025": {
+    "value_description": "Five external map URLs: MapLibre glyphs, two Esri raster services, and two CARTO styles."
+  },
+  "WEB-026": {
+    "value_description": "Fixed regional coordinate acceptance box: latitude 6 to 38, longitude 65 to 98."
+  },
+  "WEB-027": {
+    "value_description": "Legacy globe preference uses Mercator with 32 degree pitch and -6 degree bearing; camera animations last 700/500 ms."
+  },
+  "WEB-028": {
+    "value_description": "Captured India boundary is drawn without embedded source, license, or authority metadata."
+  },
+  "WEB-029": {
+    "value_description": "Fixed camera origin [76.5,30], zoom 6.8, minimum 3.8, maximum 18, and bounds [58,5] to [100,39]."
+  },
+  "WEB-030": {
+    "value_description": "A separate declaration supplies the dashboard camera origin and regional bounds."
+  },
+  "WEB-031": {
+    "value_description": "Sixteen place-search entries represent fourteen unique locations, including Delhi/NCR and Leh/Ladakh aliases, with fixed WGS84 centers and zoom."
+  },
+  "WEB-032": {
+    "value_description": "Six location presets (Delhi, Sangrur, Patiala, Karnal, Ludhiana, Amritsar) choose the nearest forecast grid point."
+  },
+  "WEB-033": {
+    "value_description": "Sixteen compass sectors with 22.5 degree width and 11.25 degree midpoint; 3.6 converts m/s to km/h."
+  },
+  "WEB-034": {
+    "value_description": "Dashboard map limits facility markers to eight; the full facility table is elsewhere."
+  },
+  "WEB-035": {
+    "value_description": "Explorer limits facility markers to twelve after visibility filtering; the SVG fallback also limits them to twelve."
+  },
+  "WEB-036": {
+    "value_description": "Facility pagination starts at fifty rows and adds fifty per Show more."
+  },
+  "WEB-037": {
+    "value_description": "Dashboard previews four facilities after type filtering; View All opens the full register."
+  },
+  "WEB-038": {
+    "value_description": "Six display ETA milestones: 2, 4, 8, 12, 18, 24 hours."
+  },
+  "WEB-039": {
+    "value_description": "Five horizon choices: 0, 2, 4, 8, 24 hours; playback interval 2200 ms."
+  },
+  "WEB-040": {
+    "value_description": "Five separately declared horizons and a 2200 ms animation match dashboard controls."
+  },
+  "WEB-041": {
+    "value_description": "AQI station markers cluster by Euclidean distance below 0.07 degrees and show maximum AQI; position remains the first station."
+  },
+  "WEB-043": {
+    "value_description": "Two canned facility advisories recommend N95/HVAC or ER/nebulizer preparation solely from school/hospital type."
+  },
+  "WEB-044": {
+    "value_description": "Two fixed condensed recommendation titles are selected by substrings; HEPA/HVAC is called hospital HVAC even for school records."
+  },
+  "WEB-045": {
+    "value_description": "Five model PM2.5 histogram bins use boundaries 0, 50, 100, 150, 200, and Infinity."
+  },
+  "WEB-046": {
+    "value_description": "Five latitude display groups use four boundaries at 29.3, 30, 30.5, and 31 degrees north."
+  },
+  "WEB-047": {
+    "value_description": "Versioned checklist storage key and shared change event; initial boolean marks are empty."
+  },
+  "WEB-048": {
+    "value_description": "Eight navigation title/subtitle reference entries."
+  },
+  "WEB-049": {
+    "value_description": "Four navigation sections, eight items, keyboard shortcuts, and a static GIS badge."
+  },
+  "WEB-050": {
+    "value_description": "Four basemap reference cards disclose providers, camera type, and imagery limitations."
+  },
+  "WEB-051": {
+    "value_description": "Unavailable AQI forecast message explicitly rejects a fixed plume-to-AQI multiplier."
+  },
+  "WEB-052": {
+    "value_description": "N/A placeholder, CSV quoting/formula protection, and UTF-8 MIME types."
+  },
+  "WEB-053": {
+    "value_description": "Five HTML character escape entities."
+  },
+  "WEB-054": {
+    "value_description": "Local clock refreshes every sixty seconds; separately implemented in context, Header, and heatmap hook."
+  },
+  "WEB-056": {
+    "value_description": "Browser tests use local 127.0.0.1:4173, 45/10/30 second test/expect/server deadlines, one worker, no retries, an installed Edge fallback, and two viewports."
+  },
+  "WEB-057": {
+    "value_description": "Relative deployment base, src alias, dist output, and disabled source maps."
+  },
+  "WEB-058": {
+    "value_description": "jsdom test environment and test-only include/setup configuration."
+  },
+  "WEB-059": {
+    "value_description": "Empty public VITE_API_BASE_URL example; no embedded secret found."
+  },
+  "WEB-061": {
+    "value_description": "Seven bundled runtime captures are byte-identical to data/live originals; served when no API URL is configured."
+  },
+  "WEB-062": {
+    "value_description": "Contract boundary fixtures for stations, bands, and wind include invalid timestamps/coordinates; tests also read real captures."
+  },
+  "WEB-063": {
+    "value_description": "Mock AQI responses, HTTP failures, a private-error placeholder, and an example.test URL; no usable credential."
+  },
+  "WEB-064": {
+    "value_description": "Mocks of six feeds and modified capture copies exercise zero values, failures, overflow, and races."
+  },
+  "WEB-065": {
+    "value_description": "Isolated source/site/action fixtures exercise corrupt storage, formula escaping, missing/zero values, and scientific copy."
+  },
+  "WEB-066": {
+    "value_description": "Synthetic mathematical stations and invalid readings; tests also validate actual captured AQI and corridor data."
+  },
+  "WEB-067": {
+    "value_description": "Fake MapLibre and twenty-five generated site visibility cases; not imported by application runtime."
+  },
+  "WEB-068": {
+    "value_description": "An unconfirmed source with zero values and malicious HTML fixtures."
+  },
+  "WEB-069": {
+    "value_description": "A station with zero readings, fake Map object, fixed clock, and fixed bounds."
+  },
+  "WEB-070": {
+    "value_description": "Fake Map layers/listeners, actual corridor capture, and an isolated station."
+  },
+  "WEB-072": {
+    "value_description": "Local basemap PNG/empty glyph/style mocks and intercepted invalid/empty/zero responses; palette probe is test-only; normal journeys use captured data."
+  },
+  "SCI-035": {
+    "value_description": "Missing site metrics become ETA 1 hour, PM2.5 +25 ug/m3, and a 0.5-hour minimum deadline.",
+    "evidence": [
+      "A patched ranked record containing only site_id produces ETA 1.0h, forecast delta +25 ug/m3, and deadline 0.5h. max(0.5, ETA-0.5) can also set a deadline after an immediate arrival."
+    ],
+    "provenance": "Pydantic validates types, not numerical provenance. Standard contracts require metrics, but these tool file loads do not perform contract validation.",
+    "recommendation": "Remove unsupported measurement defaults; require input metrics and distinguish immediate arrival from an achievable deadline."
+  },
+  "SCI-036": {
+    "value_description": "Three unconditional directives include GRAP Stage III, a 2-to-4-hour forecast window, and school restrictions until noon.",
+    "evidence": [
+      "The CAQM, DPCC, and DoE directives are always built, regardless of sources, absolute AQI, current date, or model validity; captured actions retain these directives."
+    ],
+    "provenance": "Static policy text and an uncalibrated PM2.5 increment do not establish a regulatory stage or current deadline.",
+    "recommendation": "Use verified policy criteria and current data; require human review before treating generated recommendations as mandates."
+  },
+  "SCI-057": {
+    "value_description": "All 444 facility rankings inherit the legacy 15 ug/m3 floor; exposed population estimate is 7,132,123.",
+    "evidence": [
+      "230 schools, 214 hospitals, all occupancy fields null. ETAs are 0/2/4/8 hours; estimate and low are 7,132,123, high is 14,488,106. Payload generated October 9 02:05Z; threshold-sensitivity wording is explicit."
+    ],
+    "provenance": "Uncalibrated risk derived from a legacy corridor and 2020 population; no originating forecast hash/start linkage. Default browser snapshot mode can display it.",
+    "recommendation": "Preserve the ETA, peak, and threshold-sensitivity disclosures; bind source versions and validate before operational use."
+  },
+  "DOC02": {
+    "line": 11,
+    "endline": 22,
+    "value_description": "The snapshot manifest has obsolete generation times, including population and ranked-site files updated on October 9.",
+    "evidence": "Payload generation times: AQI 2026-10-07T18:58:03.921942Z; corridor 2026-10-08T14:52:16.643513Z; population 2026-10-09T01:28:11.818637Z; rankings 2026-10-09T02:05:47.935603Z. Separate blanket fetcher claim is SCI-060.",
+    "attribution_basis": "git log --all --reverse -S 'Snapshot manifest' identifies introduction in 55c869f; current manifest/payload discrepancy was verified separately. Later capture updates do not imply authorship of original observations."
+  },
+  "SCI-019": {
+    "evidence": [
+      "_safe_url strips only the query; get logs that URL at line 82. FIRMS embeds its environment-supplied key in the path. Exception scrubbing is not applied to this DEBUG URL."
+    ],
+    "provenance": "No actual key was printed, accessed, or used. Actual disclosure is not established; normal handler logging is INFO, so the risk requires DEBUG logging."
+  },
+  "SCI-033": {
+    "line": 196,
+    "endline": 225,
+    "evidence": [
+      "ETA is the minimum band start; PM2.5 is the maximum containing-band concentration; source_id is from the first band. Current band concentration is a peak; all 444 archived rankings have delta 15.0 ug/m3."
+    ],
+    "provenance": "A band peak is not a facility observation or a sampled receptor concentration. Independently selected ETA, concentration, and source can refer to different bands.",
+    "recommendation": "Evaluate validated receptor-time concentrations and retain forecast identity; disclose the current value as a band peak."
+  },
+  "SCI-034": {
+    "evidence": [
+      "With patched empty feeds, the summary asserts elevated sources and smoke arrival in about two hours; zero site actions but three authority actions are generated. ETA defaults to 2.0 hours and summary arrival is floored at 0.5 hours."
+    ],
+    "provenance": "The assertions lack supporting input. Path: pipeline.steps.agent_handler -> agent.run -> generate_action_plan; agent local CLI also mirrors actions into web data."
+  },
+  "SCI-039": {
+    "evidence": [
+      "_validate checks known site IDs, a nonempty summary, and presence of actions when ranked sites exist. It does not check numerical agreement, deadlines, duplicates, action count, or regulatory criteria."
+    ],
+    "provenance": "A no-fabrication prompt does not verify generated text. No remote LLM was invoked.",
+    "recommendation": "Validate structured metrics against tool results and policy constraints; retain human review."
+  },
+  "SCI-046": {
+    "category": "B"
+  },
+  "SCI-052": {
+    "evidence": [
+      "Capture 2026-10-07T18:37:57Z; stored valid labels run from October 6 18:30Z to October 8 17:30Z. All PBLH fields exist. Half-hour labels are consistent with an older naive-UTC conversion issue, but the original API response is absent."
+    ],
+    "provenance": "Captured numerical forecast, not observations or reanalysis. The current parser was fixed while archived bytes were preserved; exact physical timing cannot be authenticated.",
+    "recommendation": "Preserve and label the archive; exclude it from observational calibration until original provenance or a correct fresh capture is available."
+  },
+  "SCI-055": {
+    "evidence": [
+      "Archive contains 215 included detections and two industrial_fire labels not emitted by the current detector. Nine of ten emission strengths match the legacy FRP/150 formula from rounded FRP. A read-only current replay produces 22 sources from 151 detections."
+    ],
+    "provenance": "Legacy model output from a real FIRMS capture, not independent source observations. Initial file introduced in 3d7ce96; current capture updated in 6f17ea1. Current detector replaced legacy code in 6321225; artifact parameter/version binding is absent.",
+    "recommendation": "Version and disclose the legacy derived assets; publish regenerated outputs only through separately authorized, validated work."
+  },
+  "SCI-056": {
+    "evidence": [
+      "All forty band concentrations match round(max(15,160*strength*exp(-mid/20)),1); all forty risks match round(min(.98,max(.2,strength*(1-hour_from/30))),2). Forecast starts October 7 18:00Z; capture generated October 8 14:52Z."
+    ],
+    "provenance": "Verified legacy simulation, not measured PM2.5 or evidence of fabricated raw observations. Current Gaussian puff implementation has no mandatory 15 ug/m3 or 0.2 risk floor.",
+    "recommendation": "Version and label the legacy artifact; require valid coverage and provenance before operational concentration claims."
+  },
+  "SCI-058": {
+    "evidence": [
+      "Generated October 9 06:00Z with generator rules. All eight site reasons use forecast +15 ug/m3; summary asserts an impending corridor although the explicit originating forecast is older."
+    ],
+    "provenance": "Canned derived recommendations, not observations. The forecast identity is not linked; future-looking text can outlive its inputs.",
+    "recommendation": "Preserve bytes with clear validity limits; require versioned forecast inputs and human policy review."
+  },
+  "SCI-060": {
+    "introduction_commit": "55c869f796c7857749bed32668d7da070a5d10b1",
+    "author": "MeenalSinha",
+    "attribution_basis": "git log --all --reverse -S 'All files are produced' identifies 55c869f; current lines 3-5 verified separately.",
+    "evidence": [
+      "README says all files are produced by ingestion fetchers. Corridor, rankings, and actions are derived outputs; models/README explicitly discloses older archived outputs. Manifest timestamps are a separate DOC02 finding."
+    ],
+    "provenance": "Real raw observations do not make derived model outputs observations; the fetcher-only statement is incorrect."
+  },
+  "SCI-074": {
+    "introduction_commit": "2bfad5e9cce7be15f6e37884631ccd1fb0b936d5",
+    "attribution_basis": "git log --all --reverse -- agent/tests/test_bedrock_fallback.py and file-add diff identify 2bfad5e9; production Bedrock implementation was introduced earlier and is separate."
+  }
+}
