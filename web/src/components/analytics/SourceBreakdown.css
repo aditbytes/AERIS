@@ -88,3 +88,8 @@
   font-weight: 700;
   color: var(--text-primary);
 }
+
+.mode-btn, .legend-label { color: #475569; }
+.source-breakdown-head { flex-wrap: wrap; gap: 6px; }
+.breakdown-body svg { flex-shrink: 0; }
+@media (max-width: 600px) { .breakdown-body { flex-wrap: wrap; } .breakdown-legend { min-width: 160px; } }
