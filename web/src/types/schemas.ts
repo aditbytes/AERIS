@@ -11,6 +11,22 @@ const LongitudeSchema = z.number().finite().min(-180).max(180)
 const NonnegativeSchema = z.number().finite().nonnegative()
 const NameSchema = z.string().refine(value => value.trim().length > 0, 'Must not be blank')
 
+export const ModelProvenanceSchema = z.object({
+  schema_version: z.literal(1),
+  artifact_kind: z.enum(['sources', 'corridor']),
+  artifact_sha256: z.string().regex(/^[a-f0-9]{64}$/),
+  artifact_status: z.enum(['ARCHIVED_LEGACY', 'UNVERSIONED_UNKNOWN', 'MODELLED_WITH_COMPANION_PROVENANCE']),
+  operational_validation: z.literal('NOT_ESTABLISHED'),
+  generated_at: TimestampSchema,
+  forecast_start: TimestampSchema.nullish(),
+  wind_generated_at: TimestampSchema.nullish(),
+  parameters: z.record(z.string(), z.unknown()).optional(),
+  semantics: z.record(z.string(), z.unknown()).optional(),
+  inputs: z.record(z.string(), z.unknown()).optional(),
+  limitations: z.array(z.string()).optional(),
+}).passthrough()
+export type ModelProvenance = z.infer<typeof ModelProvenanceSchema>
+
 export const SourceSchema = z.object({
   id: NameSchema,
   type: NameSchema,
@@ -33,6 +49,7 @@ export const SourceSchema = z.object({
 export const SourcesFileSchema = z.object({
   generated_at: TimestampSchema,
   sources: z.array(SourceSchema),
+  provenance: ModelProvenanceSchema.optional(),
 })
 export type Source = z.infer<typeof SourceSchema>
 export type SourcesFile = z.infer<typeof SourcesFileSchema>
@@ -79,6 +96,7 @@ export const CorridorFeatureSchema = z.union([
   CorridorBandFeatureSchema, CorridorCenterlineFeatureSchema,
 ])
 export const CorridorGeoJSONSchema = z.object({
+  provenance: ModelProvenanceSchema.optional(),
   type: z.literal('FeatureCollection'),
   generated_at: TimestampSchema,
   forecast_start: TimestampSchema.optional(),
@@ -103,6 +121,7 @@ export const RankedSiteSchema = z.object({
   source_id: NameSchema,
 })
 export const RankedSitesFileSchema = z.object({
+  model_context: z.record(z.string(), z.unknown()).optional(),
   generated_at: TimestampSchema,
   exposed_population: z.object({
     estimate: NonnegativeSchema.int(),
@@ -130,6 +149,8 @@ export const AuthorityActionSchema = z.object({
   reason: NameSchema,
 })
 export const ActionsFileSchema = z.object({
+  advisory_only: z.boolean().optional(),
+  model_context: z.record(z.string(), z.unknown()).optional(),
   generated_at: TimestampSchema,
   summary: NameSchema,
   summary_hi: z.string().optional(),
@@ -142,6 +163,9 @@ export type AuthorityAction = z.infer<typeof AuthorityActionSchema>
 export type ActionsFile = z.infer<typeof ActionsFileSchema>
 
 export const AqiStationSchema = z.object({
+  aqi_method: z.enum(['PROVIDER_REPORTED', 'PM25_SUBINDEX_AVERAGING_PERIOD_UNVERIFIED', 'UNAVAILABLE']).optional(),
+  source_timestamp: z.string().nullable().optional(),
+  timestamp_status: z.enum(['SOURCE_TIMEZONE_KNOWN', 'UNAVAILABLE_OR_AMBIGUOUS']).optional(),
   id: NameSchema,
   name: z.string(),
   lat: LatitudeSchema,
@@ -154,6 +178,9 @@ export const AqiStationSchema = z.object({
   source: NameSchema,
 })
 export const AqiFileSchema = z.object({
+  data_status: z.enum(['READINGS_AVAILABLE', 'UNAVAILABLE_OR_EMPTY']).optional(),
+  coverage_complete: z.boolean().nullable().optional(),
+  sources_with_readings: z.array(z.string()).optional(),
   generated_at: TimestampSchema,
   stations: z.array(AqiStationSchema),
 })
@@ -176,6 +203,7 @@ export const WindPointSchema = z.object({
   )), 'Wind timestamps must be unique and increasing'),
 })
 export const WindFileSchema = z.object({
+  usable_hourly_coverage_complete: z.boolean().optional(),
   generated_at: TimestampSchema,
   source: NameSchema,
   points: z.array(WindPointSchema),

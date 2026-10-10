@@ -5,6 +5,7 @@ import {
   type ActionsFile, type AqiFile, type CorridorGeoJSON, type RankedSitesFile,
   type SourcesFile, type WindFile,
 } from '@/types/schemas'
+import { snapshotProvenance } from './modelProvenance'
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '')
 export const DATA_MODE = API_BASE ? 'api' : 'snapshot'
@@ -92,7 +93,14 @@ async function fetchAndValidate<T>(
     const response = await fetch(url, { signal: controller.signal })
     if (!response.ok) throw new Error(`Unable to retrieve ${label} data (HTTP ${response.status}). Retry to recover.`)
     let json: unknown
-    try { json = await response.json() }
+    try {
+      if (DATA_MODE === 'snapshot' && (label === 'sources' || label === 'corridor')) {
+        const bytes = await response.arrayBuffer()
+        json = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes))
+        const provenance = await snapshotProvenance(bytes, label)
+        json = { ...(json as object), provenance }
+      } else json = await response.json()
+    }
     catch { throw new Error(`Invalid JSON in ${label} data. Retry to recover.`) }
     if (controller.signal.aborted) throw new DOMException('Request cancelled', 'AbortError')
 
@@ -107,6 +115,7 @@ async function fetchAndValidate<T>(
       validationCache.set(url, { payload, parsed })
     }
     // Failed or cancelled responses never replace successful freshness metadata.
+    if (controller.signal.aborted) throw new DOMException('Request cancelled', 'AbortError')
     recordFreshness(label, json, parsed)
     return parsed
   } catch (error) {

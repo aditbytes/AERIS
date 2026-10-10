@@ -1,0 +1,6 @@
+.model-provenance-notice { margin: 12px 24px; padding: 12px 16px; border: 1px solid #946522; border-radius: 8px; background: #fff7e8; color: #49330f; font-size: 13px; line-height: 1.5; }
+.model-provenance-notice p { margin: 6px 0; }
+.model-provenance-notice summary { cursor: pointer; font-weight: 600; }
+.model-provenance-notice h2 { font-size: 14px; }
+.model-provenance-notice pre { max-height: 280px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 640px) { .model-provenance-notice { margin: 8px 12px; } }
