@@ -69,17 +69,20 @@ class LocalBackend:
     def write(self, key: str, body: str, geojson: bool) -> str:
         path = self._path(key, geojson)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(body, encoding="utf-8")
+        path.write_bytes(body.encode("utf-8"))
         logger.info("Wrote %s (%d bytes)", path, len(body))
         return str(path)
 
     def read(self, key: str, geojson: bool) -> str:
+        return self.read_bytes(key, geojson).decode("utf-8", errors="strict")
+
+    def read_bytes(self, key: str, geojson: bool) -> bytes:
         path = self._path(key, geojson)
         if not path.exists():
             raise FileNotFoundError(
                 f"No snapshot at {path}. Run the fetcher first to generate live data."
             )
-        return path.read_text(encoding="utf-8")
+        return path.read_bytes()
 
 
 class S3Backend:
@@ -110,12 +113,15 @@ class S3Backend:
         return f"s3://{self.bucket}/{s3_key}"
 
     def read(self, key: str, geojson: bool) -> str:
+        return self.read_bytes(key, geojson).decode("utf-8", errors="strict")
+
+    def read_bytes(self, key: str, geojson: bool) -> bytes:
         s3_key = self._key(key, geojson)
         try:
             resp = self.client.get_object(Bucket=self.bucket, Key=s3_key)
         except self.client.exceptions.NoSuchKey as exc:
             raise FileNotFoundError(f"No object at s3://{self.bucket}/{s3_key}") from exc
-        return resp["Body"].read().decode("utf-8")
+        return resp["Body"].read()
 
 
 def get_backend() -> LocalBackend | S3Backend:
@@ -133,7 +139,7 @@ def get_backend() -> LocalBackend | S3Backend:
 def write_json(key: str, obj: Any, *, geojson: bool = False) -> str:
     """Serialise ``obj`` and store it under ``key``. Returns the location written."""
     _validate(key, obj)
-    body = json.dumps(obj, indent=2, ensure_ascii=False)
+    body = serialize_json(obj)
     return get_backend().write(key, body, geojson)
 
 
@@ -162,4 +168,40 @@ def _write_stamped(prefix: str, source: str, obj: Any, geojson: bool) -> str:
 
 def read_json(key: str, *, geojson: bool = False) -> Any:
     """Return the object stored under ``key``; raises ``FileNotFoundError`` if absent."""
-    return json.loads(get_backend().read(key, geojson))
+    return parse_json(get_backend().read(key, geojson))
+
+
+def serialize_json(obj: Any) -> str:
+    return json.dumps(obj, indent=2, ensure_ascii=False, allow_nan=False)
+
+
+def _nonfinite(value: str) -> None:
+    raise ValueError(f"Nonfinite JSON value: {value}")
+
+
+def parse_json(body: str | bytes) -> Any:
+    if isinstance(body, bytes):
+        body = body.decode("utf-8", errors="strict")
+    return json.loads(body, parse_constant=_nonfinite)
+
+
+def read_bytes(key: str, *, geojson: bool = False) -> bytes:
+    return get_backend().read_bytes(key, geojson)
+
+
+def read_model_artifact(key: str, kind: str) -> dict[str, Any]:
+    """Annotate a response; never rewrite an archived artifact or trust inline labels."""
+    raw = read_bytes(key, geojson=kind == "corridor")
+    obj = parse_json(raw)
+    obj["provenance"] = describe_model_bytes(key, kind, raw)
+    return obj
+
+
+def describe_model_bytes(key: str, kind: str, raw: bytes) -> dict[str, Any]:
+    from models.common.provenance import describe_bytes
+
+    try:
+        companion = read_bytes(f"{key}.provenance")
+    except FileNotFoundError:
+        companion = None
+    return describe_bytes(raw, kind, companion=companion)

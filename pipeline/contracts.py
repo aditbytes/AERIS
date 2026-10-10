@@ -10,6 +10,7 @@ Used by scripts/smoke_test.py against the live API and by tests against data/liv
 from __future__ import annotations
 
 from datetime import datetime
+import math
 from typing import Any, Callable
 
 Problems = list[str]
@@ -26,7 +27,7 @@ def _is_time(v: Any) -> bool:
 
 
 def _num(v: Any) -> bool:
-    return isinstance(v, (int, float)) and not isinstance(v, bool)
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
 
 
 def _in01(v: Any) -> bool:
