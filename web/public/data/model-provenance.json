@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "binding": "EXACT_UTF8_BYTES_NOT_SUPPLIER_AUTHENTICATION",
+  "artifacts": {
+    "sources": {
+      "schema_version": 1,
+      "artifact_kind": "sources",
+      "artifact_sha256": "f355626b30d77f2345c99baf0293feaeb45ba8111d7d116265e985b0e8fc438e",
+      "artifact_status": "ARCHIVED_LEGACY",
+      "operational_validation": "NOT_ESTABLISHED",
+      "generated_at": "2026-10-08T14:52:16.603976Z",
+      "finding_id": "SCI-055",
+      "model_version": "LEGACY_UNVERSIONED",
+      "original_parameter_binding": "NOT_RECORDED",
+      "original_input_binding": "NOT_RECORDED",
+      "records": 10,
+      "evidence": "docs/audits/hardcoded-data/2026-10-10/FINDINGS.csv:SCI-055",
+      "limitation": "Legacy detector output; two industrial_fire labels and nine rounded-strength matches to the old FRP/150 rule. Exact originating code/parameters/input bytes are not established.",
+      "byte_variant": "GIT_COMMITTED_LF_COPY",
+      "byte_variant_evidence": "Exact HEAD blob equals the captured Windows copy with CRLF converted to LF; original run bindings remain unknown."
+    },
+    "corridor": {
+      "schema_version": 1,
+      "artifact_kind": "corridor",
+      "artifact_sha256": "4d3d10d843643d2e5ea687589979a69b47ce4c3673b31e74d662730c824d5605",
+      "artifact_status": "ARCHIVED_LEGACY",
+      "operational_validation": "NOT_ESTABLISHED",
+      "generated_at": "2026-10-08T14:52:16.643513Z",
+      "forecast_start": "2026-10-07T18:00:00Z",
+      "wind_generated_at": "2026-10-07T18:37:57.090632Z",
+      "finding_id": "SCI-056",
+      "model_version": "LEGACY_UNVERSIONED",
+      "original_parameter_binding": "NOT_RECORDED",
+      "original_input_binding": "NOT_RECORDED",
+      "records": 50,
+      "evidence": "docs/audits/hardcoded-data/2026-10-10/FINDINGS.csv:SCI-056",
+      "limitation": "All 40 bands match the removed legacy concentration/risk-floor formulas. Not current Gaussian-puff output, measured PM2.5 or a calibrated forecast.",
+      "byte_variant": "GIT_COMMITTED_LF_COPY",
+      "byte_variant_evidence": "Exact HEAD blob equals the captured Windows copy with CRLF converted to LF; original run bindings remain unknown."
+    }
+  },
+  "byte_variants": {
+    "sources": [
+      {
+        "schema_version": 1,
+        "artifact_kind": "sources",
+        "artifact_sha256": "900b5925955635660d90295b2324083fc52a23a3596aaab9450f518a7221135a",
+        "artifact_status": "ARCHIVED_LEGACY",
+        "operational_validation": "NOT_ESTABLISHED",
+        "generated_at": "2026-10-08T14:52:16.603976Z",
+        "finding_id": "SCI-055",
+        "model_version": "LEGACY_UNVERSIONED",
+        "original_parameter_binding": "NOT_RECORDED",
+        "original_input_binding": "NOT_RECORDED",
+        "records": 10,
+        "evidence": "docs/audits/hardcoded-data/2026-10-10/FINDINGS.csv:SCI-055",
+        "limitation": "Legacy detector output; two industrial_fire labels and nine rounded-strength matches to the old FRP/150 rule. Exact originating code/parameters/input bytes are not established.",
+        "byte_variant": "WINDOWS_CRLF_CAPTURE_COPY"
+      }
+    ],
+    "corridor": [
+      {
+        "schema_version": 1,
+        "artifact_kind": "corridor",
+        "artifact_sha256": "32f81bc4e31b03fdc2ea9282bc447da410b80c2d1a6a245d7767b60b10fbd603",
+        "artifact_status": "ARCHIVED_LEGACY",
+        "operational_validation": "NOT_ESTABLISHED",
+        "generated_at": "2026-10-08T14:52:16.643513Z",
+        "forecast_start": "2026-10-07T18:00:00Z",
+        "wind_generated_at": "2026-10-07T18:37:57.090632Z",
+        "finding_id": "SCI-056",
+        "model_version": "LEGACY_UNVERSIONED",
+        "original_parameter_binding": "NOT_RECORDED",
+        "original_input_binding": "NOT_RECORDED",
+        "records": 50,
+        "evidence": "docs/audits/hardcoded-data/2026-10-10/FINDINGS.csv:SCI-056",
+        "limitation": "All 40 bands match the removed legacy concentration/risk-floor formulas. Not current Gaussian-puff output, measured PM2.5 or a calibrated forecast.",
+        "byte_variant": "WINDOWS_CRLF_CAPTURE_COPY"
+      }
+    ]
+  }
+}
