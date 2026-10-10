@@ -1,0 +1,15 @@
+.heatmap-controls { padding: 9px 12px; background: var(--surface-card); border-bottom: 1px solid var(--border-subtle); flex: 0 0 auto; font-size: 12px; color: var(--text-secondary); }
+.heatmap-control-row, .heatmap-control-row label { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.heatmap-control-row { justify-content: space-between; }
+.heatmap-control-row label { font-weight: 600; color: var(--text-primary); }
+.heatmap-control-row input[type=range] { width: 100px; }
+.heatmap-description { margin-top: 8px; max-height: 180px; overflow: auto; overflow-wrap: anywhere; }
+.heatmap-description p { margin: 5px 0; }
+.heatmap-scale { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 7px 0; }
+.heatmap-scale span { display: inline-flex; align-items: center; gap: 5px; }
+.heatmap-scale i, .heatmap-values i { display: inline-block; width: 15px; height: 15px; border: 1px solid #4a5e56; margin-right: 4px; }
+.heatmap-values { overflow-x: auto; }
+.heatmap-values table { border-collapse: collapse; width: 100%; font-size: 11px; }
+.heatmap-values th, .heatmap-values td { border-bottom: 1px solid var(--border-subtle); padding: 6px; text-align: left; }
+.heatmap-description summary { cursor: pointer; font-weight: 600; }
+@media(max-width: 600px) { .heatmap-description { max-height: 160px; } .heatmap-control-row { gap: 10px; } }
