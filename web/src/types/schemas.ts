@@ -179,6 +179,8 @@ export const WindFileSchema = z.object({
   generated_at: TimestampSchema,
   source: NameSchema,
   points: z.array(WindPointSchema),
+  // Existing ingest metadata: successful batches do not prove plume coverage.
+  coverage_complete: z.boolean().optional(),
 })
 export type WindHour = z.infer<typeof WindHourSchema>
 export type WindPoint = z.infer<typeof WindPointSchema>

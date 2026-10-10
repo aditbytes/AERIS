@@ -57,4 +57,13 @@ describe('real data contracts', () => {
     expect(WindFileSchema.safeParse({ ...wind, points: [{ ...wind.points[0], hours: [{ ...wind.points[0].hours[0], speed_ms: -1 }] }] }).success).toBe(false)
     expect(WindFileSchema.safeParse({ ...wind, points: [{ ...wind.points[0], hours: [wind.points[0].hours[0], wind.points[0].hours[0]] }] }).success).toBe(false)
   })
+  it('retains optional wind batch coverage without coercing invalid flags', () => {
+    const wind = { generated_at: time, source: 'MATHEMATICAL_TEST', points: [] }
+    expect(WindFileSchema.parse(wind).coverage_complete).toBeUndefined()
+    expect(WindFileSchema.parse({ ...wind, coverage_complete: false }).coverage_complete).toBe(false)
+    expect(WindFileSchema.parse({ ...wind, coverage_complete: true }).coverage_complete).toBe(true)
+    for (const invalid of ['false', 'true', 0, 1, null]) {
+      expect(WindFileSchema.safeParse({ ...wind, coverage_complete: invalid }).success).toBe(false)
+    }
+  })
 })

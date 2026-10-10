@@ -29,7 +29,7 @@ vi.mock('maplibre-gl', () => ({
 }))
 
 function site(index: number, type: RankedSite['type']): RankedSite {
-  return { rank: index + 1, site_id: `test-site-${index}`, name: `Test ${type} ${index}`, type, lat: 29, lon: 77, occupancy: null, eta_hours: 2, pm25_delta_ugm3: 10, risk_score: 0.2, source_id: 'test-source' }
+  return { rank: index + 1, site_id: `test-site-${index}`, name: `Test ${type} ${index}`, type, lat: 29, lon: 77, occupancy: null, eta_hours: index / 2, pm25_delta_ugm3: 10, risk_score: 0.2, source_id: 'test-source' }
 }
 
 beforeEach(() => {
@@ -64,10 +64,10 @@ describe('map explorer facility visibility', () => {
       ...Array.from({ length: 13 }, (_, index) => site(index + 12, remainingType)),
     ]
     const { unmount } = render(<MapExplorerView />)
-    expect([...activeMarkers].map(element => element.title)).toEqual(state.rankedSites!.sites.slice(0, 12).map(value => `${value.name} (Low Risk)`))
+    expect([...activeMarkers].map(element => element.title)).toEqual(state.rankedSites!.sites.slice(0, 12).map(value => `${value.name} (Low Risk · ~${value.eta_hours.toFixed(1)}h arrival)`))
     await userEvent.click(screen.getByRole('button', { name: /^Layers/ }))
     await userEvent.click(screen.getByRole('checkbox', { name: filterLabel }))
-    expect([...activeMarkers].map(element => element.title)).toEqual(state.rankedSites!.sites.slice(12, 24).map(value => `${value.name} (Low Risk)`))
+    expect([...activeMarkers].map(element => element.title)).toEqual(state.rankedSites!.sites.slice(12, 24).map(value => `${value.name} (Low Risk · ~${value.eta_hours.toFixed(1)}h arrival)`))
     unmount()
     expect(activeMarkers.size).toBe(0)
   })

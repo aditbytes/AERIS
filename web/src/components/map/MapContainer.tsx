@@ -3,10 +3,12 @@
 import { Map, Marker, Popup, setWorkerUrl } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Layers, Maximize2, Info, HelpCircle, X } from 'lucide-react'
 import { useAeris } from '@/services/dataContext'
-import { getRiskLevel, riskLabel } from '@/types/schemas'
+import { getRiskLevel, riskLabel, WindFileSchema } from '@/types/schemas'
+import { getFeedFreshness } from '@/services/api'
+import { useClock } from '@/components/status/useClock'
 import { createThermalMarkerElement, createThermalPopupHtml } from './thermalMarker'
 import { getStyleForMode, setupMapLayers, applyProjectionAndPitch, isValidSubcontinentCoord } from './mapStyles'
 import TimeControls from './TimeControls'
@@ -50,7 +52,37 @@ export default function MapContainer() {
     setBasemapMode,
     wind,
     etaHours,
+    staleFeeds,
   } = useAeris()
+
+  const now = useClock()
+  const parsedWind = useMemo(() => wind == null ? null : WindFileSchema.safeParse(wind), [wind])
+  const windData = parsedWind?.success ? parsedWind.data : null
+  // A named grid/time sample, not a regional mean or the plume transport vector.
+  const samplePoint = windData?.points.find(point => point.hours.length > 0)
+  const sample = samplePoint?.hours[0]
+  const incompleteWindGrid = useMemo(() => {
+    const reference = windData?.points.find(point => point.hours.length > 0)?.hours
+    return windData?.points.some(point => !point.hours.length || point.hours.length !== reference?.length || point.hours.some((hour, index) => (
+      Date.parse(hour.t) !== Date.parse(reference![index].t)
+    ))) ?? false
+  }, [windData])
+  const speedKmh = sample ? sample.speed_ms * 3.6 : null
+  const windSpeedKmh = speedKmh != null && Number.isFinite(speedKmh)
+    ? speedKmh > 0 && speedKmh < 0.1 ? '<0.1' : speedKmh.toFixed(1) : null
+  const compass = sample ? ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(sample.dir_from_deg / 45) % 8] : null
+  const windFreshness = getFeedFreshness('wind', windData?.generated_at, now, staleFeeds.some(feed => feed.label === 'wind' && feed.stale))
+  const windStatus = !parsedWind ? 'Wind unavailable: feed missing.'
+    : !parsedWind.success || (sample && windSpeedKmh == null) ? 'Wind unavailable: invalid forecast data.'
+      : !sample ? 'Wind unavailable: no forecast samples.'
+        : windFreshness.status === 'unknown' ? 'Wind capture age unknown; forecast sample retained.'
+          : windFreshness.stale ? 'Stale wind capture; forecast sample retained.'
+            : 'Forecast grid sample; not an observed regional wind.'
+  const windCoverage = windData?.coverage_complete === false || incompleteWindGrid
+    ? 'Incomplete wind coverage; sample only.'
+    : windData?.coverage_complete === true
+      ? 'All retrieval batches succeeded; plume coverage not established.'
+      : 'Wind coverage unknown; sample only.'
 
   const initialMode = useRef(basemapMode)
   const appliedStyleMode = useRef(basemapMode)
@@ -322,8 +354,8 @@ export default function MapContainer() {
   }, [flyToLocation, webGlSupported])
 
   const activeSourcesCount = sources?.sources.filter(s => isValidSubcontinentCoord(s.lat, s.lon) && (scopeFilter === 'all' || s.territory === 'india')).length ?? 0
-  const windSpeedKmh = wind?.points?.[0]?.hours?.[0]?.speed_ms ? (wind.points[0].hours[0].speed_ms * 3.6).toFixed(0) : '18'
-  const earliestEta = etaHours != null ? etaHours.toFixed(1) : (rankedSites?.sites?.[0]?.eta_hours?.toFixed(1) ?? '3.2')
+  const reportedEta = etaHours ?? rankedSites?.sites[0]?.eta_hours
+  const earliestEta = reportedEta != null && Number.isFinite(reportedEta) && reportedEta >= 0 ? reportedEta.toFixed(1) : null
 
   return (
     <div className="map-wrapper card">
@@ -406,21 +438,32 @@ export default function MapContainer() {
 
         <div className="storyline-connector" aria-hidden="true">➔</div>
 
-        <div className="storyline-node flow" title="Transport velocity along southeasterly wind corridor">
+        <div className="storyline-node flow" role="region" aria-label="Wind forecast sample">
           <span className="story-step-badge">2. Flow</span>
           <div className="story-step-text">
-            <strong className="story-headline">💨 {windSpeedKmh} km/h</strong>
-            <span className="story-sub">SE Airflow Vector</span>
+            <span className="story-sub" role="status" aria-label="Wind data status">
+              {loading && 'Loading wind data… '}{windStatus}
+              {feedErrors.wind && ` Wind feed unavailable: ${feedErrors.wind}.${sample && windSpeedKmh != null ? ' Retained forecast sample shown.' : ''}`}
+            </span>
+            {sample && samplePoint && windSpeedKmh != null && (
+              <>
+                <strong className="story-headline">{windSpeedKmh} km/h</strong>
+                <span className="story-sub">{sample.speed_ms === 0 ? 'Calm; direction undefined' : `Wind from ${compass} (${sample.dir_from_deg}°)`}</span>
+                <span className="story-sub">{Date.parse(sample.t) < now ? 'Past forecast sample' : 'Forecast sample'}: <time dateTime={sample.t}>{sample.t}</time> at {samplePoint.lat}, {samplePoint.lon} (lat, lon). Source: {windData!.source}.</span>
+                <span className="story-sub">Capture: <time dateTime={windData!.generated_at}>{windData!.generated_at}</time>.</span>
+              </>
+            )}
+            {windData && <span className="story-sub">{windCoverage}</span>}
           </div>
         </div>
 
         <div className="storyline-connector" aria-hidden="true">➔</div>
 
-        <div className="storyline-node impact" title="Projected smoke arrival at downwind NCR schools and hospitals">
+        <div className="storyline-node impact" title="Uncalibrated forecast-relative arrival at a ranked receptor">
           <span className="story-step-badge">3. Impact</span>
           <div className="story-step-text">
-            <strong className="story-headline">⚠️ NCR ~{earliestEta}h ETA</strong>
-            <span className="story-sub">Downwind Receptors</span>
+            <strong className="story-headline">{earliestEta == null ? 'ETA unavailable' : `~${earliestEta}h ETA`}</strong>
+            <span className="story-sub">Ranked receptor · uncalibrated · forecast-relative</span>
           </div>
         </div>
       </div>
