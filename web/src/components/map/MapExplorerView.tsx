@@ -124,7 +124,6 @@ export default function MapExplorerView() {
         bearing: initialMode.current === 'globe' ? -6 : 0,
         attributionControl: { compact: true },
         dragPan: {
-          inertia: true,
           linearity: 0.28,
           maxSpeed: 1400,
           deceleration: 2500,
@@ -290,13 +289,14 @@ export default function MapExplorerView() {
 
           const riskLvl = getRiskLevel(site.risk_score)
           const riskText = riskLabel(riskLvl)
+          const isImminent = site.eta_hours < 8
           const el = document.createElement('div')
-          el.className = `explorer-site-marker site-${site.type} risk-${riskLvl}`
+          el.className = `explorer-site-marker site-${site.type} risk-${riskLvl} ${isImminent ? 'is-imminent' : 'is-background'}`
           el.innerHTML = `
             <span class="site-icon">${isSchool ? '🏫' : '🏥'}</span>
-            <span class="site-risk-tag">${riskText}</span>
+            <span class="site-risk-tag">${riskText}${isImminent ? ` · ~${site.eta_hours.toFixed(0)}h` : ''}</span>
           `
-          el.title = `${site.name} (${riskText} Risk)`
+          el.title = `${site.name} (${riskText} Risk · ~${site.eta_hours.toFixed(1)}h arrival)`
 
           el.setAttribute('role', 'button')
           el.tabIndex = 0

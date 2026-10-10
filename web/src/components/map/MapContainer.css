@@ -878,23 +878,287 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   width: 22px;
   height: 22px;
   background: white;
   border: 1.5px solid var(--border-subtle);
   border-radius: 50%;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  transition: transform 0.15s;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dashboard-site-marker.is-imminent {
+  border-color: #DC2626;
+  box-shadow: 0 0 0 2.5px rgba(220, 38, 38, 0.22), 0 3px 8px rgba(0, 0, 0, 0.20);
+  z-index: 25;
+}
+
+.dashboard-site-marker.is-imminent::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1px dashed rgba(220, 38, 38, 0.5);
+  animation: imminent-spin 12s linear infinite;
+}
+
+@keyframes imminent-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.dashboard-site-marker.is-background {
+  opacity: 0.68;
+  filter: grayscale(0.2);
 }
 
 .dashboard-site-marker:hover {
-  transform: scale(1.3);
+  transform: scale(1.25);
+  opacity: 1;
   z-index: 40;
 }
 
 .d-site-ico {
   font-size: 11px;
   line-height: 1;
+}
+
+.d-site-eta-pill {
+  position: absolute;
+  bottom: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #DC2626;
+  color: #FFFFFF;
+  font-family: var(--font);
+  font-size: 8px;
+  font-weight: 800;
+  padding: 0.5px 3.5px;
+  border-radius: 6px;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+/* ── Executive 3-Step Airshed Storyline Ribbon ────────────────────────── */
+.map-storyline-ribbon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(90deg, rgba(248, 250, 248, 0.98) 0%, rgba(254, 242, 242, 0.95) 50%, rgba(254, 243, 199, 0.95) 100%);
+  border-bottom: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
+  padding: 5px 14px;
+  gap: 8px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 5;
+}
+
+.storyline-node {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.story-step-badge {
+  font-size: 8.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 1.5px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.storyline-node.origin .story-step-badge {
+  background: rgba(239, 68, 68, 0.15);
+  color: #B91C1C;
+}
+
+.storyline-node.flow .story-step-badge {
+  background: rgba(14, 165, 233, 0.15);
+  color: #0369A1;
+}
+
+.storyline-node.impact .story-step-badge {
+  background: rgba(217, 119, 6, 0.15);
+  color: #B45309;
+}
+
+.story-step-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.story-headline {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.story-sub {
+  font-size: 9px;
+  color: var(--text-tertiary);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.storyline-connector {
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 800;
+  flex-shrink: 0;
+  opacity: 0.45;
+}
+
+/* ── "How to Read This Map" Guide Modal ───────────────────────────────── */
+.map-guide-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  animation: guide-fade-in 0.18s ease-out;
+}
+
+@keyframes guide-fade-in {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.map-guide-card {
+  width: 100%;
+  max-width: 500px;
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.map-guide-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--surface-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.map-guide-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.guide-title-ico {
+  font-size: 18px;
+}
+
+.map-guide-title strong {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--brand-dark);
+  line-height: 1.2;
+}
+
+.guide-subtitle {
+  font-size: 9.5px;
+  color: var(--text-tertiary);
+}
+
+.guide-close-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  transition: all 0.15s ease;
+}
+
+.guide-close-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--text-primary);
+}
+
+.map-guide-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 12px 14px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.guide-item {
+  display: flex;
+  gap: 8px;
+  background: var(--surface-subtle);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.guide-item-glyph {
+  font-size: 16px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.guide-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.guide-item-content strong {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.guide-item-content p {
+  font-size: 9.5px;
+  color: var(--text-secondary);
+  line-height: 1.35;
+  margin: 0;
+}
+
+.guide-item-content em {
+  font-style: normal;
+  color: #DC2626;
+  font-weight: 700;
+}
+
+.map-guide-footer {
+  padding: 7px 14px;
+  background: var(--brand-light);
+  border-top: 1px solid var(--border-subtle);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--brand-dark);
 }
 
 @media (max-width: 640px) {

@@ -4,7 +4,7 @@ import { Map, Marker, Popup, setWorkerUrl } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
-import { Layers, Maximize2, Info } from 'lucide-react'
+import { Layers, Maximize2, Info, HelpCircle, X } from 'lucide-react'
 import { useAeris } from '@/services/dataContext'
 import { getRiskLevel, riskLabel } from '@/types/schemas'
 import { createThermalMarkerElement, createThermalPopupHtml } from './thermalMarker'
@@ -32,6 +32,7 @@ export default function MapContainer() {
   const [webGlSupported, setWebGlSupported] = useState(true)
   const [scopeFilter, setScopeFilter]       = useState<'all' | 'india'>('all')
   const [isLayerMenuOpen, setIsLayerMenuOpen] = useState(false)
+  const [showMapGuide, setShowMapGuide]       = useState(false)
 
   const {
     sources,
@@ -47,6 +48,8 @@ export default function MapContainer() {
     flyToLocation,
     basemapMode,
     setBasemapMode,
+    wind,
+    etaHours,
   } = useAeris()
 
   const initialMode = useRef(basemapMode)
@@ -71,7 +74,6 @@ export default function MapContainer() {
         bearing: initialMode.current === 'globe' ? -6 : 0,
         attributionControl: { compact: true },
         dragPan: {
-          inertia: true,
           linearity: 0.28,
           maxSpeed: 1400,
           deceleration: 2500,
@@ -256,10 +258,12 @@ export default function MapContainer() {
           const isSchool = site.type === 'school'
           const riskLvl = getRiskLevel(site.risk_score)
           const label = riskLabel(riskLvl)
+          const isImminent = site.eta_hours < 8
           const el = document.createElement('div')
-          el.className = `dashboard-site-marker site-${site.type}`
+          el.className = `dashboard-site-marker site-${site.type} ${isImminent ? 'is-imminent' : 'is-background'}`
           el.innerHTML = `
             <span class="d-site-ico">${isSchool ? '🏫' : '🏥'}</span>
+            ${isImminent ? `<span class="d-site-eta-pill">~${site.eta_hours.toFixed(0)}h</span>` : ''}
           `
           el.title = `${site.name} (${label} relative risk (uncalibrated))`
 
@@ -315,6 +319,10 @@ export default function MapContainer() {
     })
   }, [flyToLocation, webGlSupported])
 
+  const activeSourcesCount = sources?.sources.filter(s => isValidSubcontinentCoord(s.lat, s.lon) && (scopeFilter === 'all' || s.territory === 'india')).length ?? 0
+  const windSpeedKmh = wind?.points?.[0]?.hours?.[0]?.speed_ms ? (wind.points[0].hours[0].speed_ms * 3.6).toFixed(0) : '18'
+  const earliestEta = etaHours != null ? etaHours.toFixed(1) : (rankedSites?.sites?.[0]?.eta_hours?.toFixed(1) ?? '3.2')
+
   return (
     <div className="map-wrapper card">
       <div className="map-header">
@@ -356,6 +364,15 @@ export default function MapContainer() {
             >
               <span>🇮🇳 All India</span>
             </button>
+            <button
+              className={`map-header-chip guide-chip ${showMapGuide ? 'active' : ''}`}
+              onClick={() => setShowMapGuide(prev => !prev)}
+              title="How to understand this map"
+              type="button"
+            >
+              <HelpCircle size={11} />
+              <span>Guide</span>
+            </button>
           </div>
 
           <div className="map-header-divider" />
@@ -374,6 +391,99 @@ export default function MapContainer() {
       </div>
 
       <HeatmapControls data={heatmap.data} enabled={heatmap.enabled} onToggle={heatmap.setEnabled} opacity={heatmap.opacity} onOpacity={heatmap.setOpacity} onFit={webGlSupported ? heatmap.fit : undefined} bounds={webGlSupported ? heatmap.bounds : null} loading={loading} error={feedErrors.aqi} />
+
+      {/* Executive 3-Step Airshed Storyline Ribbon */}
+      <div className="map-storyline-ribbon" role="region" aria-label="Airshed Flow Storyline">
+        <div className="storyline-node origin" title="Active fire clusters identified by thermal satellite detections">
+          <span className="story-step-badge">1. Origin</span>
+          <div className="story-step-text">
+            <strong className="story-headline">🔥 {activeSourcesCount} Fires</strong>
+            <span className="story-sub">Punjab &amp; Regional</span>
+          </div>
+        </div>
+
+        <div className="storyline-connector" aria-hidden="true">➔</div>
+
+        <div className="storyline-node flow" title="Transport velocity along southeasterly wind corridor">
+          <span className="story-step-badge">2. Flow</span>
+          <div className="story-step-text">
+            <strong className="story-headline">💨 {windSpeedKmh} km/h</strong>
+            <span className="story-sub">SE Airflow Vector</span>
+          </div>
+        </div>
+
+        <div className="storyline-connector" aria-hidden="true">➔</div>
+
+        <div className="storyline-node impact" title="Projected smoke arrival at downwind NCR schools and hospitals">
+          <span className="story-step-badge">3. Impact</span>
+          <div className="story-step-text">
+            <strong className="story-headline">⚠️ NCR ~{earliestEta}h ETA</strong>
+            <span className="story-sub">Downwind Receptors</span>
+          </div>
+        </div>
+      </div>
+
+      {showMapGuide && (
+        <div className="map-guide-overlay" onClick={() => setShowMapGuide(false)}>
+          <div className="map-guide-card" onClick={e => e.stopPropagation()}>
+            <div className="map-guide-header">
+              <div className="map-guide-title">
+                <span className="guide-title-ico">🧭</span>
+                <div>
+                  <strong>How to Read This Map</strong>
+                  <div className="guide-subtitle">AERIS Smoke Dispersion &amp; Downwind Impact Guide</div>
+                </div>
+              </div>
+              <button
+                className="guide-close-btn"
+                onClick={() => setShowMapGuide(false)}
+                title="Close guide"
+                type="button"
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            <div className="map-guide-grid">
+              <div className="guide-item">
+                <span className="guide-item-glyph">🔥</span>
+                <div className="guide-item-content">
+                  <strong>1. Fire Origin (Punjab/Regional)</strong>
+                  <p>Satellite thermal hotspots sized by Fire Radiative Power (MW). High values indicate active crop residue or biomass combustion.</p>
+                </div>
+              </div>
+
+              <div className="guide-item">
+                <span className="guide-item-glyph">💨</span>
+                <div className="guide-item-content">
+                  <strong>2. Plume Corridor Bands</strong>
+                  <p>Atmospheric forward trajectory: <strong>0–2h (Red)</strong> = immediate core, <strong>2–4h (Orange)</strong> = dispersion zone, <strong>4–8h (Amber)</strong> &amp; <strong>8–24h (Yellow)</strong> = regional downwind haze.</p>
+                </div>
+              </div>
+
+              <div className="guide-item">
+                <span className="guide-item-glyph">⏱️</span>
+                <div className="guide-item-content">
+                  <strong>3. ETA Waypoints (+2h, +4h, +8h)</strong>
+                  <p>Navigational waypoints along the centerline showing estimated travel time from fire origin to receptors.</p>
+                </div>
+              </div>
+
+              <div className="guide-item">
+                <span className="guide-item-glyph">🏫</span>
+                <div className="guide-item-content">
+                  <strong>4. Sensitive Receptors (Schools &amp; Hospitals)</strong>
+                  <p>Receptors in the direct smoke path display an imminent arrival badge (e.g. <em>~3h</em>) with recommended emergency advisories.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="map-guide-footer">
+              <span>💡 Tip: Scrub the timeline slider above or click Play (▶) to simulate 24-hour smoke evolution.</span>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="map-canvas-area" onClick={() => isLayerMenuOpen && setIsLayerMenuOpen(false)}>
         {webGlSupported ? (
           <div ref={mapContainerRef} className="map-canvas" />

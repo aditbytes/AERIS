@@ -958,11 +958,23 @@
   padding: 3px 6px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-  transition: transform 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.explorer-site-marker.is-imminent {
+  border-color: #DC2626;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.25), 0 4px 12px rgba(0, 0, 0, 0.18);
+  z-index: 35;
+}
+
+.explorer-site-marker.is-background {
+  opacity: 0.70;
+  filter: grayscale(0.2);
 }
 
 .explorer-site-marker:hover {
   transform: scale(1.15) translateY(-2px);
+  opacity: 1;
   z-index: 50;
 }
 

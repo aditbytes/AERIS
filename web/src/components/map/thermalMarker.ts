@@ -43,10 +43,13 @@ export function createThermalMarkerElement(
   const strokeColor = isTransboundary ? '#F59E0B' : '#EF4444'
   const coreFill = isTransboundary ? '#FDE047' : '#FF453A'
 
-  const ringCount = severity === 'severe' ? 3 : severity === 'high' ? 2 : 1
+  // Reserve animated sonar ping rings strictly for the peak cluster or selected marker to eliminate visual noise
   let sonarRingsHtml = ''
-  for (let i = 1; i <= ringCount; i++) {
-    sonarRingsHtml += `<div class="sensor-sonar-ring ring-${i}"></div>`
+  if (isPeak || options?.isSelected) {
+    const ringCount = severity === 'severe' ? 2 : 1
+    for (let i = 1; i <= ringCount; i++) {
+      sonarRingsHtml += `<div class="sensor-sonar-ring ring-${i}"></div>`
+    }
   }
 
   const frpFormatted = src.total_frp_mw.toFixed(0)
