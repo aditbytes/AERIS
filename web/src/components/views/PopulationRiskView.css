@@ -254,3 +254,16 @@
     grid-template-columns: 1fr;
   }
 }
+
+.population-risk-view { min-height: 0; min-width: 0; }
+.population-risk-view .view-title-group, .population-risk-view .fac-main-col { min-width: 0; overflow-wrap: anywhere; }
+.population-risk-view .view-actions, .population-risk-view .section-header, .population-risk-view .panel-header { flex-wrap: wrap; gap: 8px; }
+@media (max-width: 600px) {
+  .population-risk-view { padding: 12px; gap: 12px; }
+  .population-risk-view .view-header { flex-direction: column; padding: 12px; gap: 12px; }
+  .population-risk-view .kpi-val-row, .population-risk-view .card-val-row, .population-risk-view .fac-who-row, .population-risk-view .fac-directive-row, .population-risk-view .pop-controls-row, .population-risk-view .filter-pills, .population-risk-view .filters-row, .population-risk-view .feed-item, .population-risk-view .settings-actions, .population-risk-view .config-row { flex-wrap: wrap; }
+  .population-risk-view .pop-kpi-grid, .population-risk-view .analytics-kpi-grid, .population-risk-view .fires-kpi-grid, .population-risk-view .weather-kpi-grid { grid-template-columns: 1fr; }
+  .population-risk-view .grap-progress-box { min-width: 0; width: 100%; }
+  .population-risk-view select { max-width: 100%; min-width: 0; }
+  .population-risk-view .table-responsive { overflow-x: auto; width: 100%; }
+}

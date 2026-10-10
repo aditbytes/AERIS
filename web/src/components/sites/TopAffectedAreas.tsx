@@ -7,21 +7,8 @@ function siteIcon(type: 'school' | 'hospital'): string {
   return type === 'hospital' ? '🏥' : '🏫'
 }
 
-function formatEtaTime(etaHours: number): { rel: string; abs: string } {
-  const rel = etaHours <= 0.1 ? 'in < 15 min' : `in ${etaHours.toFixed(1)} h`
-  const now = new Date()
-  now.setMinutes(now.getMinutes() + Math.round(etaHours * 60))
-  const abs = now.toLocaleTimeString('en-IN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-    timeZone: 'Asia/Kolkata',
-  })
-  return { rel, abs: `${abs} IST` }
-}
-
 export default function TopAffectedAreas() {
-  const { rankedSites, setSelectedSiteId, setActiveTab } = useAeris()
+  const { rankedSites, setSelectedSiteId, setActiveTab, setFlyToLocation } = useAeris()
   const [filterType, setFilterType] = useState<'all' | 'hospital' | 'school'>('all')
 
   const allSites = rankedSites?.sites ?? []
@@ -61,15 +48,14 @@ export default function TopAffectedAreas() {
             </button>
           </div>
         </div>
-        <span
+        <button
+          type="button"
           className="section-link"
           onClick={() => setActiveTab('population')}
-          role="button"
-          tabIndex={0}
           title="Open Population Risk Registry"
         >
           View All ({allSites.length}) →
-        </span>
+        </button>
       </div>
 
       {sites.length === 0 ? (
@@ -80,20 +66,17 @@ export default function TopAffectedAreas() {
         <ul className="areas-list">
           {sites.map((site: RankedSite) => {
             const level = getRiskLevel(site.risk_score)
-            const eta = formatEtaTime(site.eta_hours)
             const occupancyText = site.occupancy != null
               ? `${site.occupancy.toLocaleString()} capacity`
               : 'capacity unknown'
 
             return (
-              <li
-                key={site.site_id}
+              <li key={site.site_id}>
+              <button
+                type="button"
                 className="area-item"
-                onClick={() => setSelectedSiteId(site.site_id)}
-                tabIndex={0}
-                onKeyDown={e => e.key === 'Enter' && setSelectedSiteId(site.site_id)}
-                role="button"
-                aria-label={`${site.name} (${site.site_id}) — ${riskLabel(level)} risk (${Math.round(site.risk_score * 100)}%)`}
+                onClick={() => { setSelectedSiteId(site.site_id); setFlyToLocation({ lat: site.lat, lon: site.lon, name: site.name, zoom: 12 }); setActiveTab('map') }}
+                aria-label={`${site.name} (${site.site_id}) — ${riskLabel(level)} heuristic risk; open map`}
               >
                 <div className="area-icon">{siteIcon(site.type)}</div>
                 <div className="area-body">
@@ -109,14 +92,14 @@ export default function TopAffectedAreas() {
                   </div>
                 </div>
                 <div className="area-right">
-                  <span className={riskBadgeClass(level)}>
-                    {riskLabel(level)} ({Math.round(site.risk_score * 100)}%)
+                  <span className={riskBadgeClass(level)} title="Uncalibrated relative risk score, not a probability">
+                    {riskLabel(level)} ({site.risk_score.toFixed(2)})
                   </span>
-                  <span className="area-eta text-xs text-tertiary" title={`Estimated arrival: ${eta.abs}`}>
-                    {eta.rel} · {eta.abs}
+                  <span className="area-eta text-xs text-tertiary" title="Model ETA is relative to its originating forecast; the ranked feed does not link its forecast origin.">
+                    Forecast-relative ETA +{site.eta_hours.toFixed(1)} h · Absolute arrival unavailable
                   </span>
                 </div>
-              </li>
+              </button></li>
             )
           })}
         </ul>

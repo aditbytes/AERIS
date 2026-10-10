@@ -1,18 +1,16 @@
 import { useMemo, useState } from 'react'
 import {
   Baby,
-  Building2,
   Download,
   Filter,
-  GraduationCap,
   HeartPulse,
   MapPin,
   Search,
-  ShieldAlert,
   Users,
 } from 'lucide-react'
 import { useAeris } from '@/services/dataContext'
-import { getRiskLevel, riskLabel } from '@/types/schemas'
+import { getRiskLevel, riskLabel, riskBadgeClass } from '@/types/schemas'
+import { buildCsv, downloadText } from './csv'
 import './PopulationRiskView.css'
 
 export default function PopulationRiskView() {
@@ -20,9 +18,10 @@ export default function PopulationRiskView() {
   const [filterType, setFilterType] = useState<'all' | 'school' | 'hospital'>('all')
   const [filterRisk, setFilterRisk] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [visibleCount, setVisibleCount] = useState(50)
 
-  const sites = rankedSites?.sites ?? []
-  const exposed = rankedSites?.exposed_population ?? { estimate: 570938, low: 428203, high: 713672 }
+  const sites = useMemo(() => rankedSites?.sites ?? [], [rankedSites])
+  const exposed = rankedSites?.exposed_population.data_available === false ? null : rankedSites?.exposed_population
 
   const schools = useMemo(() => sites.filter((s) => s.type === 'school'), [sites])
   const hospitals = useMemo(() => sites.filter((s) => s.type === 'hospital'), [sites])
@@ -51,7 +50,7 @@ export default function PopulationRiskView() {
     const rows = filteredSites.map((s) => [
       s.rank,
       s.site_id,
-      `"${s.name.replace(/"/g, '""')}"`,
+      s.name,
       s.type,
       s.lat,
       s.lon,
@@ -61,15 +60,7 @@ export default function PopulationRiskView() {
       s.risk_score.toFixed(3),
       riskLabel(getRiskLevel(s.risk_score)),
     ])
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', `AERIS_Population_Exposure_${new Date().toISOString().slice(0, 10)}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    downloadText(`AERIS_Ranked_Facilities_${new Date().toISOString().slice(0, 10)}.csv`, buildCsv(headers, rows))
   }
 
   const handleInspectMap = (site: (typeof sites)[0]) => {
@@ -85,11 +76,11 @@ export default function PopulationRiskView() {
         <div className="view-title-group">
           <div className="view-badge">
             <Users size={14} />
-            <span>High-Resolution Demographic Exposure Modeling</span>
+            <span>Heuristic facility ranking</span>
           </div>
-          <h1 className="view-title">Population Risk &amp; Vulnerable Demographics Matrix</h1>
+          <h1 className="view-title">Population Estimates &amp; Ranked Facilities</h1>
           <p className="view-subtitle">
-            Evaluating acute respiratory exposure among pediatric and clinical cohorts within the downwind transboundary plume corridor.
+            Facilities ranked by uncalibrated plume and risk heuristics. Occupancy is reported capacity, not observed people or medically validated exposure.
           </p>
         </div>
 
@@ -104,21 +95,21 @@ export default function PopulationRiskView() {
       {/* KPI Row */}
       <div className="pop-kpi-grid">
         <div className="pop-kpi-card">
-          <span className="kpi-label">Total Population at Risk</span>
+          <span className="kpi-label">Modelled Corridor Population</span>
           <div className="kpi-val-row">
-            <span className="kpi-val danger">{(exposed.estimate / 1000).toFixed(0)}K</span>
+            <span className="kpi-val danger">{exposed ? exposed.estimate.toLocaleString() : 'Unavailable'}</span>
             <span className="kpi-unit">Individuals</span>
           </div>
           <div className="kpi-footer">
-            <span className="kpi-sub">Threshold Sensitivity Range: {(exposed.low / 1000).toFixed(0)}K – {(exposed.high / 1000).toFixed(0)}K</span>
+            <span className="kpi-sub">{exposed ? `Threshold sensitivity range: ${exposed.low.toLocaleString()} – ${exposed.high.toLocaleString()}` : 'Population cells unavailable; zero exposure cannot be inferred.'}</span>
           </div>
         </div>
 
         <div className="pop-kpi-card">
-          <span className="kpi-label">School Children at Risk</span>
+          <span className="kpi-label">Known School Capacity</span>
           <div className="kpi-val-row">
             <span className="kpi-val">{schoolChildren.toLocaleString()}</span>
-            <span className="kpi-unit">Students</span>
+            <span className="kpi-unit">Capacity</span>
           </div>
           <div className="kpi-footer">
             <span className="kpi-sub">Across {schools.length} educational institutions</span>
@@ -126,10 +117,10 @@ export default function PopulationRiskView() {
         </div>
 
         <div className="pop-kpi-card">
-          <span className="kpi-label">Hospital Patients &amp; Beds</span>
+          <span className="kpi-label">Known Hospital Capacity</span>
           <div className="kpi-val-row">
             <span className="kpi-val">{hospitalPatients.toLocaleString()}</span>
-            <span className="kpi-unit">Inpatients</span>
+            <span className="kpi-unit">Capacity</span>
           </div>
           <div className="kpi-footer">
             <span className="kpi-sub">Across {hospitals.length} acute healthcare facilities</span>
@@ -137,13 +128,13 @@ export default function PopulationRiskView() {
         </div>
 
         <div className="pop-kpi-card">
-          <span className="kpi-label">Very High Exposure Sites</span>
+          <span className="kpi-label">Very High Heuristic Scores</span>
           <div className="kpi-val-row">
             <span className="kpi-val danger">{sites.filter((s) => s.risk_score >= 0.85).length}</span>
             <span className="kpi-unit">Critical</span>
           </div>
           <div className="kpi-footer">
-            <span className="kpi-sub">Plume arrival ETA &lt; 2.5 hours</span>
+            <span className="kpi-sub">Composite risk score ≥0.85; not a probability</span>
           </div>
         </div>
       </div>
@@ -153,10 +144,10 @@ export default function PopulationRiskView() {
         <div className="cohort-card pediatric">
           <div className="cohort-icon"><Baby size={22} /></div>
           <div className="cohort-content">
-            <div className="cohort-title">Pediatric Cohort (Ages 0–14)</div>
-            <div className="cohort-stat">{schoolChildren.toLocaleString()} Students Enrolled</div>
+            <div className="cohort-title">School facilities</div>
+            <div className="cohort-stat">{schoolChildren.toLocaleString()} known capacity · {schools.filter(site => site.occupancy == null).length} unknown</div>
             <p className="cohort-desc">
-              Higher respiration volume per body weight. Inhalation of particulate matter triggers acute airway hyperreactivity and asthmatic exacerbation.
+              School type alone does not provide ages, enrollment, attendance, or individual exposure measurements.
             </p>
           </div>
         </div>
@@ -164,10 +155,10 @@ export default function PopulationRiskView() {
         <div className="cohort-card clinical">
           <div className="cohort-icon"><HeartPulse size={22} /></div>
           <div className="cohort-content">
-            <div className="cohort-title">Clinical &amp; Pulmonary Inpatients</div>
-            <div className="cohort-stat">{hospitalPatients.toLocaleString()} High-Dependency Beds</div>
+            <div className="cohort-title">Hospital facilities</div>
+            <div className="cohort-stat">{hospitalPatients.toLocaleString()} known capacity · {hospitals.filter(site => site.occupancy == null).length} unknown</div>
             <p className="cohort-desc">
-              COPD, cardiovascular, and neonatal ICU units. Requires affirmative HVAC HEPA positive pressure and backup power verification.
+              Hospital type alone does not provide clinical cohorts, admissions, occupied beds, or individual exposure measurements.
             </p>
           </div>
         </div>
@@ -180,6 +171,7 @@ export default function PopulationRiskView() {
           <input
             type="text"
             placeholder="Search facility by name or ID..."
+            aria-label="Search facilities"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -209,7 +201,7 @@ export default function PopulationRiskView() {
 
           <div className="risk-select-wrap">
             <Filter size={13} />
-            <select value={filterRisk} onChange={(e) => setFilterRisk(e.target.value)}>
+            <select aria-label="Filter facility heuristic risk" value={filterRisk} onChange={(e) => setFilterRisk(e.target.value)}>
               <option value="all">All Risk Levels</option>
               <option value="very-high">Very High (≥0.85)</option>
               <option value="high">High (0.65–0.84)</option>
@@ -223,7 +215,7 @@ export default function PopulationRiskView() {
       {/* Facilities Register Table */}
       <div className="facilities-table-panel">
         <div className="table-header-meta">
-          <span className="results-count">Showing {filteredSites.length} of {sites.length} Vulnerable Facilities</span>
+          <span className="results-count">Showing {Math.min(visibleCount, filteredSites.length)} of {filteredSites.length} matching facilities ({sites.length} total)</span>
         </div>
         <div className="table-responsive">
           <table className="facilities-table">
@@ -240,9 +232,9 @@ export default function PopulationRiskView() {
               </tr>
             </thead>
             <tbody>
-              {filteredSites.slice(0, 50).map((s) => {
+              {filteredSites.slice(0, visibleCount).map((s) => {
                 const level = getRiskLevel(s.risk_score)
-                const badgeClass = level === 'very-high' ? 'badge-vh' : level === 'high' ? 'badge-h' : 'badge-m'
+                const badgeClass = riskBadgeClass(level)
 
                 return (
                   <tr key={s.site_id}>
@@ -258,7 +250,7 @@ export default function PopulationRiskView() {
                         {s.type === 'school' ? '🏫 School' : '🏥 Hospital'}
                       </span>
                     </td>
-                    <td><strong>{s.occupancy ? s.occupancy.toLocaleString() : 'N/A'}</strong></td>
+                    <td><strong>{s.occupancy != null ? s.occupancy.toLocaleString() : 'Unknown'}</strong></td>
                     <td>
                       <span className="eta-tag">{s.eta_hours.toFixed(1)} hrs</span>
                     </td>
@@ -266,7 +258,7 @@ export default function PopulationRiskView() {
                       <span className="delta-tag">+{Math.round(s.pm25_delta_ugm3)} µg/m³</span>
                     </td>
                     <td>
-                      <span className={`badge ${badgeClass}`}>{riskLabel(level)} ({s.risk_score.toFixed(2)})</span>
+                      <span className={badgeClass}>{riskLabel(level)} ({s.risk_score.toFixed(2)})</span>
                     </td>
                     <td>
                       <button className="btn-inspect-map" onClick={() => handleInspectMap(s)}>
@@ -277,9 +269,11 @@ export default function PopulationRiskView() {
                   </tr>
                 )
               })}
+              {filteredSites.length === 0 && <tr><td colSpan={8}>No facilities match these filters.</td></tr>}
             </tbody>
           </table>
         </div>
+        {filteredSites.length > visibleCount && <button type="button" className="btn-secondary" onClick={() => setVisibleCount(count => count + 50)}>Show more facilities</button>}
       </div>
     </div>
   )
