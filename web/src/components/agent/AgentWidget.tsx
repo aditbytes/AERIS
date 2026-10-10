@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ArrowRight, ChevronDown, ChevronUp, Flame, ShieldAlert, Users, Zap } from 'lucide-react'
 import { useAeris } from '@/services/dataContext'
 import './AgentWidget.css'
+import { advisoryDeadline } from './advisoryEvidence'
 
 function formatPopK(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
@@ -80,7 +81,7 @@ export default function AgentWidget() {
                 <div className="dir-content">
                   <div className="dir-title-row">
                     <span className="dir-target">{target}</span>
-                    <span className="dir-deadline">⏱ {act.deadline_hours}h</span>
+                    <span className="dir-deadline" title={advisoryDeadline(actions, act.deadline_hours)}>⏱ {act.deadline_hours}h scheduling</span>
                   </div>
                   <p className="dir-action">{act.action}</p>
                 </div>

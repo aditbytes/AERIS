@@ -5,6 +5,7 @@ import type { SiteAction } from '@/types/schemas'
 import './RecommendedActions.css'
 import { actionKey, useActionChecklist } from '@/components/agent/actionChecklist'
 import { buildCsv, downloadText } from '@/components/views/csv'
+import { advisoryDeadline } from '@/components/agent/advisoryEvidence'
 
 interface GroupedDirective {
   actionText: string
@@ -105,8 +106,8 @@ export default function RecommendedActions() {
       return
     }
 
-    const headers = ['Priority', 'Site ID', 'Site Name', 'Recipient', 'Recommendation', 'Deadline Hours', 'Local Checklist', 'Reason']
-    const rows = actions.actions.map(a => [a.priority, a.site_id, siteMap.get(a.site_id)?.name ?? a.site_id, a.who, a.action, a.deadline_hours, checked[actionKey(actions.generated_at, a)] ? 'MARKED LOCALLY' : 'UNMARKED', a.reason])
+    const headers = ['Priority', 'Site ID', 'Site Name', 'Recipient', 'Recommendation', 'Scheduling value and declared reference (not a live countdown)', 'Local Checklist', 'Reason']
+    const rows = actions.actions.map(a => [a.priority, a.site_id, siteMap.get(a.site_id)?.name ?? a.site_id, a.who, a.action, advisoryDeadline(actions, a.deadline_hours), checked[actionKey(actions.generated_at, a)] ? 'MARKED LOCALLY' : 'UNMARKED', a.reason])
     downloadText(`AERIS_Recommendations_${new Date().toISOString().slice(0, 10)}.csv`, buildCsv(headers, rows))
   }
 
@@ -170,7 +171,7 @@ export default function RecommendedActions() {
                   <div className="group-title-wrap">
                     <span className="directive-group-title">{group.title}</span>
                     <span className="directive-meta-sub">
-                      Priority #{group.highestPriority} · Due in {group.earliestDeadline}h
+                      Priority #{group.highestPriority} · Scheduling value {group.earliestDeadline}h
                     </span>
                   </div>
                 </div>
@@ -216,7 +217,7 @@ export default function RecommendedActions() {
                             <div className="action-site-header">
                               <span className="action-site-name">{siteName}</span>
                               <span className="action-site-id">#{item.site_id}</span>
-                              <span className="action-deadline-badge">⏱ {item.deadline_hours}h</span>
+                              <span className="action-deadline-badge" title={advisoryDeadline(actions, item.deadline_hours)}>⏱ {item.deadline_hours}h scheduling</span>
                             </div>
                             <div className="action-who-role">{item.who}</div>
                           </div>
