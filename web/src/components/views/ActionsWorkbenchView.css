@@ -379,3 +379,16 @@
     grid-template-columns: 1fr;
   }
 }
+
+.actions-workbench-view { min-height: 0; min-width: 0; }
+.actions-workbench-view .view-title-group, .actions-workbench-view .fac-main-col { min-width: 0; overflow-wrap: anywhere; }
+.actions-workbench-view .view-actions, .actions-workbench-view .section-header, .actions-workbench-view .panel-header { flex-wrap: wrap; gap: 8px; }
+@media (max-width: 600px) {
+  .actions-workbench-view { padding: 12px; gap: 12px; }
+  .actions-workbench-view .view-header { flex-direction: column; padding: 12px; gap: 12px; }
+  .actions-workbench-view .kpi-val-row, .actions-workbench-view .card-val-row, .actions-workbench-view .fac-who-row, .actions-workbench-view .fac-directive-row, .actions-workbench-view .pop-controls-row, .actions-workbench-view .filter-pills, .actions-workbench-view .filters-row, .actions-workbench-view .feed-item, .actions-workbench-view .settings-actions, .actions-workbench-view .config-row { flex-wrap: wrap; }
+  .actions-workbench-view .pop-kpi-grid, .actions-workbench-view .analytics-kpi-grid, .actions-workbench-view .fires-kpi-grid, .actions-workbench-view .weather-kpi-grid { grid-template-columns: 1fr; }
+  .actions-workbench-view .grap-progress-box { min-width: 0; width: 100%; }
+  .actions-workbench-view select { max-width: 100%; min-width: 0; }
+  .actions-workbench-view .table-responsive { overflow-x: auto; width: 100%; }
+}

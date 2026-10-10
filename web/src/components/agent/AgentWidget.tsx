@@ -17,7 +17,7 @@ export default function AgentWidget() {
   // No data -> '—'; never a placeholder number
   const totalFires = sources?.sources.reduce((acc, s) => acc + s.fire_count, 0)
   const totalFrp   = sources?.sources.reduce((acc, s) => acc + s.total_frp_mw, 0)
-  const exposure   = rankedSites?.exposed_population
+  const exposure   = rankedSites?.exposed_population.data_available === false ? undefined : rankedSites?.exposed_population
   const etaVal     = etaHours != null ? `${etaHours.toFixed(1)}h` : '—'
 
   const topActions = actions?.actions.slice(0, 3) ?? []
@@ -35,15 +35,15 @@ export default function AgentWidget() {
         </div>
         <div className="agent-title-group">
           <span className="agent-title">AERIS Agent</span>
-          <span className="agent-status">● Live Brief</span>
+          <span className="agent-status">Generated advisory</span>
         </div>
       </div>
 
       {/* Headline */}
       <div className="agent-headline-block">
-        <h4 className="agent-headline">Stubble Plume Influx Approaching NCR</h4>
+        <h4 className="agent-headline">Model-informed Recommendations</h4>
         <div className="agent-chips-grid">
-          <span className="agent-chip" title="Total active fire detections across airshed">
+          <span className="agent-chip" title="Fire detections represented by source candidates">
             <Flame size={11} color="#DC2626" />
             <strong>{totalFires ?? '—'}</strong> Fires
           </span>
@@ -51,7 +51,7 @@ export default function AgentWidget() {
             <Zap size={11} color="#EA580C" />
             <strong>{totalFrp != null ? Math.round(totalFrp) : '—'}</strong> MW FRP
           </span>
-          <span className="agent-chip highlight" title="Plume front arrival countdown to receptor communities">
+          <span className="agent-chip highlight" title="Model-relative ETA from the ranked snapshot; not a live countdown">
             ⏱️ ETA <strong>~{etaVal}</strong>
           </span>
           <span
@@ -67,10 +67,10 @@ export default function AgentWidget() {
       {/* Top 3 Prioritized Directives */}
       <div className="agent-top-directives">
         <div className="directives-header">
-          <span className="directives-title">Mandated Interventions (Top 3)</span>
-          <span className="directives-count">{actions?.actions.length ?? 8} Directives</span>
+          <span className="directives-title">Suggested Actions (Top 3)</span>
+          <span className="directives-count">{actions?.actions.length ?? 0} Recommendations</span>
         </div>
-        <ul className="directives-list">
+        <ul className="directives-list" tabIndex={0} aria-label="Suggested actions">
           {topActions.map((act) => {
             // Extract facility name from who
             const target = act.who.split(',')[1]?.trim() || act.who.split(',')[0]?.trim() || act.site_id
@@ -117,7 +117,7 @@ export default function AgentWidget() {
         type="button"
       >
         <ShieldAlert size={14} />
-        View All Protective Actions
+        View All Recommendations
         <ArrowRight size={14} />
       </button>
     </div>

@@ -186,7 +186,7 @@
 .dir-deadline {
   font-size: 9px;
   font-weight: 700;
-  color: #D97706;
+  color: #475569;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -251,3 +251,6 @@
   gap: 6px;
   border-radius: 8px;
 }
+.directives-title, .dir-priority, .dir-deadline { color: #475569; }
+.agent-status { color: #475569; }
+.agent-chip { overflow-wrap: anywhere; }
