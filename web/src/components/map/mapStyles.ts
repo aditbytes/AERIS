@@ -1,6 +1,6 @@
 /**
- * AERIS Geospatial Production Map Styles & 3D Globe Projection Engine
- * Supports ESRI Photorealistic World Imagery Satellite, Carto Dark Matter GIS, Topographic, and 3D Globe.
+ * Existing Esri satellite and CARTO basemaps with a Mercator camera.
+ * The persisted 'globe' preference selects a tilted satellite view.
  */
 
 import type { Map } from 'maplibre-gl'
@@ -8,6 +8,7 @@ import type { BasemapMode } from '@/services/dataContext'
 
 export const SATELLITE_STYLE: any = {
   version: 8,
+  glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
   sources: {
     'esri-satellite': {
       type: 'raster',
@@ -66,8 +67,8 @@ export function isValidSubcontinentCoord(lat: number, lon: number): boolean {
   return (
     typeof lat === 'number' &&
     typeof lon === 'number' &&
-    !isNaN(lat) &&
-    !isNaN(lon) &&
+    Number.isFinite(lat) &&
+    Number.isFinite(lon) &&
     lat >= 6.0 &&
     lat <= 38.0 &&
     lon >= 65.0 &&
@@ -105,13 +106,13 @@ export function applyProjectionAndPitch(map: Map, mode: BasemapMode) {
 }
 
 /**
- * Re-attach official Survey of India boundary layers & Smoke plume corridor.
- * Ensures sovereign territory lines (J&K, Ladakh, PoK) and dispersion corridors remain perfectly rendered.
+ * Re-attach the repository's captured boundary and model corridor layers.
+ * File presence does not establish authoritative boundary provenance.
  */
 export function setupMapLayers(map: Map, mode: BasemapMode) {
   const isDarkOrSat = mode === 'satellite' || mode === 'globe' || mode === 'dark'
 
-  // 1. Official Survey of India boundary layer
+  // 1. Repository boundary overlay
   if (!map.getSource('india-boundary')) {
     map.addSource('india-boundary', {
       type: 'geojson',
@@ -133,7 +134,7 @@ export function setupMapLayers(map: Map, mode: BasemapMode) {
     })
   }
 
-  // Solid official border line
+  // Solid boundary line
   if (!map.getLayer('india-border-line')) {
     map.addLayer({
       id: 'india-border-line',
@@ -237,6 +238,7 @@ export function setupMapLayers(map: Map, mode: BasemapMode) {
       source: 'corridor-eta',
       layout: {
         'text-field': ['get', 'label'],
+        'text-font': ['Open Sans Semibold'],
         'text-size': 9.5,
         'text-offset': [0, 1.2],
         'text-anchor': 'top',

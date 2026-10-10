@@ -3,6 +3,8 @@ import { CheckCircle2, ChevronDown, ChevronRight, FileText, Hospital, School } f
 import { useAeris } from '@/services/dataContext'
 import type { SiteAction } from '@/types/schemas'
 import './RecommendedActions.css'
+import { actionKey, useActionChecklist } from '@/components/agent/actionChecklist'
+import { buildCsv, downloadText } from '@/components/views/csv'
 
 interface GroupedDirective {
   actionText: string
@@ -27,16 +29,7 @@ function getCondensedTitle(action: string, count: number, facilityType: 'school'
 export default function RecommendedActions() {
   const { actions, rankedSites, setShowActionsModal } = useAeris()
 
-  // Initialize checked state from localStorage
-  const [checked, setChecked] = useState<Record<string, boolean>>(() => {
-    try {
-      const saved = localStorage.getItem('aeris_dispatched_actions')
-      if (saved) return JSON.parse(saved)
-    } catch {
-      // Ignore
-    }
-    return { 's_1420-1': true, 's_0306-5': true }
-  })
+  const { checked, toggle: toggleCheck, setMany } = useActionChecklist()
 
   // State to track expanded groups
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
@@ -56,32 +49,8 @@ export default function RecommendedActions() {
     setExpandedReasons(prev => ({ ...prev, [id]: !prev[id] }))
   }
 
-  const toggleCheck = (id: string) => {
-    setChecked(prev => {
-      const next = { ...prev, [id]: !prev[id] }
-      try {
-        localStorage.setItem('aeris_dispatched_actions', JSON.stringify(next))
-      } catch {
-        // Ignore
-      }
-      return next
-    })
-  }
-
   const toggleGroupAll = (groupItems: SiteAction[], allChecked: boolean) => {
-    setChecked(prev => {
-      const next = { ...prev }
-      groupItems.forEach(item => {
-        const id = `${item.site_id}-${item.priority}`
-        next[id] = !allChecked
-      })
-      try {
-        localStorage.setItem('aeris_dispatched_actions', JSON.stringify(next))
-      } catch {
-        // Ignore
-      }
-      return next
-    })
+    setMany(groupItems.map(item => actionKey(actions?.generated_at, item)), !allChecked)
   }
 
   // Lookup map for site names from ranked_sites
@@ -127,7 +96,7 @@ export default function RecommendedActions() {
   }, [actions, siteMap])
 
   const totalActionsCount = actions?.actions.length ?? 0
-  const totalDispatchedCount = (actions?.actions ?? []).filter(a => !!checked[`${a.site_id}-${a.priority}`]).length
+  const totalDispatchedCount = (actions?.actions ?? []).filter(a => !!checked[actionKey(actions?.generated_at, a)]).length
 
   const handleExportCsv = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -136,31 +105,9 @@ export default function RecommendedActions() {
       return
     }
 
-    const headers = ['Priority', 'Site_ID', 'Site_Name', 'Target_Entity', 'Action_Directive', 'Deadline_Hours', 'Status', 'Reason']
-    const rows = actions.actions.map(a => {
-      const id = `${a.site_id}-${a.priority}`
-      const status = checked[id] ? 'DISPATCHED' : 'PENDING'
-      const siteInfo = siteMap.get(a.site_id)
-      return [
-        `#${a.priority}`,
-        `"${a.site_id}"`,
-        `"${(siteInfo?.name ?? a.site_id).replace(/"/g, '""')}"`,
-        `"${a.who.replace(/"/g, '""')}"`,
-        `"${a.action.replace(/"/g, '""')}"`,
-        `${a.deadline_hours}h`,
-        status,
-        `"${a.reason.replace(/"/g, '""')}"`,
-      ].join(',')
-    })
-
-    const csvContent = [headers.join(','), ...rows].join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `AERIS_CPCB_Directives_${new Date().toISOString().slice(0, 10)}.csv`
-    link.click()
-    URL.revokeObjectURL(url)
+    const headers = ['Priority', 'Site ID', 'Site Name', 'Recipient', 'Recommendation', 'Deadline Hours', 'Local Checklist', 'Reason']
+    const rows = actions.actions.map(a => [a.priority, a.site_id, siteMap.get(a.site_id)?.name ?? a.site_id, a.who, a.action, a.deadline_hours, checked[actionKey(actions.generated_at, a)] ? 'MARKED LOCALLY' : 'UNMARKED', a.reason])
+    downloadText(`AERIS_Recommendations_${new Date().toISOString().slice(0, 10)}.csv`, buildCsv(headers, rows))
   }
 
   return (
@@ -173,14 +120,14 @@ export default function RecommendedActions() {
               className="rec-actions-status-pill"
               title={`Showing ${totalActionsCount} field directives across ${groups.length} grouped operation categories`}
             >
-              {totalDispatchedCount}/{totalActionsCount} Dispatched · 2 Directives (8 Sites)
+              {totalDispatchedCount}/{totalActionsCount} marked locally · {groups.length} groups
             </span>
           )}
         </div>
         <button
           className="section-link export-btn"
           onClick={handleExportCsv}
-          title="Download official CSV Action Directives Report"
+          title="Download recommendation CSV with local checklist marks"
           type="button"
         >
           <FileText size={12} />
@@ -188,13 +135,13 @@ export default function RecommendedActions() {
         </button>
       </div>
 
+      <p className="panel-sub">Local review checklist only; no alerts are sent.</p>
       <div className="actions-grouped-scrollable">
         {groups.map((group, gIdx) => {
           const groupKey = `group-${gIdx}`
           const isExpanded = !!expandedGroups[groupKey]
-          const groupCheckedCount = group.items.filter(i => !!checked[`${i.site_id}-${i.priority}`]).length
+          const groupCheckedCount = group.items.filter(i => !!checked[actionKey(actions?.generated_at, i)]).length
           const isAllChecked = groupCheckedCount === group.items.length
-          const isPartiallyChecked = groupCheckedCount > 0 && !isAllChecked
 
           return (
             <div key={groupKey} className="directive-group-card">
@@ -202,17 +149,14 @@ export default function RecommendedActions() {
               <div
                 className="directive-group-header"
                 onClick={() => toggleGroup(groupKey)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleGroup(groupKey); } }}
-                aria-expanded={isExpanded}
               >
                 <div className="directive-header-left">
                   <button
                     type="button"
                     className="group-expand-btn"
                     onClick={(e) => { e.stopPropagation(); toggleGroup(groupKey); }}
-                    aria-label={isExpanded ? 'Collapse directive group' : 'Expand directive group'}
+                    aria-label={`${isExpanded ? 'Collapse' : 'Expand'} recommendation group: ${group.title}`}
+                    aria-expanded={isExpanded}
                   >
                     {isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
                   </button>
@@ -236,7 +180,7 @@ export default function RecommendedActions() {
                     type="button"
                     className={`group-batch-toggle ${isAllChecked ? 'all-done' : ''}`}
                     onClick={() => toggleGroupAll(group.items, isAllChecked)}
-                    title={isAllChecked ? 'Uncheck all in group' : 'Dispatch all in group'}
+                    title={isAllChecked ? 'Unmark all locally in group' : 'Mark all locally in group'}
                   >
                     {isAllChecked && <CheckCircle2 size={13} />}
                     <span>{groupCheckedCount}/{group.items.length} Ready</span>
@@ -248,7 +192,7 @@ export default function RecommendedActions() {
               {isExpanded && (
                 <ul className="directive-sub-items-list">
                   {group.items.map(item => {
-                    const id = `${item.site_id}-${item.priority}`
+                    const id = actionKey(actions?.generated_at, item)
                     const isDone = !!checked[id]
                     const siteInfo = siteMap.get(item.site_id)
                     const siteName = siteInfo?.name ?? item.who.split(',')[1]?.trim() ?? item.site_id
@@ -263,7 +207,7 @@ export default function RecommendedActions() {
                               className="action-checkbox"
                               checked={isDone}
                               onChange={() => toggleCheck(id)}
-                              aria-label={`Dispatch directive for ${siteName}`}
+                              aria-label={`Mark recommendation for ${siteName} locally`}
                             />
                             <span className="checkmark" />
                           </label>
@@ -304,6 +248,7 @@ export default function RecommendedActions() {
             </div>
           )
         })}
+        {groups.length === 0 && <p role="status">No recommendations available.</p>}
       </div>
     </div>
   )

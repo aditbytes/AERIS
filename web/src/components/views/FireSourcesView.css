@@ -405,7 +405,7 @@
 }
 
 .flame-icon.trans {
-  color: #d97706;
+  color: #475569;
 }
 
 .flame-icon.dom {
@@ -430,4 +430,17 @@
   border-radius: 4px;
   background: #f3f4f6;
   color: #4b5563;
+}
+
+.fire-sources-view { min-height: 0; min-width: 0; }
+.fire-sources-view .view-title-group, .fire-sources-view .fac-main-col { min-width: 0; overflow-wrap: anywhere; }
+.fire-sources-view .view-actions, .fire-sources-view .section-header, .fire-sources-view .panel-header { flex-wrap: wrap; gap: 8px; }
+@media (max-width: 600px) {
+  .fire-sources-view { padding: 12px; gap: 12px; }
+  .fire-sources-view .view-header { flex-direction: column; padding: 12px; gap: 12px; }
+  .fire-sources-view .kpi-val-row, .fire-sources-view .card-val-row, .fire-sources-view .fac-who-row, .fire-sources-view .fac-directive-row, .fire-sources-view .pop-controls-row, .fire-sources-view .filter-pills, .fire-sources-view .filters-row, .fire-sources-view .feed-item, .fire-sources-view .settings-actions, .fire-sources-view .config-row { flex-wrap: wrap; }
+  .fire-sources-view .pop-kpi-grid, .fire-sources-view .analytics-kpi-grid, .fire-sources-view .fires-kpi-grid, .fire-sources-view .weather-kpi-grid { grid-template-columns: 1fr; }
+  .fire-sources-view .grap-progress-box { min-width: 0; width: 100%; }
+  .fire-sources-view select { max-width: 100%; min-width: 0; }
+  .fire-sources-view .table-responsive { overflow-x: auto; width: 100%; }
 }

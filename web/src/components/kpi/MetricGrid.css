@@ -100,3 +100,10 @@
     grid-template-columns: 1fr;
   }
 }
+
+.metric-value-row { flex-wrap: wrap; }
+.metric-label { white-space: normal; }
+.aqi-card .metric-label { color: white; }
+.aqi-label-row { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.aqi-card .metric-chart { width: 50px; flex: 0 0 50px; }
+.aqi-card .metric-chart svg { max-width: 100%; height: auto; }

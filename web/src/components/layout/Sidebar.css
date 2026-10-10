@@ -275,12 +275,12 @@
 
 .badge-warning {
   background: #FEF3C7;
-  color: #D97706;
+  color: #475569;
 }
 
 .badge-primary {
   background: #D1FAE5;
-  color: #059669;
+  color: #475569;
 }
 
 .badge-neutral {
@@ -465,4 +465,12 @@
   background: var(--brand-light);
   color: var(--brand-primary);
   border-color: var(--brand-medium);
+}
+
+.brand-sub-title, .sidebar-section-title, .footer-status-label, .sidebar-kbd { color: #475569; }
+.badge-alert { color: #991B1B; }
+.badge-warning { color: #92400E; }
+.footer-status-dot { animation: none; box-shadow: none; }
+@media (max-width: 600px) {
+  .sidebar.expanded { position: fixed; top: 0; left: 0; bottom: 0; width: min(248px, calc(100vw - 48px)); min-width: 0; }
 }

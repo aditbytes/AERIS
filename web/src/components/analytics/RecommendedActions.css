@@ -353,3 +353,15 @@
 .reason-text {
   color: var(--text-primary);
 }
+
+.action-checkbox:focus-visible + .checkmark { outline: 2px solid var(--brand-primary); outline-offset: 3px; }
+.action-row.done { opacity: 1; }
+.directive-meta-sub, .action-site-id, .reason-toggle-btn, .reason-label, .group-expand-btn { color: #475569; }
+.rec-actions-status-pill { color: #166534; }
+@media (max-width: 600px) {
+  .rec-actions .section-header, .directive-group-header, .directive-header-right { flex-wrap: wrap; }
+  .action-site-header { flex-wrap: wrap; }
+  .directive-group-title, .action-who-role { white-space: normal; overflow-wrap: anywhere; }
+  .action-site-id { display: none; }
+  .action-reason-drawer { flex-wrap: wrap; }
+}

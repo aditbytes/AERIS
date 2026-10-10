@@ -15,18 +15,18 @@ export default function WhatIfWeAct() {
 
   const total = exposedPopulation
   const siteCount = rankedSites?.sites.length ?? 0
-  if (!total) {
+  if (total == null) {
     return (
       <div className="whatif card">
         <h3 className="section-title">What If We Act?</h3>
-        <p className="panel-sub">No population is inside the current forecast corridor.</p>
+        <p className="panel-sub">Population estimate unavailable. Population cells are required to compute corridor occupancy.</p>
       </div>
     )
   }
 
   const schoolHosp = Math.round(total * 0.65)
   const allIntervene = Math.round(total * 0.45)
-  const reduction = Math.round((1 - allIntervene / total) * 100)
+  const reduction = 55
 
   const bars: { id: 'none' | 'partial' | 'full'; label: string; icon: string; value: number; color: string; pattern?: string }[] = [
     { id: 'none',    label: 'No Action',         icon: '⚠', value: total,        color: '#E03131' },
@@ -34,20 +34,14 @@ export default function WhatIfWeAct() {
     { id: 'full',    label: 'Full Intervene',    icon: '✓', value: allIntervene, color: '#22734F' },
   ]
 
-  const maxVal = total
+  const maxVal = Math.max(total, 1)
 
   return (
     <div className="whatif card">
       <div className="whatif-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <h3 className="section-title">What If We Act?</h3>
-          <span
-            className="whatif-info-tag"
-            title="35% and 55% reductions are assumed policy scenario multipliers (not atmospheric model outputs). Illustrates potential acute exposure mitigation under prompt intervention."
-            style={{ cursor: 'help', fontSize: '11px', color: 'var(--text-tertiary)' }}
-          >
-            ⓘ
-          </span>
+          <span className="whatif-info-tag">Assumed scenario</span>
         </div>
         <div
           className="whatif-reduction"
@@ -55,12 +49,12 @@ export default function WhatIfWeAct() {
         >
           <span className="reduction-arrow">↓</span>
           <span className="reduction-pct">{reduction}%</span>
-          <span className="reduction-label">Assumed scenario reduction<br/>in acute exposure</span>
+          <span className="reduction-label">Assumed multiplier<br/>not measured effectiveness</span>
         </div>
       </div>
 
       <div className="whatif-pop">
-        Corridor population: <strong>{formatM(total)}</strong> ({siteCount} critical facilities)
+        Corridor population estimate: <strong>{formatM(total)}</strong> ({siteCount} ranked facilities). Assumed reductions: 35% partial, 55% full; no validated intervention effect.
       </div>
 
       <div className="whatif-bars">
@@ -70,6 +64,7 @@ export default function WhatIfWeAct() {
             <button
               key={bar.id}
               className={`bar-col interactive-scenario ${isSelected ? 'active' : ''}`}
+              aria-pressed={isSelected}
               onClick={() => setInterventionScenario(bar.id)}
               title={`Simulate: ${bar.label} (${formatM(bar.value)} exposed)`}
               type="button"

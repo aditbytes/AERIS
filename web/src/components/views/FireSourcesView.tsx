@@ -2,15 +2,14 @@ import { useMemo, useState } from 'react'
 import {
   Download,
   Flame,
-  Layers,
   MapPin,
   Radio,
   Search,
   SlidersHorizontal,
-  Zap,
 } from 'lucide-react'
 import { useAeris } from '@/services/dataContext'
 import './FireSourcesView.css'
+import { buildCsv, downloadText } from './csv'
 
 export default function FireSourcesView() {
   const { sources, setActiveTab, setFlyToLocation } = useAeris()
@@ -19,7 +18,7 @@ export default function FireSourcesView() {
   const [minFrp, setMinFrp] = useState(0)
   const [scopeFilter, setScopeFilter] = useState<'all' | 'india' | 'transboundary'>('all')
 
-  const sourceList = sources?.sources ?? []
+  const sourceList = useMemo(() => sources?.sources ?? [], [sources])
 
   // Metrics
   const totalFrp = useMemo(() => {
@@ -70,30 +69,9 @@ export default function FireSourcesView() {
 
   // Export CSV
   const exportCsv = () => {
-    const headers = ['Cluster ID', 'Territory', 'District', 'State', 'Country', 'Latitude', 'Longitude', 'Hotspots', 'FRP (MW)', 'Confidence', 'Emission Flux', 'Airshed Role']
-    const rows = sourceList.map((s) => [
-      s.id,
-      s.territory || 'india',
-      `"${s.district || ''}"`,
-      `"${s.state || ''}"`,
-      `"${s.country || ''}"`,
-      s.lat,
-      s.lon,
-      s.fire_count,
-      s.total_frp_mw,
-      (s.confidence * 100).toFixed(0) + '%',
-      s.emission_strength.toFixed(2),
-      `"${s.airshed_role || ''}"`,
-    ])
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', `AERIS_VIIRS_Fire_Clusters_${new Date().toISOString().slice(0, 10)}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    const headers = ['Candidate ID', 'Territory', 'District', 'State', 'Country', 'Latitude', 'Longitude', 'Fire Pixels', 'FRP (MW)', 'Heuristic Confidence', 'Heuristic Strength', 'Airshed Role']
+    const rows = filteredSources.map(s => [s.id, s.territory ?? 'unknown', s.district, s.state, s.country, s.lat, s.lon, s.fire_count, s.total_frp_mw, s.confidence, s.emission_strength, s.airshed_role])
+    downloadText(`AERIS_Source_Candidates_${new Date().toISOString().slice(0, 10)}.csv`, buildCsv(headers, rows))
   }
 
   const handleInspectMap = (lat: number, lon: number, name: string) => {
@@ -108,11 +86,11 @@ export default function FireSourcesView() {
         <div className="view-title-group">
           <div className="view-badge">
             <Flame size={14} />
-            <span>NASA FIRMS / VIIRS Active Fire Registry</span>
+            <span>Captured NASA FIRMS thermal detections</span>
           </div>
-          <h1 className="view-title">Agricultural Fire Sources &amp; Hotspot Clusters</h1>
+          <h1 className="view-title">Fire-Derived Source Candidates &amp; Hotspot Clusters</h1>
           <p className="view-subtitle">
-            Satellite thermal anomalies detected by VIIRS NOAA-20 &amp; NOAA-21 (375m resolution) across Punjab &amp; Haryana.
+            Source candidates clustered from captured NASA FIRMS thermal detections. Source classification, confidence, and emission strength are uncalibrated heuristics.
           </p>
         </div>
 
@@ -133,34 +111,34 @@ export default function FireSourcesView() {
             <span className="kpi-unit">MW</span>
           </div>
           <div className="kpi-footer">
-            <span className="kpi-sub">Total thermal radiative energy emitted</span>
+            <span className="kpi-sub">Sum of captured fire radiative power, not pollutant concentration</span>
           </div>
         </div>
 
         <div className="fires-kpi-card">
-          <span className="kpi-label">Active Satellite Hotspots</span>
+          <span className="kpi-label">Captured Satellite Hotspots</span>
           <div className="kpi-val-row">
             <span className="kpi-val">{totalHotspots}</span>
             <span className="kpi-unit">Detections</span>
           </div>
           <div className="kpi-footer">
-            <span className="kpi-sub">Aggregated into {sourceList.length} major plumes</span>
+            <span className="kpi-sub">Aggregated into {sourceList.length} source candidate clusters</span>
           </div>
         </div>
 
         <div className="fires-kpi-card">
-          <span className="kpi-label">High Confidence Ratio</span>
+          <span className="kpi-label">High Heuristic Confidence</span>
           <div className="kpi-val-row">
             <span className="kpi-val">{highConfCount} of {sourceList.length}</span>
             <span className="kpi-unit">({Math.round((highConfCount / Math.max(1, sourceList.length)) * 100)}%)</span>
           </div>
           <div className="kpi-footer">
-            <span className="kpi-sub">VIIRS thermal quality flag &gt; 80%</span>
+            <span className="kpi-sub">Heuristic confidence score ≥ 0.80 (uncalibrated)</span>
           </div>
         </div>
 
         <div className="fires-kpi-card">
-          <span className="kpi-label">Primary Epicenter</span>
+          <span className="kpi-label">Highest Captured Cluster FRP</span>
           <div className="kpi-val-row">
             <span className="kpi-val small">{maxCluster?.id ?? 'N/A'}</span>
           </div>
@@ -179,6 +157,7 @@ export default function FireSourcesView() {
           <input
             type="text"
             placeholder="Search by district, cluster ID, or coordinates..."
+            aria-label="Search source candidates"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -213,7 +192,7 @@ export default function FireSourcesView() {
           <div className="sort-group">
             <SlidersHorizontal size={14} />
             <span>Sort:</span>
-            <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
+            <select aria-label="Sort source candidates" value={sortBy} onChange={(e) => setSortBy(e.target.value as 'frp' | 'count' | 'confidence')}>
               <option value="frp">Radiative Power (FRP)</option>
               <option value="count">Hotspot Count</option>
               <option value="confidence">Confidence %</option>
@@ -224,6 +203,7 @@ export default function FireSourcesView() {
             <span>Min FRP: {minFrp} MW</span>
             <input
               type="range"
+              aria-label="Minimum fire radiative power (MW)"
               min="0"
               max="500"
               step="25"
@@ -247,7 +227,7 @@ export default function FireSourcesView() {
                   <th>Airshed Scope</th>
                   <th>FRP Intensity</th>
                   <th>Hotspots</th>
-                  <th>Sensor Conf.</th>
+                  <th>Heuristic Conf.</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -274,7 +254,7 @@ export default function FireSourcesView() {
                       </td>
                       <td>
                         <span className={`territory-pill ${isTrans ? 'transboundary' : 'india'}`}>
-                          {isTrans ? '🌐 Transboundary' : '🇮🇳 Domestic'}
+                          {isTrans ? '🌐 Transboundary' : s.territory === 'india' ? '🇮🇳 Domestic' : 'Scope unavailable'}
                         </span>
                       </td>
                       <td>
@@ -306,6 +286,7 @@ export default function FireSourcesView() {
                     </tr>
                   )
                 })}
+                {filteredSources.length === 0 && <tr><td colSpan={7}>No source candidates match these filters.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -323,8 +304,8 @@ export default function FireSourcesView() {
               .sort((a, b) => b.total_frp_mw - a.total_frp_mw)
               .slice(0, 8)
               .map((s, idx) => {
-                const maxVal = sourceList[0]?.total_frp_mw || 1
-                const pct = (s.total_frp_mw / maxVal) * 100
+                const maxVal = maxCluster?.total_frp_mw || 1
+                const pct = Math.min(100, (s.total_frp_mw / maxVal) * 100)
                 const isTrans = s.territory === 'transboundary'
 
                 return (
@@ -333,7 +314,7 @@ export default function FireSourcesView() {
                       <span className="rank-num">#{idx + 1}</span>
                       <div className="rank-name-box">
                         <span className="rank-name">{s.district || s.id}</span>
-                        <span className="rank-flag">{isTrans ? '🌐 PK' : '🇮🇳 IN'}</span>
+                        <span className="rank-flag">{s.country || (isTrans ? 'Transboundary' : s.territory === 'india' ? 'India' : 'Unknown')}</span>
                       </div>
                       <span className="rank-frp">{s.total_frp_mw.toFixed(1)} MW</span>
                     </div>
@@ -356,10 +337,10 @@ export default function FireSourcesView() {
           <div className="satellite-info-box">
             <div className="info-title">
               <Radio size={14} />
-              <span>Satellite Sensor Fidelity</span>
+              <span>Captured Feed Limitations</span>
             </div>
             <p className="info-body">
-              Data retrieved from Suomi-NPP &amp; NOAA-20 VIIRS sensors via NASA FIRMS. 375m spatial resolution minimizes cloud and sub-pixel saturation artifacts.
+              NASA FIRMS thermal anomalies support source candidates. Cloud cover and detection limits may omit fires; heuristic confidence is not a calibrated probability or confirmed pollution attribution.
             </p>
           </div>
         </div>

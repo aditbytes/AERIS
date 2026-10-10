@@ -165,7 +165,7 @@
 .live-status-text {
   font-size: 10px;
   font-weight: 700;
-  color: #059669;
+  color: #475569;
   letter-spacing: 0.04em;
 }
 
@@ -258,7 +258,7 @@
 .officer-session-tag {
   font-size: 9px;
   font-weight: 500;
-  color: #059669;
+  color: #475569;
 }
 
 /* Notifications Dropdown */
@@ -368,13 +368,32 @@
 
 .notif-time {
   font-size: 10px;
-  color: #888;
+  color: #475569;
   margin-top: 4px;
 }
 
 @media (max-width: 768px) {
   .header-view-subtitle-pill { display: none; }
-  .header-center { display: none; }
   .officer-session-tag { display: none; }
   .live-status-chip { padding: 4px 8px; }
+}
+
+.header-center { position: relative; min-width: 0; }
+.header-search-submit { border: 0; background: transparent; color: var(--brand-dark); cursor: pointer; padding: 4px; font: inherit; }
+.header-search-feedback { position: absolute; top: 40px; left: 0; padding: 8px 12px; border: 1px solid var(--border-subtle); border-radius: 8px; background: white; color: var(--text-primary); font-size: 12px; max-width: 100%; z-index: 110; overflow-wrap: anywhere; }
+.notif-list { list-style: none; }
+.notif-item { cursor: default; }
+.notif-desc { overflow-wrap: anywhere; }
+.header-title-wrap { min-width: 0; }
+.header-view-title { overflow-wrap: anywhere; }
+@media (max-width: 1200px) { .header-view-subtitle-pill, .officer-session-chip { display: none; } .header { gap: 10px; padding: 0 12px; } }
+@media (max-width: 768px) {
+  .header { flex-wrap: wrap; height: auto; min-height: 56px; padding: 8px; gap: 8px; }
+  .header-left { flex: 1; min-width: 0; }
+  .header-view-title { font-size: 14px; }
+  .header-right { gap: 5px; }
+  .header-center { order: 3; flex-basis: 100%; max-width: none; }
+  .header-search { max-width: none; }
+  .live-status-chip { display: none; }
+  .notif-dropdown { position: fixed; top: 60px; right: 8px; width: min(340px, calc(100vw - 84px)); max-height: calc(100dvh - 76px); overflow-y: auto; }
 }

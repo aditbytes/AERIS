@@ -1,10 +1,9 @@
-/**
- * AERIS Precision Geospatial Thermal Sensor Reticle Engine
- * Replaces cartoon icons with NASA/Aerospace-grade infrared optical sensor reticles,
- * calibrated crosshairs, radar sonar pings, and monospace military telemetry readouts.
- */
+/** Source-candidate markers with escaped feed text and visual FRP tiers, not calibrated attribution. */
 
 import type { Source } from '../../types/schemas'
+import { escapeHtml } from './html'
+
+let markerSequence = 0
 
 export function getThermalSeverity(frp: number): 'severe' | 'high' | 'moderate' {
   if (frp >= 200) return 'severe'
@@ -35,9 +34,12 @@ export function createThermalMarkerElement(
   const el = document.createElement('div')
   el.className = `aeris-sensor-reticle severity-${severity} ${isTransboundary ? 'is-transboundary' : 'is-india'} ${options?.isSelected ? 'is-selected' : ''} ${isPeak ? 'is-peak-cluster' : ''}`
   el.dataset.sourceId = src.id
-  el.dataset.territory = src.territory || 'india'
+  el.dataset.territory = src.territory || 'unknown'
+  el.setAttribute('aria-label', `${src.id}: fire-derived source candidate, ${src.total_frp_mw.toFixed(1)} MW FRP`)
+  el.setAttribute('role', 'button')
+  el.tabIndex = 0
 
-  const gradId = `reticle-grad-${src.id}`
+  const gradId = `reticle-grad-${++markerSequence}`
   const strokeColor = isTransboundary ? '#F59E0B' : '#EF4444'
   const coreFill = isTransboundary ? '#FDE047' : '#FF453A'
 
@@ -48,7 +50,7 @@ export function createThermalMarkerElement(
   }
 
   const frpFormatted = src.total_frp_mw.toFixed(0)
-  const territoryCode = isTransboundary ? '🌐 PK' : '🇮🇳 IN'
+  const territoryCode = isTransboundary ? 'Regional' : src.territory === 'india' ? 'India' : 'Unknown'
 
   el.innerHTML = `
     <div class="reticle-anchor" style="width: ${dims.width}px; height: ${dims.height}px;">
@@ -88,6 +90,7 @@ export function createThermalMarkerElement(
   `
 
   if (options?.onClick) {
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click() } })
     el.addEventListener('click', (e) => {
       e.stopPropagation()
       options.onClick!(e)
@@ -100,22 +103,22 @@ export function createThermalMarkerElement(
 export function createThermalPopupHtml(src: Source): string {
   const isTransboundary = src.territory === 'transboundary'
   const territoryBadge = isTransboundary
-    ? `<span class="t-badge transboundary">🌐 Transboundary Regional Influx</span>`
-    : `<span class="t-badge india">🇮🇳 Domestic Actionable Hotspot</span>`
+    ? `<span class="t-badge transboundary">Regional source candidate</span>`
+    : `<span class="t-badge india">Fire-derived source candidate</span>`
 
-  const district = src.district || 'Unassigned Sector'
-  const locationName = src.location_name || `${district}, ${src.state || 'Punjab'}`
-  const airshedRole = src.airshed_role || 'Upwind thermal emission advecting downwind into Delhi NCR airshed.'
+  const district = src.district || 'District unavailable'
+  const locationName = src.location_name || src.state || 'Location name unavailable'
+  const airshedRole = src.airshed_role || 'No causal source attribution established. Clustering confidence and emission proxy are uncalibrated heuristics.'
 
   return `
     <div class="aeris-sensor-popup-card">
       <div class="sensor-popup-head">
         <div class="sensor-meta-row">
-          <span class="sensor-id-mono">VIIRS // ${src.id}</span>
+          <span class="sensor-id-mono">${escapeHtml(src.id)}</span>
           ${territoryBadge}
         </div>
-        <div class="sensor-district-title">${district}</div>
-        <div class="sensor-coords-sub">${src.lat.toFixed(4)}°N, ${src.lon.toFixed(4)}°E • ${locationName}</div>
+        <div class="sensor-district-title">${escapeHtml(district)}</div>
+        <div class="sensor-coords-sub">${src.lat.toFixed(4)}°N, ${src.lon.toFixed(4)}°E • ${escapeHtml(locationName)}</div>
       </div>
 
       <div class="sensor-telemetry-grid">
@@ -125,14 +128,14 @@ export function createThermalPopupHtml(src: Source): string {
         </div>
         <div class="telemetry-block">
           <span class="block-lbl">Hotspots Count</span>
-          <span class="block-val">${src.fire_count} VIIRS Pixels</span>
+          <span class="block-val">${src.fire_count} detections</span>
         </div>
         <div class="telemetry-block">
-          <span class="block-lbl">Sensor Confidence</span>
-          <span class="block-val">${(src.confidence * 100).toFixed(0)}% (NOAA-21)</span>
+          <span class="block-lbl">Clustering confidence (heuristic)</span>
+          <span class="block-val">${(src.confidence * 100).toFixed(0)}% (uncalibrated)</span>
         </div>
         <div class="telemetry-block">
-          <span class="block-lbl">Plume Emission Flux</span>
+          <span class="block-lbl">Normalised emission proxy</span>
           <span class="block-val">${(src.emission_strength * 100).toFixed(0)}% Intensity</span>
         </div>
       </div>
@@ -140,9 +143,9 @@ export function createThermalPopupHtml(src: Source): string {
       <div class="sensor-airshed-intel">
         <div class="intel-header">
           <span class="intel-dot"></span>
-          <span class="intel-title">Atmospheric Airshed Impact</span>
+          <span class="intel-title">Source attribution limits</span>
         </div>
-        <p class="intel-body">${airshedRole}</p>
+        <p class="intel-body">${escapeHtml(airshedRole)}</p>
       </div>
     </div>
   `

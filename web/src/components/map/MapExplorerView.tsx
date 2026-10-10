@@ -1,20 +1,7 @@
-/**
- * MapExplorerView.tsx — Full-Featured GIS Map Explorer for AERIS
- *
- * Capabilities:
- *  - Full viewport interactive MapLibre GL map
- *  - Smooth, unrestricted zoom out down to zoom 2.8 (entire subcontinent and Asia)
- *  - Official Survey of India (SOI) sovereign boundary with PoK, J&K, Ladakh & Indira Col
- *  - Camera presets: Full India (SOI), Smoke Corridor, Punjab Fire Hotspots, Delhi NCR, J&K & Ladakh
- *  - Time Horizon controller with live auto-play animation (0h -> 1h -> 2h -> 3h)
- *  - Layer toggles: Fire Clusters, Smoke Plumes, Schools, Hospitals, Live AQI Stations, Wind, SOI Border
- *  - Quick city search & fly-to (Delhi, Chandigarh, Amritsar, Srinagar, Leh, etc.)
- *  - Interactive site/fire inspector drawer with action execution
- *  - SVG fallback with complete SOI crown and responsive vectors
- */
+/** Map explorer: feed layers, forecast-relative bands, camera controls and real-geometry fallback. */
 
-import { useEffect, useRef, useState, useMemo } from 'react'
-import { Map, Marker, Popup, setWorkerUrl, type GeoJSONSource } from 'maplibre-gl'
+import { useEffect, useRef, useState, lazy, Suspense } from 'react'
+import { Map, Marker, setWorkerUrl } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import {
@@ -30,9 +17,13 @@ import {
   Zap,
 } from 'lucide-react'
 import { useAeris, type TimeHorizon } from '@/services/dataContext'
-import { getRiskLevel, riskLabel, type CorridorBandProperties, type RankedSite } from '@/types/schemas'
+import { getRiskLevel, riskLabel, type RankedSite } from '@/types/schemas'
 import { createThermalMarkerElement } from './thermalMarker'
 import { getStyleForMode, setupMapLayers, applyProjectionAndPitch, isValidSubcontinentCoord } from './mapStyles'
+import HeatmapControls from './HeatmapControls'
+import { useObservationHeatmap } from './useObservationHeatmap'
+import { useScientificLayers } from './useScientificLayers'
+const SvgFallbackMap = lazy(() => import('./SvgFallbackMap'))
 import './MapExplorerView.css'
 
 try {
@@ -40,15 +31,6 @@ try {
 } catch {
   // Worker already set
 }
-
-// Preset camera bookmarks
-const CAMERA_PRESETS = [
-  { id: 'corridor', name: '🎯 Smoke Corridor',    center: [76.5, 30.0] as [number, number], zoom: 6.8 },
-  { id: 'punjab',   name: '🔥 Punjab Hotspots',   center: [75.2, 31.2] as [number, number], zoom: 8.4 },
-  { id: 'delhi',    name: '📍 Delhi NCR Receptors',center: [77.2, 28.6] as [number, number], zoom: 9.8 },
-  { id: 'kashmir',  name: '🏔️ J&K & Ladakh (SOI)',center: [76.0, 34.2] as [number, number], zoom: 6.4 },
-  { id: 'india',    name: '🇮🇳 Full India (SOI)',  center: [78.9, 22.8] as [number, number], zoom: 4.4 },
-]
 
 interface InspectorData {
   type: 'fire' | 'school' | 'hospital' | 'station'
@@ -71,14 +53,15 @@ export default function MapExplorerView() {
     corridor,
     rankedSites,
     aqi,
+    wind,
+    loading,
+    feedErrors,
     timeHorizon,
     setTimeHorizon,
-    setActiveTab,
     setShowActionsModal,
     setSelectedSiteId,
     exposedPopulation,
     etaHours,
-    interventionScenario,
     basemapMode,
     setBasemapMode,
     flyToLocation,
@@ -108,6 +91,7 @@ export default function MapExplorerView() {
     if (!isPlaying) return
     const horizons: TimeHorizon[] = [0, 2, 4, 8, 24]
     const interval = setInterval(() => {
+      if (document.hidden) return
       setTimeHorizon((prev) => {
         const curIdx = horizons.indexOf(prev)
         const nextIdx = (curIdx + 1) % horizons.length
@@ -117,6 +101,8 @@ export default function MapExplorerView() {
     return () => clearInterval(interval)
   }, [isPlaying, setTimeHorizon])
 
+  const initialMode = useRef(basemapMode)
+  const appliedStyleMode = useRef(basemapMode)
   // ── 1. Initialize MapLibre ──────────────────────────────────────────────────
   useEffect(() => {
     if (!mapContainerRef.current || mapInitRef.current || !webGlSupported) return
@@ -125,15 +111,15 @@ export default function MapExplorerView() {
     try {
       const map = new Map({
         container: mapContainerRef.current,
-        style: getStyleForMode(basemapMode),
+        style: getStyleForMode(initialMode.current),
         center: [76.5, 30.0],
         zoom: 6.8,
         minZoom: 3.8,   // Constrained bounds to South Asia / Indian subcontinent
         maxZoom: 18,    // High resolution facility & plume inspection
         maxBounds: [[58.0, 5.0], [100.0, 39.0]],
-        pitch: basemapMode === 'globe' ? 32 : 0,
-        bearing: basemapMode === 'globe' ? -6 : 0,
-        attributionControl: false,
+        pitch: initialMode.current === 'globe' ? 32 : 0,
+        bearing: initialMode.current === 'globe' ? -6 : 0,
+        attributionControl: { compact: true },
       })
 
       map.on('error', (e) => {
@@ -147,8 +133,8 @@ export default function MapExplorerView() {
       mapRef.current = map
 
       map.on('load', () => {
-        setupMapLayers(map, basemapMode)
-        applyProjectionAndPitch(map, basemapMode)
+        setupMapLayers(map, initialMode.current)
+        applyProjectionAndPitch(map, initialMode.current)
       })
     } catch (err) {
       console.warn('[AERIS MapExplorer] Constructor failed:', err)
@@ -170,38 +156,23 @@ export default function MapExplorerView() {
 
     map.flyTo({
       center: [flyToLocation.lon, flyToLocation.lat],
-      zoom: flyToLocation.zoom || 10.5,
+      zoom: flyToLocation.zoom ?? 10.5,
       speed: 1.3,
       curve: 1.4,
     })
   }, [flyToLocation, webGlSupported])
 
-  // ── 1b. Dynamically switch basemap style & 3D globe projection ─────────────
+  // Change styles only when the basemap changes, never when a layer toggles.
   useEffect(() => {
     const map = mapRef.current
     if (!map || !webGlSupported) return
-
-    map.setStyle(getStyleForMode(basemapMode))
-    const onStyleLoad = () => {
-      setupMapLayers(map, basemapMode)
-      applyProjectionAndPitch(map, basemapMode)
-
-      if (map.getLayer('india-border-line')) {
-        map.setLayoutProperty('india-border-line', 'visibility', showSoiBorder ? 'visible' : 'none')
-        map.setLayoutProperty('india-border-halo', 'visibility', showSoiBorder ? 'visible' : 'none')
-      }
-      if (map.getLayer('plume-fill')) {
-        map.setLayoutProperty('plume-fill', 'visibility', showPlume ? 'visible' : 'none')
-      }
-      if (map.getLayer('plume-centerline')) {
-        map.setLayoutProperty('plume-centerline', 'visibility', showPlume ? 'visible' : 'none')
-      }
-      if (map.getLayer('plume-line')) {
-        map.setLayoutProperty('plume-line', 'visibility', showPlume ? 'visible' : 'none')
-      }
-    }
+    if (appliedStyleMode.current === basemapMode) return
+    appliedStyleMode.current = basemapMode
+    const onStyleLoad = () => applyProjectionAndPitch(map, basemapMode)
     map.once('style.load', onStyleLoad)
-  }, [basemapMode, webGlSupported, showSoiBorder, showPlume])
+    map.setStyle(getStyleForMode(basemapMode), { diff: false })
+    return () => { map.off('style.load', onStyleLoad) }
+  }, [basemapMode, webGlSupported])
 
   // Automatically trigger map.resize() whenever container bounds resize
   useEffect(() => {
@@ -213,62 +184,15 @@ export default function MapExplorerView() {
     return () => ro.disconnect()
   }, [])
 
-  // ── 2. Update corridor GeoJSON when timeHorizon changes ──────────────────
+  const heatmap = useObservationHeatmap(aqi, mapRef, webGlSupported)
+  useScientificLayers(mapRef, { mode: basemapMode, corridor, horizon: timeHorizon, heatmap: heatmap.data, heatmapEnabled: heatmap.enabled, opacity: heatmap.opacity, showPlume, showBorder: showSoiBorder, supported: webGlSupported })
+  const scopedSources = (sources?.sources ?? []).filter(s => isValidSubcontinentCoord(s.lat, s.lon) && (fireScopeFilter === 'all' || s.territory === fireScopeFilter))
+
   useEffect(() => {
-    const map = mapRef.current
-    if (!map || !corridor || !webGlSupported) return
-
-    const applyData = () => {
-      const source = map.getSource('corridor') as GeoJSONSource | undefined
-      if (!source) { setTimeout(applyData, 80); return }
-
-      const filtered = {
-        ...corridor,
-        features: corridor.features.filter(f => {
-          if (f.properties.kind === 'centerline') return true
-          const p = f.properties as CorridorBandProperties
-          return p.hour_from <= timeHorizon
-        }),
-      }
-      source.setData(filtered as Parameters<GeoJSONSource['setData']>[0])
-    }
-    applyData()
-  }, [corridor, timeHorizon, webGlSupported])
-
-  // ── 2b. Adjust plume visual intensity based on What-If scenario ─────────
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map || !webGlSupported) return
-
-    const updateLayer = () => {
-      if (!map.getLayer('plume-fill')) {
-        setTimeout(updateLayer, 100)
-        return
-      }
-
-      const opacity = interventionScenario === 'full' ? 0.38
-        : interventionScenario === 'partial' ? 0.62
-        : 0.90
-
-      map.setPaintProperty('plume-fill', 'fill-opacity', opacity)
-    }
-    updateLayer()
-  }, [interventionScenario, webGlSupported])
-
-  // ── 3. Toggle layer visibility ───────────────────────────────────────────
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map || !webGlSupported) return
-
-    if (map.getLayer('india-border-line')) {
-      map.setLayoutProperty('india-border-line', 'visibility', showSoiBorder ? 'visible' : 'none')
-      map.setLayoutProperty('india-border-halo', 'visibility', showSoiBorder ? 'visible' : 'none')
-    }
-    if (map.getLayer('plume-fill')) {
-      map.setLayoutProperty('plume-fill', 'visibility', showPlume ? 'visible' : 'none')
-      map.setLayoutProperty('plume-centerline', 'visibility', showPlume ? 'visible' : 'none')
-    }
-  }, [showSoiBorder, showPlume, webGlSupported])
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') { setIsFullscreen(false); setIsLayerPanelOpen(false); setIsRegionsOpen(false); setSelectedFeature(null) } }
+    window.addEventListener('keydown', escape)
+    return () => window.removeEventListener('keydown', escape)
+  }, [])
 
   // ── 4. Render all interactive markers ────────────────────────────────────
   useEffect(() => {
@@ -306,19 +230,17 @@ export default function MapExplorerView() {
             setSelectedFeature({
               type: 'fire',
               title: `${src.district || src.type.replace(/_/g, ' ')} (${src.id})`,
-              subtitle: src.location_name || (isTransboundary ? 'Transboundary Regional Airshed Influx' : 'Domestic Stubble Burning Cluster'),
+              subtitle: src.location_name || 'Fire-derived source candidate; classification unconfirmed',
               coords: [src.lon, src.lat],
               metrics: [
                 { label: 'Radiative Power (FRP)', value: `${src.total_frp_mw.toFixed(1)} MW` },
                 { label: 'Detected Fires', value: `${src.fire_count} hotspots` },
-                { label: 'Territory Scope', value: isTransboundary ? '🌐 Transboundary (Pakistan)' : '🇮🇳 Domestic (India)' },
-                { label: 'Detection Confidence', value: `${(src.confidence * 100).toFixed(0)}% (VIIRS SNPP/NOAA-21)` },
-                { label: 'Plume Emission Flux', value: `${(src.emission_strength * 100).toFixed(0)}% intensity` },
+                { label: 'Territory Scope', value: src.territory ?? 'Unavailable' },
+                { label: 'Detection Confidence', value: `${(src.confidence * 100).toFixed(0)}% heuristic score (uncalibrated)` },
+                { label: 'Normalised emission proxy', value: `${(src.emission_strength * 100).toFixed(0)}% intensity` },
                 { label: 'District / Sector', value: src.district || 'Unassigned' },
               ],
-              actionText: isTransboundary
-                ? 'Transboundary Influx: High-altitude smoke trajectory entering Indian airspace via NW 315° winds. Regional airshed modeling alert active.'
-                : 'Actionable Domestic Source: Ground enforcement & drone misting suppression deployment recommended for local district administration.',
+              actionText: 'Candidate derived from fire clustering. Thermal detection does not confirm pollution attribution, land use, or measured emissions.',
             })
           },
         })
@@ -336,12 +258,10 @@ export default function MapExplorerView() {
     // 2. Sensitive Receptor Facilities (Schools & Hospitals)
     if (rankedSites) {
       rankedSites.sites
-        .filter(site => isValidSubcontinentCoord(site.lat, site.lon))
+        .filter(site => isValidSubcontinentCoord(site.lat, site.lon) && (site.type === 'school' ? showSchools : showHospitals))
         .slice(0, 12)
         .forEach((site: RankedSite) => {
           const isSchool = site.type === 'school'
-          if (isSchool && !showSchools) return
-          if (!isSchool && !showHospitals) return
 
           const riskLvl = getRiskLevel(site.risk_score)
           const riskText = riskLabel(riskLvl)
@@ -353,6 +273,10 @@ export default function MapExplorerView() {
           `
           el.title = `${site.name} (${riskText} Risk)`
 
+          el.setAttribute('role', 'button')
+          el.tabIndex = 0
+          el.setAttribute('aria-label', el.title)
+          el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click() } })
           el.addEventListener('click', (e) => {
             e.stopPropagation()
             setSelectedSiteId(site.site_id)
@@ -363,9 +287,9 @@ export default function MapExplorerView() {
               coords: [site.lon, site.lat],
               metrics: [
                 { label: 'Risk Priority', value: riskText },
-                { label: 'Plume Arrival ETA', value: `~ ${site.eta_hours.toFixed(1)}h` },
-                { label: 'Risk Score', value: `${(site.risk_score * 100).toFixed(0)}%` },
-                { label: 'Forecast Peak PM2.5', value: `+${site.pm25_delta_ugm3.toFixed(0)} µg/m³` },
+                { label: 'Forecast-relative model ETA', value: `~ ${site.eta_hours.toFixed(1)}h` },
+                { label: 'Uncalibrated relative score', value: `${(site.risk_score * 100).toFixed(0)}%` },
+                { label: 'Modelled band peak PM2.5', value: `+${site.pm25_delta_ugm3.toFixed(0)} µg/m³` },
               ],
               actionText: isSchool
                 ? 'Transition morning assembly indoors, verify HVAC filtration, distribute certified N95 masks.'
@@ -447,20 +371,24 @@ export default function MapExplorerView() {
           el.title = `${cluster.name}: AQI ${aqiVal}`
         }
 
-        el.addEventListener('click', (e) => {
+        el.setAttribute('role', 'button')
+          el.tabIndex = 0
+          el.setAttribute('aria-label', el.title)
+          el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click() } })
+          el.addEventListener('click', (e) => {
           e.stopPropagation()
           setSelectedFeature({
             type: 'station',
             title: cluster.count > 1 ? `${cluster.name} (+${cluster.count - 1} nearby sensors)` : cluster.name,
-            subtitle: `Live Ground Station Cluster (${cluster.count} sensor${cluster.count > 1 ? 's' : ''})`,
+            subtitle: `Reported ground station cluster (${cluster.count} sensor${cluster.count > 1 ? 's' : ''})`,
             coords: [cluster.lon, cluster.lat],
             metrics: [
               { label: 'Peak Observed AQI', value: `${aqiVal}` },
-              { label: 'Airshed Status', value: aqiVal > 300 ? 'Severe / Hazardous' : aqiVal > 200 ? 'Very Poor' : 'Moderate' },
+              { label: 'Airshed Status', value: aqiVal > 300 ? 'Reported AQI >300' : aqiVal > 200 ? 'Reported AQI >200' : 'Reported AQI ≤200' },
               { label: 'Monitored Sensors', value: `${cluster.count} active sensor${cluster.count > 1 ? 's' : ''}` },
               { label: 'Cluster Center', value: `${cluster.lat.toFixed(3)}°N, ${cluster.lon.toFixed(3)}°E` },
             ],
-            actionText: 'Ground telemetry verifying continuous particulate concentration and transboundary advection.',
+            actionText: 'Reported station AQI does not establish source attribution or model validation. Individual observation times and sources are available in the PM2.5 layer.',
           })
         })
 
@@ -471,7 +399,8 @@ export default function MapExplorerView() {
         markersRef.current.push(marker)
       })
     }
-  }, [sources, rankedSites, aqi, showFires, fireScopeFilter, showSchools, showHospitals, showStations, webGlSupported, setSelectedSiteId, selectedFeature?.title])
+    return () => { markersRef.current.forEach(m => m.remove()); markersRef.current = [] }
+  }, [sources, rankedSites, aqi, showFires, fireScopeFilter, showSchools, showHospitals, showStations, webGlSupported, setSelectedSiteId, selectedFeature?.title, selectedFeature?.type])
 
   // ── Fly to selected preset ───────────────────────────────────────────────
   const flyToPreset = (center: [number, number], zoom: number) => {
@@ -485,14 +414,14 @@ export default function MapExplorerView() {
 
   return (
     <div className={`map-explorer-container ${isFullscreen ? 'fullscreen' : ''}`}>
+      <HeatmapControls data={heatmap.data} enabled={heatmap.enabled} onToggle={heatmap.setEnabled} opacity={heatmap.opacity} onOpacity={heatmap.setOpacity} onFit={webGlSupported ? heatmap.fit : undefined} bounds={webGlSupported ? heatmap.bounds : null} loading={loading} error={feedErrors.aqi} />
+      <p className="map-science-note">Uncalibrated model corridors · forecast start: {corridor?.forecast_start ?? 'unavailable'}. Time controls select cumulative bands; full centrelines and ETA markers remain as forecast context. Station observations are separate from modelled band peaks. Facility markers show up to 12 ranked sites after filtering; the facility table contains the full list.</p>
       {/* ── Map Canvas Stage with Floating HUD Controls ───────────────────── */}
       <div className="explorer-stage" onClick={() => isRegionsOpen && setIsRegionsOpen(false)}>
         {webGlSupported ? (
           <div ref={mapContainerRef} className="explorer-canvas" />
         ) : (
-          <div className="explorer-fallback">
-            <div className="fallback-note">Interactive WebGL canvas loaded via vector rendering engine.</div>
-          </div>
+          <Suspense fallback={<p role="status">Loading static map…</p>}><SvgFallbackMap sources={showFires ? sources : null} rankedSites={rankedSites ? { ...rankedSites, sites: rankedSites.sites.filter(s => s.type === 'school' ? showSchools : showHospitals) } : null} scopeFilter={fireScopeFilter} corridor={showPlume ? corridor : null} horizon={timeHorizon} heatmap={heatmap.data} heatmapEnabled={heatmap.enabled} opacity={heatmap.opacity} /></Suspense>
         )}
 
         {/* ── Top Floating Command HUD Capsule ────────────────────────────── */}
@@ -505,7 +434,7 @@ export default function MapExplorerView() {
                 setIsRegionsOpen(false)
                 setFireScopeFilter(prev => prev === 'india' ? 'all' : 'india')
               }}
-              title={fireScopeFilter === 'india' ? "Viewing India CPCB Scope — click to show Full Regional Airshed" : "Viewing Full Regional Airshed — click to filter to India CPCB Scope"}
+              title={fireScopeFilter === 'india' ? "Viewing India source scope — click to show Full Regional Airshed" : "Viewing Full Regional Airshed — click to filter to India source scope"}
               type="button"
             >
               <span>{fireScopeFilter === 'india' ? '🇮🇳 India Scope' : '🌐 Full Airshed'}</span>
@@ -516,7 +445,7 @@ export default function MapExplorerView() {
                 setIsRegionsOpen(false)
                 flyToPreset([78.9, 23.5], 4.2)
               }}
-              title="Fit Entire India (Survey of India Sovereign Boundary with PoK/Ladakh)"
+              title="Fit Entire India (repository boundary with PoK/Ladakh)"
             >
               <span>🇮🇳 All India</span>
             </button>
@@ -557,7 +486,7 @@ export default function MapExplorerView() {
                     <span className="dropdown-icon">🔥</span>
                     <div className="dropdown-text">
                       <strong>Punjab Hotspots</strong>
-                      <small>Stubble fire source cluster</small>
+                      <small>Source candidate region</small>
                     </div>
                   </button>
                   <button
@@ -582,8 +511,8 @@ export default function MapExplorerView() {
                   >
                     <span className="dropdown-icon">🏔️</span>
                     <div className="dropdown-text">
-                      <strong>J&K & Ladakh (SOI)</strong>
-                      <small>Official northern sovereign territories</small>
+                      <strong>J&K & Ladakh</strong>
+                      <small>Northern regional view</small>
                     </div>
                   </button>
                 </div>
@@ -606,10 +535,10 @@ export default function MapExplorerView() {
             <button
               className={`hud-basemap-btn ${basemapMode === 'globe' ? 'active' : ''}`}
               onClick={() => setBasemapMode('globe')}
-              title="3D Spherical Earth Globe Projection"
+              title="Mercator satellite perspective, 32 degree tilt"
               type="button"
             >
-              <span>🪐 3D Globe</span>
+              <span>🪐 Tilted satellite</span>
             </button>
             <button
               className={`hud-basemap-btn ${basemapMode === 'dark' ? 'active' : ''}`}
@@ -646,6 +575,7 @@ export default function MapExplorerView() {
               {([0, 2, 4, 8, 24] as TimeHorizon[]).map(h => (
                 <button
                   key={h}
+                  aria-pressed={timeHorizon === h}
                   className={`hud-time-pill ${timeHorizon === h ? 'active' : ''}`}
                   onClick={() => {
                     setIsPlaying(false)
@@ -653,7 +583,7 @@ export default function MapExplorerView() {
                   }}
                   type="button"
                 >
-                  {h === 0 ? 'Now' : `+${h}h`}
+                  {h === 0 ? 'Start' : `+${h}h`}
                 </button>
               ))}
             </div>
@@ -723,8 +653,8 @@ export default function MapExplorerView() {
                   className={`layer-basemap-card ${basemapMode === 'globe' ? 'active' : ''}`}
                   onClick={() => setBasemapMode('globe')}
                 >
-                  <strong>🪐 3D Globe</strong>
-                  <small>Earth sphere + 42° tilt</small>
+                  <strong>🪐 Tilted satellite</strong>
+                  <small>Mercator · 32° tilt</small>
                 </button>
                 <button
                   type="button"
@@ -756,11 +686,9 @@ export default function MapExplorerView() {
                     />
                     <span className="layer-badge-icon">🔥</span>
                     <div className="layer-info">
-                      <span className="layer-name">Thermal Fire Hotspots</span>
+                      <span className="layer-name">Fire-derived source candidates</span>
                       <span className="layer-desc">
-                        {fireScopeFilter === 'india' ? '6 domestic clusters • 156 fires (894 MW)'
-                          : fireScopeFilter === 'transboundary' ? '4 transboundary clusters • 59 fires (384 MW)'
-                          : '10 regional clusters • 215 fires (1,275 MW)'}
+                        {scopedSources.length} source candidates · {scopedSources.reduce((sum, s) => sum + s.fire_count, 0)} detections · {scopedSources.reduce((sum, s) => sum + s.total_frp_mw, 0).toFixed(1)} MW FRP
                       </span>
                     </div>
                   </label>
@@ -772,7 +700,7 @@ export default function MapExplorerView() {
                         onClick={() => setFireScopeFilter('all')}
                         title="Show all regional fires (Domestic + Transboundary)"
                       >
-                        All (10)
+                        All ({sources?.sources.length ?? 0})
                       </button>
                       <button
                         type="button"
@@ -780,7 +708,7 @@ export default function MapExplorerView() {
                         onClick={() => setFireScopeFilter('india')}
                         title="Show domestic Indian fires only (CPCB Focus)"
                       >
-                        🇮🇳 India (6)
+                        🇮🇳 India ({sources?.sources.filter(s => s.territory === 'india').length ?? 0})
                       </button>
                       <button
                         type="button"
@@ -788,7 +716,7 @@ export default function MapExplorerView() {
                         onClick={() => setFireScopeFilter('transboundary')}
                         title="Show transboundary upwind fires only (Pakistan Influx)"
                       >
-                        🌐 Transboundary (4)
+                        🌐 Transboundary ({sources?.sources.filter(s => s.territory === 'transboundary').length ?? 0})
                       </button>
                     </div>
                   )}
@@ -802,8 +730,8 @@ export default function MapExplorerView() {
                   />
                   <span className="layer-badge-icon" style={{ color: '#DC2626' }}>🟥</span>
                   <div className="layer-info">
-                    <span className="layer-name">PM2.5 Plume Footprint</span>
-                    <span className="layer-desc">Gaussian dispersion plume (0h–3h)</span>
+                    <span className="layer-name">Modelled plume footprint</span>
+                    <span className="layer-desc">Uncalibrated baseline · forecast-relative bands</span>
                   </div>
                 </label>
 
@@ -816,7 +744,7 @@ export default function MapExplorerView() {
                   <span className="layer-badge-icon">🏫</span>
                   <div className="layer-info">
                     <span className="layer-name">Sensitive Schools</span>
-                    <span className="layer-desc">440+ educational institutions</span>
+                    <span className="layer-desc">{rankedSites?.sites.filter(s => s.type === 'school').length ?? 0} ranked schools; map shows first 12 sites</span>
                   </div>
                 </label>
 
@@ -829,7 +757,7 @@ export default function MapExplorerView() {
                   <span className="layer-badge-icon">🏥</span>
                   <div className="layer-info">
                     <span className="layer-name">Hospitals & Clinics</span>
-                    <span className="layer-desc">50+ healthcare facilities</span>
+                    <span className="layer-desc">{rankedSites?.sites.filter(s => s.type === 'hospital').length ?? 0} ranked hospitals; map shows first 12 sites</span>
                   </div>
                 </label>
 
@@ -841,8 +769,8 @@ export default function MapExplorerView() {
                   />
                   <span className="layer-badge-icon">📡</span>
                   <div className="layer-info">
-                    <span className="layer-name">Live Ground AQI Sensors</span>
-                    <span className="layer-desc">60 continuous monitoring stations</span>
+                    <span className="layer-name">Reported AQI stations</span>
+                    <span className="layer-desc">{aqi?.stations.length ?? 0} station records; missing AQI omitted</span>
                   </div>
                 </label>
 
@@ -854,8 +782,8 @@ export default function MapExplorerView() {
                   />
                   <span className="layer-badge-icon">🟩</span>
                   <div className="layer-info">
-                    <span className="layer-name">Survey of India Boundary</span>
-                    <span className="layer-desc">Official sovereign border (PoK & Ladakh)</span>
+                    <span className="layer-name">Repository boundary</span>
+                    <span className="layer-desc">Captured boundary overlay; see data provenance</span>
                   </div>
                 </label>
               </div>
@@ -864,14 +792,14 @@ export default function MapExplorerView() {
               <div className="layer-telemetry-box">
                 <div className="telem-row">
                   <span className="telem-lbl">Wind Trajectory:</span>
-                  <span className="telem-val">💨 NW → SE (315° @ 18 km/h)</span>
+                  <span className="telem-val">{wind?.points[0]?.hours[0] ? `${wind.points[0].hours[0].dir_from_deg.toFixed(0)}° from · ${wind.points[0].hours[0].speed_ms.toFixed(1)} m/s (first forecast grid/hour)` : 'Unavailable'}</span>
                 </div>
                 <div className="telem-row">
-                  <span className="telem-lbl">Delhi NCR ETA:</span>
+                  <span className="telem-lbl">Minimum ranked-site ETA:</span>
                   <span className="telem-val">{etaHours != null ? `~ ${etaHours.toFixed(1)}h` : '—'}</span>
                 </div>
                 <div className="telem-row">
-                  <span className="telem-lbl">Potentially Exposed:</span>
+                  <span className="telem-lbl">Population in model corridor:</span>
                   <span className="telem-val">{exposedPopulation != null ? `${(exposedPopulation / 1000).toFixed(0)}K residents` : '—'}</span>
                 </div>
               </div>
@@ -915,7 +843,7 @@ export default function MapExplorerView() {
               <div className="inspector-action-card">
                 <div className="action-card-title">
                   <Shield size={14} color="#166534" />
-                  <span>Recommended Protective Intervention</span>
+                  <span>Advisory context (not dispatched)</span>
                 </div>
                 <p className="action-card-text">{selectedFeature.actionText}</p>
                 <button
@@ -923,7 +851,7 @@ export default function MapExplorerView() {
                   onClick={() => setShowActionsModal(true)}
                 >
                   <Zap size={14} />
-                  <span>Execute Directives</span>
+                  <span>Review proposed actions</span>
                 </button>
               </div>
             )}
@@ -932,13 +860,15 @@ export default function MapExplorerView() {
 
         {/* ── Left Bottom Floating Geospatial Intelligence Legend ─────────── */}
         <div className="map-floating-legend" onClick={(e) => e.stopPropagation()}>
-          <div className="legend-head" onClick={() => setShowLegend(!showLegend)}>
+          <div className="legend-head">
             <div className="legend-title">
               <span className="legend-badge-dot" />
               <span>Map Intelligence Legend</span>
             </div>
             <button
               className="legend-toggle-btn"
+              onClick={() => setShowLegend(!showLegend)}
+              aria-expanded={showLegend}
               type="button"
               title={showLegend ? "Collapse legend" : "Expand legend"}
             >
@@ -949,10 +879,10 @@ export default function MapExplorerView() {
           {showLegend && (
             <div className="legend-body">
               <div className="legend-group">
-                <span className="legend-group-title">🔥 Fire Intensity (FRP)</span>
+                <span className="legend-group-title">🔥 Fire FRP display tiers</span>
                 <div className="legend-items">
-                  <div className="legend-item"><span className="legend-swatch severe" /><span>Severe (&gt;200 MW)</span></div>
-                  <div className="legend-item"><span className="legend-swatch high" /><span>High (50–200 MW)</span></div>
+                  <div className="legend-item"><span className="legend-swatch severe" /><span>Severe (≥200 MW)</span></div>
+                  <div className="legend-item"><span className="legend-swatch high" /><span>High (50–&lt;200 MW)</span></div>
                   <div className="legend-item"><span className="legend-swatch moderate" /><span>Moderate (&lt;50 MW)</span></div>
                 </div>
               </div>
@@ -960,18 +890,18 @@ export default function MapExplorerView() {
               <div className="legend-group">
                 <span className="legend-group-title">💨 Smoke Plume (ETA)</span>
                 <div className="legend-items">
-                  <div className="legend-item"><span className="legend-swatch plume-acute" /><span>0–1h Acute Core</span></div>
-                  <div className="legend-item"><span className="legend-swatch plume-mid" /><span>1–2h Advecting Swath</span></div>
-                  <div className="legend-item"><span className="legend-swatch plume-receptor" /><span>2–3h Receptor Influx</span></div>
+                  <div className="legend-item"><span className="legend-swatch plume-acute" /><span>0–2h band start</span></div>
+                  <div className="legend-item"><span className="legend-swatch plume-mid" /><span>2–4h band start</span></div>
+                  <div className="legend-item"><span className="legend-swatch plume-receptor" /><span>4–8h band start; 8–24h also available</span></div>
                 </div>
               </div>
 
               <div className="legend-group">
                 <span className="legend-group-title">📡 Monitoring Stations (AQI)</span>
                 <div className="legend-items">
-                  <div className="legend-item"><span className="legend-swatch aqi-severe" /><span>Hazardous (&gt;300)</span></div>
-                  <div className="legend-item"><span className="legend-swatch aqi-poor" /><span>Very Poor (200–300)</span></div>
-                  <div className="legend-item"><span className="legend-swatch aqi-mod" /><span>Moderate (&lt;200)</span></div>
+                  <div className="legend-item"><span className="legend-swatch aqi-severe" /><span>Reported index &gt;300</span></div>
+                  <div className="legend-item"><span className="legend-swatch aqi-poor" /><span>Reported index 200–300</span></div>
+                  <div className="legend-item"><span className="legend-swatch aqi-mod" /><span>Reported index &lt;200</span></div>
                 </div>
               </div>
             </div>

@@ -1,285 +1,133 @@
-import {
-  Bell,
-  PanelLeft,
-  RefreshCw,
-  Search,
-  ShieldCheck,
-} from 'lucide-react'
+import { Bell, PanelLeft, RefreshCw, Search, ShieldCheck } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import './Header.css'
 import { useAeris } from '@/services/dataContext'
+import { DATA_MODE, getFeedFreshness } from '@/services/api'
 
 const TAB_META: Record<string, { label: string; subtitle: string }> = {
-  dashboard:  { label: 'Dashboard',                subtitle: 'Real-Time Monitoring' },
-  map:        { label: 'Map Explorer',             subtitle: 'GIS Spatial Analysis' },
-  analytics:  { label: 'Analytics & Trends',       subtitle: 'Atmospheric Projections' },
-  wind:       { label: 'Wind & Meteorology',       subtitle: 'GFS Forecast Modeling' },
-  sources:    { label: 'Fire Sources (VIIRS)',     subtitle: 'NASA Satellite Detection' },
-  population: { label: 'Population Risk Registry', subtitle: 'Critical Facility Exposure' },
-  shield:     { label: 'Protective Actions',       subtitle: 'CPCB & CAQM Directives' },
-  settings:   { label: 'System Settings',          subtitle: 'Configuration & System State' },
+  dashboard: { label: 'Dashboard', subtitle: 'Observed & modelled data' },
+  map: { label: 'Map Explorer', subtitle: 'GIS spatial analysis' },
+  analytics: { label: 'Analytics & Trends', subtitle: 'Uncalibrated model outputs' },
+  wind: { label: 'Wind & Meteorology', subtitle: 'Forecast grid' },
+  sources: { label: 'Source Candidates', subtitle: 'Satellite thermal detections' },
+  population: { label: 'Population Risk Registry', subtitle: 'Heuristic facility ranking' },
+  shield: { label: 'Protective Actions', subtitle: 'Advisory checklist' },
+  settings: { label: 'System Settings', subtitle: 'Configuration & data state' },
+}
+
+const PLACES: Record<string, { lon: number; lat: number; zoom: number; name: string }> = {
+  delhi: { lon: 77.2090, lat: 28.6139, zoom: 10, name: 'Delhi NCR' },
+  ncr: { lon: 77.2090, lat: 28.6139, zoom: 10, name: 'Delhi NCR' },
+  chandigarh: { lon: 76.7794, lat: 30.7333, zoom: 10.5, name: 'Chandigarh' },
+  amritsar: { lon: 74.8723, lat: 31.6340, zoom: 11, name: 'Amritsar' },
+  ludhiana: { lon: 75.8573, lat: 30.9010, zoom: 10.8, name: 'Ludhiana' },
+  patiala: { lon: 76.3869, lat: 30.3398, zoom: 11, name: 'Patiala' },
+  karnal: { lon: 76.9897, lat: 29.6857, zoom: 11, name: 'Karnal' },
+  faridabad: { lon: 77.3178, lat: 28.4089, zoom: 11, name: 'Faridabad' },
+  srinagar: { lon: 74.7973, lat: 34.0837, zoom: 10.5, name: 'Srinagar' },
+  jammu: { lon: 74.8570, lat: 32.7266, zoom: 10.5, name: 'Jammu' },
+  ladakh: { lon: 77.5771, lat: 34.1526, zoom: 10.5, name: 'Leh' },
+  leh: { lon: 77.5771, lat: 34.1526, zoom: 10.5, name: 'Leh' },
+  kashmir: { lon: 75.3, lat: 33.7, zoom: 8.5, name: 'Jammu & Kashmir' },
+  punjab: { lon: 75.4, lat: 31, zoom: 8.5, name: 'Punjab' },
+  haryana: { lon: 76.5, lat: 29.5, zoom: 8.5, name: 'Haryana' },
+  india: { lon: 78.9, lat: 23.5, zoom: 4.2, name: 'India' },
 }
 
 export default function Header() {
-  const {
-    loading,
-    refreshData,
-    setFlyToLocation,
-    activeTab,
-    setActiveTab,
-    isSidebarCollapsed,
-    toggleSidebar,
-    sources,
-    actions,
-    rankedSites,
-    aqi,
-  } = useAeris()
-
+  const { loading, refreshing, refreshData, setFlyToLocation, activeTab, setActiveTab, isSidebarCollapsed,
+    toggleSidebar, sources, corridor, actions, rankedSites, aqi, wind, staleFeeds } = useAeris()
   const [searchInput, setSearchInput] = useState('')
+  const [searchFeedback, setSearchFeedback] = useState('')
   const [showNotifs, setShowNotifs] = useState(false)
-  const [unreadCount, setUnreadCount] = useState(3)
-
+  const [now, setNow] = useState(Date.now)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const notifRef = useRef<HTMLDivElement>(null)
+  const notifButtonRef = useRef<HTMLButtonElement>(null)
 
-  // Listen for Cmd+K / Ctrl+K to auto-focus search
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault()
+    const interval = window.setInterval(() => setNow(Date.now()), 60_000)
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
         searchInputRef.current?.focus()
       }
+      if (event.key === 'Escape' && showNotifs) {
+        setShowNotifs(false)
+        notifButtonRef.current?.focus()
+      }
+    }
+    const handlePointer = (event: PointerEvent) => {
+      if (!notifRef.current?.contains(event.target as Node)) setShowNotifs(false)
     }
     window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    const q = searchInput.trim().toLowerCase()
-    if (!q) return
-
-    const targets: Record<string, { lon: number; lat: number; zoom: number; name: string }> = {
-      delhi:      { lon: 77.2090, lat: 28.6139, zoom: 10.0, name: 'Delhi NCR' },
-      ncr:        { lon: 77.2090, lat: 28.6139, zoom: 10.0, name: 'Delhi NCR' },
-      chandigarh: { lon: 76.7794, lat: 30.7333, zoom: 10.5, name: 'Chandigarh' },
-      amritsar:   { lon: 74.8723, lat: 31.6340, zoom: 11.0, name: 'Amritsar' },
-      ludhiana:   { lon: 75.8573, lat: 30.9010, zoom: 10.8, name: 'Ludhiana' },
-      patiala:    { lon: 76.3869, lat: 30.3398, zoom: 11.0, name: 'Patiala' },
-      karnal:     { lon: 76.9897, lat: 29.6857, zoom: 11.0, name: 'Karnal' },
-      faridabad:  { lon: 77.3178, lat: 28.4089, zoom: 11.2, name: 'Faridabad' },
-      srinagar:   { lon: 74.7973, lat: 34.0837, zoom: 10.5, name: 'Srinagar (J&K)' },
-      jammu:      { lon: 74.8570, lat: 32.7266, zoom: 10.5, name: 'Jammu (J&K)' },
-      ladakh:     { lon: 77.5771, lat: 34.1526, zoom: 10.5, name: 'Leh (Ladakh)' },
-      leh:        { lon: 77.5771, lat: 34.1526, zoom: 10.5, name: 'Leh (Ladakh)' },
-      pok:        { lon: 74.3036, lat: 35.9221, zoom: 9.5,  name: 'Gilgit (PoK)' },
-      kashmir:    { lon: 75.3000, lat: 33.7000, zoom: 8.5,  name: 'Jammu & Kashmir' },
-      punjab:     { lon: 75.4000, lat: 31.0000, zoom: 8.5,  name: 'Punjab' },
-      haryana:    { lon: 76.5000, lat: 29.5000, zoom: 8.5,  name: 'Haryana' },
-      india:      { lon: 78.9000, lat: 23.5000, zoom: 4.2,  name: 'India' },
+    window.addEventListener('pointerdown', handlePointer)
+    return () => {
+      window.clearInterval(interval)
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('pointerdown', handlePointer)
     }
+  }, [showNotifs])
 
-    const matchedKey = Object.keys(targets).find(k => q.includes(k) || k.includes(q))
-    if (matchedKey) {
-      const target = targets[matchedKey]
-      setFlyToLocation(target)
-      setActiveTab('map')
-      setSearchInput('')
-    }
+  const feeds = [
+    ['sources', sources?.generated_at], ['corridor', corridor?.generated_at], ['actions', actions?.generated_at],
+    ['ranked_sites', rankedSites?.generated_at], ['aqi', aqi?.generated_at], ['wind', wind?.generated_at],
+  ].map(([label, timestamp]) => getFeedFreshness(label!, timestamp, now, staleFeeds.some(feed => feed.label === label)))
+  const problems = feeds.filter(feed => feed.status !== 'current')
+  const statusText = loading ? 'Loading data' : problems.length > 0 ? `${problems.length} feeds stale / unavailable` : 'Recent data'
+  const modeLabel = DATA_MODE === 'snapshot' ? 'Snapshot' : 'API'
+  const currentMeta = TAB_META[activeTab] ?? TAB_META.dashboard
+
+  const handleSearch = (event: React.FormEvent) => {
+    event.preventDefault()
+    const query = searchInput.trim().toLowerCase()
+    if (!query) { setSearchFeedback('Enter a place, facility name, or source ID.'); return }
+    const site = rankedSites?.sites.find(item => item.name.toLowerCase().includes(query) || item.site_id.toLowerCase() === query)
+    const source = sources?.sources.find(item => item.id.toLowerCase() === query || item.district?.toLowerCase().includes(query) || item.location_name?.toLowerCase().includes(query))
+    const place = PLACES[query] ?? Object.entries(PLACES).find(([key]) => query.split(/\s+/).includes(key))?.[1]
+    const target = site ? { lon: site.lon, lat: site.lat, zoom: 12, name: site.name }
+      : source ? { lon: source.lon, lat: source.lat, zoom: 11, name: source.id } : place
+    if (!target) { setSearchFeedback(`No matching place, facility, or source for “${searchInput.trim()}”.`); return }
+    setFlyToLocation(target)
+    setActiveTab('map')
+    setSearchFeedback(`Showing ${target.name}.`)
+    setSearchInput('')
   }
-
-  const currentMeta = TAB_META[activeTab] ?? { label: 'Dashboard', subtitle: 'Real-Time Monitoring' }
 
   return (
     <header className="header">
-      {/* Left: View Title & Context Subtitle (Only show toggle when sidebar is collapsed) */}
       <div className="header-left">
-        {isSidebarCollapsed && (
-          <button
-            className="header-sidebar-toggle-btn"
-            onClick={toggleSidebar}
-            title="Expand Sidebar (⌘B)"
-            aria-label="Expand Sidebar"
-            type="button"
-          >
-            <PanelLeft size={18} />
-          </button>
-        )}
-
+        {isSidebarCollapsed && <button className="header-sidebar-toggle-btn" onClick={toggleSidebar} aria-label="Expand Sidebar" type="button"><PanelLeft size={18} /></button>}
         <div className="header-title-wrap">
           <h1 className="header-view-title">{currentMeta.label}</h1>
           <span className="header-view-subtitle-pill">{currentMeta.subtitle}</span>
         </div>
       </div>
-
-      {/* Center: Prominent Global Search Bar */}
       <div className="header-center">
         <form className="header-search" onSubmit={handleSearch}>
-          <Search size={15} className="search-icon" />
-          <input
-            ref={searchInputRef}
-            className="search-input"
-            placeholder="Search location, facility, or source (e.g. Delhi, Karnal, Leh)..."
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-          />
-          <kbd className="search-kbd" title="Press ⌘K to search">⌘K</kbd>
+          <Search size={15} className="search-icon" aria-hidden="true" />
+          <input ref={searchInputRef} className="search-input" placeholder="Place, facility, or source ID" aria-label="Search place, facility, or source ID" type="search" value={searchInput} onChange={event => setSearchInput(event.target.value)} />
+          <button type="submit" className="header-search-submit" aria-label="Search map">Search</button>
         </form>
+        {searchFeedback && <p className="header-search-feedback" role="status">{searchFeedback}</p>}
       </div>
-
-      {/* Right: Live Status Badge + Refresh + Notifications + Operational Desk Chip */}
       <div className="header-right">
-        {(() => {
-          const timestamps = [
-            sources?.generated_at,
-            actions?.generated_at,
-            rankedSites?.generated_at,
-            aqi?.generated_at,
-          ].filter(Boolean) as string[]
-
-          let liveText = 'LIVE'
-          let isStale = false
-          let freshnessTitle = 'Data synchronized'
-
-          if (timestamps.length > 0) {
-            const latestTime = Math.max(...timestamps.map(t => new Date(t).getTime()))
-            const now = Date.now()
-            const diffMs = Math.max(0, now - latestTime)
-            const diffMin = Math.floor(diffMs / 60000)
-            const diffHours = Math.floor(diffMin / 60)
-            const diffDays = Math.floor(diffHours / 24)
-
-            if (diffDays >= 1) {
-              isStale = true
-              liveText = `Stale · ${diffDays}d old`
-              freshnessTitle = `Telemetry snapshot from ${new Date(latestTime).toLocaleDateString('en-IN')}`
-            } else if (diffHours >= 1) {
-              liveText = `Live · ${diffHours}h ago`
-              freshnessTitle = `Snapshot updated ${diffHours}h ago (${new Date(latestTime).toLocaleTimeString('en-IN')})`
-            } else if (diffMin > 0) {
-              liveText = `Live · updated ${diffMin} min ago`
-              freshnessTitle = `Snapshot updated ${diffMin} min ago`
-            } else {
-              liveText = 'Live · updated just now'
-              freshnessTitle = 'Synchronized with latest data snapshot'
-            }
-          }
-
-          return (
-            <div
-              className={`live-status-chip ${isStale ? 'stale' : 'live'}`}
-              title={freshnessTitle}
-            >
-              <span className="live-status-dot" />
-              <span className="live-status-text">{liveText}</span>
-            </div>
-          )
-        })()}
-
-        <button
-          className="icon-btn refresh-btn"
-          onClick={refreshData}
-          title="Refresh live environmental data"
-          aria-label="Refresh data"
-          type="button"
-        >
-          <RefreshCw size={16} className={loading ? 'spinning' : ''} />
-        </button>
-
-        {/* Notifications Hub */}
-        <div className="notif-wrapper">
-          <button
-            className="icon-btn notif-btn"
-            aria-label="Notifications"
-            onClick={() => {
-              setShowNotifs(!showNotifs)
-            }}
-            type="button"
-          >
-            <Bell size={17} />
-            {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
-          </button>
-
-          {showNotifs && (
-            <div className="notif-dropdown">
-              <div className="notif-dropdown-header">
-                <span className="notif-title">Active Environmental Alerts</span>
-                <button
-                  className="notif-mark-read"
-                  onClick={() => setUnreadCount(0)}
-                  type="button"
-                >
-                  Mark all as read
-                </button>
-              </div>
-              <div className="notif-list">
-                <div
-                  className="notif-item alert"
-                  onClick={() => {
-                    setActiveTab('sources')
-                    setShowNotifs(false)
-                  }}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <div className="notif-dot alert" />
-                  <div className="notif-content">
-                    <span className="notif-headline">🚨 High Stubble Cluster Detected</span>
-                    <p className="notif-desc">VIIRS detected 676 MW cluster in Sangrur, Punjab with 36 active fire pixels.</p>
-                    <span className="notif-time">15 mins ago • NASA FIRMS</span>
-                  </div>
-                </div>
-
-                <div
-                  className="notif-item warning"
-                  onClick={() => {
-                    setActiveTab('wind')
-                    setShowNotifs(false)
-                  }}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <div className="notif-dot warning" />
-                  <div className="notif-content">
-                    <span className="notif-headline">⚠️ Nocturnal Inversion Warning</span>
-                    <p className="notif-desc">Boundary layer height (PBLH) dropping below 150m tonight; extreme pollutant trapping expected.</p>
-                    <span className="notif-time">32 mins ago • Open-Meteo GFS</span>
-                  </div>
-                </div>
-
-                <div
-                  className="notif-item notice"
-                  onClick={() => {
-                    setActiveTab('shield')
-                    setShowNotifs(false)
-                  }}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <div className="notif-dot notice" />
-                  <div className="notif-content">
-                    <span className="notif-headline">📋 CAQM GRAP Stage IV Active</span>
-                    <p className="notif-desc">Mandatory heavy truck diversions and indoor school protocols enforced across NCR.</p>
-                    <span className="notif-time">1 hour ago • Statutory Order</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+        <div className={`live-status-chip ${problems.length ? 'stale' : 'live'}`} title={`${modeLabel}: ${statusText}`}>
+          <span className="live-status-text">{modeLabel} · {statusText}</span>
         </div>
-
-        {/* Operational Officer Desk Chip (Replaces mock profile/logout) */}
-        <div
-          className="officer-session-chip"
-          title="Active CAQM / DPCC Operations Desk (Local Read-Only Session)"
-        >
-          <div className="officer-avatar-badge">
-            <ShieldCheck size={14} color="#059669" />
-          </div>
-          <div className="officer-meta">
-            <span className="officer-desk-title">CAQM Incident Desk</span>
-            <span className="officer-session-tag">Duty Officer · Local Session</span>
-          </div>
+        <button className="icon-btn refresh-btn" onClick={refreshData} disabled={loading || refreshing} title="Refresh environmental data" aria-label="Refresh data" type="button"><RefreshCw size={16} className={loading || refreshing ? 'spinning' : ''} /></button>
+        <div className="notif-wrapper" ref={notifRef}>
+          <button ref={notifButtonRef} className="icon-btn notif-btn" aria-label="Data feed status" aria-expanded={showNotifs} aria-controls="feed-status-panel" onClick={() => setShowNotifs(value => !value)} type="button"><Bell size={17} /></button>
+          {showNotifs && <section id="feed-status-panel" className="notif-dropdown" aria-label="Data feed status">
+            <div className="notif-dropdown-header"><span className="notif-title">Data feed status · {modeLabel}</span></div>
+            <ul className="notif-list">
+              {feeds.map(feed => <li className="notif-item" key={feed.label}><div className="notif-content"><strong className="notif-headline">{feed.label.replace('_', ' ')}: {feed.status}</strong><span className="notif-desc">{feed.generatedAt ?? 'Timestamp unavailable'}{feed.reason ? ` · ${feed.reason}` : ''}</span></div></li>)}
+            </ul>
+          </section>}
+        </div>
+        <div className="officer-session-chip" title="Local dashboard; no authenticated officer or dispatch service">
+          <div className="officer-avatar-badge"><ShieldCheck size={14} color="#059669" /></div>
+          <div className="officer-meta"><span className="officer-desk-title">AERIS Dashboard</span><span className="officer-session-tag">Local read-only session</span></div>
         </div>
       </div>
     </header>

@@ -393,3 +393,20 @@
     grid-template-columns: 1fr;
   }
 }
+
+.analytics-view { min-height: 0; min-width: 0; }
+.analytics-view .view-title-group, .analytics-view .fac-main-col { min-width: 0; overflow-wrap: anywhere; }
+.analytics-view .view-actions, .analytics-view .section-header, .analytics-view .panel-header { flex-wrap: wrap; gap: 8px; }
+@media (max-width: 600px) {
+  .analytics-view { padding: 12px; gap: 12px; }
+  .analytics-view .view-header { flex-direction: column; padding: 12px; gap: 12px; }
+  .analytics-view .kpi-val-row, .analytics-view .card-val-row, .analytics-view .fac-who-row, .analytics-view .fac-directive-row, .analytics-view .pop-controls-row, .analytics-view .filter-pills, .analytics-view .filters-row, .analytics-view .feed-item, .analytics-view .settings-actions, .analytics-view .config-row { flex-wrap: wrap; }
+  .analytics-view .pop-kpi-grid, .analytics-view .analytics-kpi-grid, .analytics-view .fires-kpi-grid, .analytics-view .weather-kpi-grid { grid-template-columns: 1fr; }
+  .analytics-view .grap-progress-box { min-width: 0; width: 100%; }
+  .analytics-view select { max-width: 100%; min-width: 0; }
+  .analytics-view .table-responsive { overflow-x: auto; width: 100%; }
+}
+
+.station-row { width: 100%; text-align: left; font: inherit; background: transparent; border: 0; }
+.station-name-col { min-width: 0; }
+.st-source { overflow-wrap: anywhere; }

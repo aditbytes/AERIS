@@ -7,8 +7,8 @@
  *  4. Acts as the single source of truth for the entire dashboard
  */
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { getActions, getAqi, getCorridor, getRankedSites, getSources, getStaleFeeds, getWind, type Freshness } from './api'
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { getActions, getAqi, getCommittedFeedFreshness, getCorridor, getRankedSites, getSources, getWind, type FeedName, type Freshness } from './api'
 import type { ActionsFile, AqiFile, CorridorGeoJSON, RankedSite, RankedSitesFile, SourcesFile, WindFile } from '@/types/schemas'
 
 export type TimeHorizon = 0 | 2 | 4 | 8 | 24
@@ -42,8 +42,11 @@ export interface AerisState extends TimeContextState {
 
   // Status
   loading: boolean
+  refreshing: boolean
+  hasData: boolean
   error:   string | null
-  staleFeeds: Freshness[]   // feeds the API flagged stale (last real result shown)
+  feedErrors: Partial<Record<FeedName, string>>
+  staleFeeds: Freshness[]   // capture age, including archived snapshot mode
 
   // Derived convenience
   exposedPopulation:       number | null
@@ -78,8 +81,15 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
   const [aqi,         setAqi]         = useState<AqiFile | null>(null)
   const [wind,        setWind]        = useState<WindFile | null>(null)
   const [loading,     setLoading]     = useState(true)
-  const [staleFeeds,  setStaleFeeds]  = useState<Freshness[]>([])
+  const [refreshing,  setRefreshing]  = useState(false)
+  const [freshnessNow, setFreshnessNow] = useState(() => Date.now())
   const [error,       setError]       = useState<string | null>(null)
+  const [feedErrors,  setFeedErrors]  = useState<Partial<Record<FeedName, string>>>({})
+  const requestId = useRef(0)
+  const requestController = useRef<AbortController | null>(null)
+  const mounted = useRef(false)
+  const initialLoadComplete = useRef(false)
+  const resizeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [timeHorizon,          setTimeHorizon]          = useState<TimeHorizon>(2)
   const [selectedSiteId,       setSelectedSiteId]       = useState<string | null>(null)
@@ -129,7 +139,8 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // Ignore
     }
-    setTimeout(() => {
+    if (resizeTimer.current) clearTimeout(resizeTimer.current)
+    resizeTimer.current = setTimeout(() => {
       window.dispatchEvent(new Event('resize'))
     }, 260)
   }, [])
@@ -137,6 +148,10 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed(!isSidebarCollapsed)
   }, [isSidebarCollapsed, setSidebarCollapsed])
+
+  const cancelResize = useCallback(() => {
+    if (resizeTimer.current) clearTimeout(resizeTimer.current)
+  }, [])
 
   // Global keyboard shortcut: Cmd+B / Ctrl+B to toggle sidebar
   useEffect(() => {
@@ -155,36 +170,67 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
   }, [toggleSidebar])
 
   const loadData = useCallback(async () => {
-    setLoading(true)
+    requestController.current?.abort()
+    const controller = new AbortController()
+    requestController.current = controller
+    const id = ++requestId.current
+    setLoading(!initialLoadComplete.current)
+    setRefreshing(initialLoadComplete.current)
     setError(null)
-    try {
-      const [s, c, r, a, q, w] = await Promise.all([
-        getSources(),
-        getCorridor(),
-        getRankedSites(),
-        getActions(),
-        getAqi(),
-        getWind().catch(() => null),
-      ])
-      setSources(s)
-      setCorridor(c)
-      setRankedSites(r)
-      setActions(a)
-      setAqi(q)
-      setWind(w)
-      setStaleFeeds(getStaleFeeds())
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unknown error loading AERIS data.')
-    } finally {
-      setLoading(false)
+    const results = await Promise.allSettled([
+      getSources(controller.signal), getCorridor(controller.signal),
+      getRankedSites(controller.signal), getActions(controller.signal),
+      getAqi(controller.signal), getWind(controller.signal),
+    ])
+    if (!mounted.current || id !== requestId.current || controller.signal.aborted) return
+
+    const names: FeedName[] = ['sources', 'corridor', 'ranked_sites', 'actions', 'aqi', 'wind']
+    const failures: Partial<Record<FeedName, string>> = {}
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        failures[names[index]] = result.reason instanceof Error
+          ? result.reason.message : `Unable to retrieve ${names[index]} data. Retry to recover.`
+      }
+    })
+    const [s, c, r, a, q, w] = results
+    if (s.status === 'fulfilled') setSources(s.value)
+    if (c.status === 'fulfilled') setCorridor(c.value)
+    if (r.status === 'fulfilled') setRankedSites(r.value)
+    if (a.status === 'fulfilled') setActions(a.value)
+    if (q.status === 'fulfilled') setAqi(q.value)
+    if (w.status === 'fulfilled') setWind(w.value)
+    setFeedErrors(failures)
+    if (Object.keys(failures).length) {
+      setError(`Unavailable feeds: ${Object.keys(failures).map(name => name.replace('_', ' ')).join(', ')}. Last valid results remain displayed where available. Retry to recover.`)
     }
+    setFreshnessNow(Date.now())
+    initialLoadComplete.current = true
+    setLoading(false)
+    setRefreshing(false)
   }, [])
 
-  useEffect(() => { loadData() }, [loadData])
+  useEffect(() => {
+    mounted.current = true
+    void loadData()
+    const freshnessTimer = setInterval(() => setFreshnessNow(Date.now()), 60_000)
+    return () => {
+      mounted.current = false
+      requestId.current++
+      requestController.current?.abort()
+      clearInterval(freshnessTimer)
+      cancelResize()
+    }
+  }, [loadData, cancelResize])
+
+  const hasData = Boolean(sources || corridor || rankedSites || actions || aqi || wind)
+  const staleFeeds = useMemo(() => getCommittedFeedFreshness({
+    sources, corridor, ranked_sites: rankedSites, actions, aqi, wind,
+  }, freshnessNow), [sources, corridor, rankedSites, actions, aqi, wind, freshnessNow])
 
   // Derived: baseline exposed population from ranked_sites (memoized)
   const exposedPopulation = useMemo(
-    () => rankedSites?.exposed_population.estimate ?? null,
+    () => rankedSites?.exposed_population.data_available === false
+      ? null : rankedSites?.exposed_population.estimate ?? null,
     [rankedSites]
   )
 
@@ -215,9 +261,10 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
     if (!aqi || aqi.stations.length === 0) return null
     const valid = aqi.stations
       .map(s => s.aqi)
-      .filter((v): v is number => typeof v === 'number' && v > 0)
+      .filter((v): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0)
+    // Each input is finite and nonnegative; summing them can still overflow.
     return valid.length > 0
-      ? Math.round(valid.reduce((acc, v) => acc + v, 0) / valid.length)
+      ? Math.round(valid.reduce((mean, value, index) => mean + (value - mean) / (index + 1), 0))
       : null
   }, [aqi])
 
@@ -233,7 +280,7 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
     timeHorizon, selectedSiteId, showActionsModal,
     activeTab, searchTerm, flyToLocation, interventionScenario,
     basemapMode, setBasemapMode,
-    loading, error, staleFeeds,
+    loading, refreshing, hasData, error, feedErrors, staleFeeds,
     exposedPopulation, activeExposedPopulation, avertedExposures, etaHours, avgAqi,
     isSidebarCollapsed, toggleSidebar, setSidebarCollapsed,
     setTimeHorizon, setSelectedSiteId, setShowActionsModal,
@@ -244,7 +291,7 @@ export function AerisProvider({ children }: { children: React.ReactNode }) {
     timeHorizon, selectedSiteId, showActionsModal,
     activeTab, searchTerm, flyToLocation, interventionScenario,
     basemapMode, setBasemapMode,
-    loading, error, staleFeeds,
+    loading, refreshing, hasData, error, feedErrors, staleFeeds,
     exposedPopulation, activeExposedPopulation, avertedExposures, etaHours, avgAqi,
     isSidebarCollapsed, toggleSidebar, setSidebarCollapsed,
     setSelectedSiteId, setShowActionsModal,

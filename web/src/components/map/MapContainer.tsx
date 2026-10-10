@@ -1,23 +1,19 @@
-/**
- * MapContainer — MapLibre GL interactive map with Survey of India (SOI) boundaries
- *
- * Guarantees:
- *  - Official Survey of India boundary layer (includes Jammu & Kashmir, Ladakh, PoK)
- *  - Zero annoying floating green patch covering the map
- *  - Sleek inline forecast pill in header (Wind direction, ETA to Delhi, Expected AQI)
- *  - Automatic SVG vector map fallback with official SOI territory demarcation
- */
+/** Dashboard map: real candidate markers, uncalibrated corridors and observed station cells. */
 
-import { Map, NavigationControl, Marker, Popup, setWorkerUrl, type GeoJSONSource } from 'maplibre-gl'
+import { Map, Marker, Popup, setWorkerUrl } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Layers, Maximize2 } from 'lucide-react'
 import { useAeris } from '@/services/dataContext'
-import { getRiskLevel, riskLabel, type CorridorBandProperties } from '@/types/schemas'
+import { getRiskLevel, riskLabel } from '@/types/schemas'
 import { createThermalMarkerElement, createThermalPopupHtml } from './thermalMarker'
 import { getStyleForMode, setupMapLayers, applyProjectionAndPitch, isValidSubcontinentCoord } from './mapStyles'
 import TimeControls from './TimeControls'
+import HeatmapControls from './HeatmapControls'
+import { useObservationHeatmap } from './useObservationHeatmap'
+import { useScientificLayers } from './useScientificLayers'
+import { escapeHtml } from './html'
 import './MapContainer.css'
 
 const SvgFallbackMap = lazy(() => import('./SvgFallbackMap'))
@@ -39,6 +35,9 @@ export default function MapContainer() {
 
   const {
     sources,
+    aqi,
+    loading,
+    feedErrors,
     corridor,
     timeHorizon,
     selectedSiteId,
@@ -46,11 +45,12 @@ export default function MapContainer() {
     setSelectedSiteId,
     setActiveTab,
     flyToLocation,
-    interventionScenario,
     basemapMode,
     setBasemapMode,
   } = useAeris()
 
+  const initialMode = useRef(basemapMode)
+  const appliedStyleMode = useRef(basemapMode)
   // ── 1. Initialize map once ────────────────────────────────────────────────
   useEffect(() => {
     if (!mapContainerRef.current || mapInitRef.current || !webGlSupported) return
@@ -59,15 +59,15 @@ export default function MapContainer() {
     try {
       const map = new Map({
         container: mapContainerRef.current,
-        style: getStyleForMode(basemapMode),
+        style: getStyleForMode(initialMode.current),
         center: [76.5, 30.0],
         zoom: 6.8,
         minZoom: 3.8,   // Constrain bounds to South Asia / Indian subcontinent
         maxZoom: 18,    // High resolution facility inspection
         maxBounds: [[58.0, 5.0], [100.0, 39.0]],
-        pitch: basemapMode === 'globe' ? 32 : 0,
-        bearing: basemapMode === 'globe' ? -6 : 0,
-        attributionControl: false,
+        pitch: initialMode.current === 'globe' ? 32 : 0,
+        bearing: initialMode.current === 'globe' ? -6 : 0,
+        attributionControl: { compact: true },
       })
 
       map.on('error', (e) => {
@@ -81,8 +81,8 @@ export default function MapContainer() {
       mapRef.current = map
 
       map.on('load', () => {
-        setupMapLayers(map, basemapMode)
-        applyProjectionAndPitch(map, basemapMode)
+        setupMapLayers(map, initialMode.current)
+        applyProjectionAndPitch(map, initialMode.current)
       })
     } catch (err) {
       console.warn('[AERIS] MapLibre constructor failed, using SVG vector canvas:', err)
@@ -100,13 +100,18 @@ export default function MapContainer() {
   useEffect(() => {
     const map = mapRef.current
     if (!map || !webGlSupported) return
+    // The constructor already applied the initial style. Replacing it while
+    // it loads can race the initial scientific sources and camera setup.
+    if (appliedStyleMode.current === basemapMode) return
+    appliedStyleMode.current = basemapMode
 
-    map.setStyle(getStyleForMode(basemapMode))
     const onStyleLoad = () => {
       setupMapLayers(map, basemapMode)
       applyProjectionAndPitch(map, basemapMode)
     }
     map.once('style.load', onStyleLoad)
+    map.setStyle(getStyleForMode(basemapMode), { diff: false })
+    return () => { map.off('style.load', onStyleLoad) }
   }, [basemapMode, webGlSupported])
 
   // Automatically trigger map.resize() whenever the container dimensions change
@@ -150,7 +155,9 @@ export default function MapContainer() {
       }
     })
 
-    if (count > 0 && minLon < maxLon && minLat < maxLat) {
+    if (count > 0) {
+      if (minLon === maxLon) { minLon -= 0.05; maxLon += 0.05 }
+      if (minLat === maxLat) { minLat -= 0.05; maxLat += 0.05 }
       map.fitBounds(
         [[minLon, minLat], [maxLon, maxLat]],
         {
@@ -171,74 +178,8 @@ export default function MapContainer() {
     }
   }, [sources, corridor, fitAirshedBounds, webGlSupported])
 
-  // ── 2. Update corridor GeoJSON and ETA ticks when data or timeHorizon changes ──
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map || !corridor || !webGlSupported) return
-
-    const waitForSource = () => {
-      const source = map.getSource('corridor') as GeoJSONSource | undefined
-      if (!source) { setTimeout(waitForSource, 100); return }
-
-      const filtered = {
-        ...corridor,
-        features: corridor.features.filter(f => {
-          if (f.properties.kind === 'centerline') return true
-          const p = f.properties as CorridorBandProperties
-          return p.hour_from <= timeHorizon
-        }),
-      }
-      source.setData(filtered as Parameters<GeoJSONSource['setData']>[0])
-
-      // Update centerline milestone ETA ticks (+2h, +4h, +8h, +12h, +18h, +24h)
-      const etaSource = map.getSource('corridor-eta') as GeoJSONSource | undefined
-      if (etaSource) {
-        const centerline = corridor.features.find(f => f.properties.kind === 'centerline')
-        type PointFeature = {
-          type: 'Feature'
-          geometry: { type: 'Point'; coordinates: number[] }
-          properties: { eta: number; label: string }
-        }
-        const etaFeatures: PointFeature[] = []
-        if (centerline && Array.isArray(centerline.geometry?.coordinates)) {
-          const coords = centerline.geometry.coordinates as number[][]
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const etas = (centerline.properties as any).points_eta_hours || []
-          etas.forEach((eta: number, idx: number) => {
-            if ([2, 4, 8, 12, 18, 24].includes(eta) && coords[idx]) {
-              etaFeatures.push({
-                type: 'Feature',
-                geometry: { type: 'Point', coordinates: coords[idx] },
-                properties: { eta, label: `+${eta}h` },
-              })
-            }
-          })
-        }
-        etaSource.setData({ type: 'FeatureCollection', features: etaFeatures } as Parameters<GeoJSONSource['setData']>[0])
-      }
-    }
-    waitForSource()
-  }, [corridor, timeHorizon, webGlSupported])
-
-  // ── 2b. Adjust plume visual intensity based on What-If scenario ─────────
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map || !webGlSupported) return
-
-    const updateLayer = () => {
-      if (!map.getLayer('plume-fill')) {
-        setTimeout(updateLayer, 100)
-        return
-      }
-
-      const opacity = interventionScenario === 'full' ? 0.38
-        : interventionScenario === 'partial' ? 0.62
-        : 0.90
-
-      map.setPaintProperty('plume-fill', 'fill-opacity', opacity)
-    }
-    updateLayer()
-  }, [interventionScenario, webGlSupported])
+  const heatmap = useObservationHeatmap(aqi, mapRef, webGlSupported)
+  useScientificLayers(mapRef, { mode: basemapMode, corridor, horizon: timeHorizon, heatmap: heatmap.data, heatmapEnabled: heatmap.enabled, opacity: heatmap.opacity, supported: webGlSupported })
 
   // ── 3. Place fire source and receptor site markers ──────────────────────
   useEffect(() => {
@@ -294,7 +235,7 @@ export default function MapContainer() {
           el.innerHTML = `
             <span class="d-site-ico">${isSchool ? '🏫' : '🏥'}</span>
           `
-          el.title = `${site.name} (${label} Risk)`
+          el.title = `${site.name} (${label} relative risk (uncalibrated))`
 
           const marker = new Marker({ element: el, anchor: 'center' })
             .setLngLat([site.lon, site.lat])
@@ -302,10 +243,10 @@ export default function MapContainer() {
               new Popup({ offset: 16, closeButton: false, className: 'aeris-popup' })
                 .setHTML(`
                   <div class="popup-content">
-                    <strong>${site.name}</strong>
-                    <div>${isSchool ? '🏫 School' : '🏥 Hospital'} • <span style="color:#C92A2A;font-weight:700">${label} Risk</span></div>
-                    <div>⏱️ Plume Arrival ETA: ~${site.eta_hours.toFixed(1)}h</div>
-                    <div>💨 PM2.5 Impact: +${site.pm25_delta_ugm3.toFixed(0)} µg/m³</div>
+                    <strong>${escapeHtml(site.name)}</strong>
+                    <div>${isSchool ? '🏫 School' : '🏥 Hospital'} • <span style="color:#C92A2A;font-weight:700">${label} relative risk (uncalibrated)</span></div>
+                    <div>⏱️ Model ETA (forecast-relative): ~${site.eta_hours.toFixed(1)}h</div>
+                    <div>💨 Modelled band peak PM2.5: +${site.pm25_delta_ugm3.toFixed(0)} µg/m³</div>
                   </div>
                 `)
             )
@@ -314,6 +255,7 @@ export default function MapContainer() {
           markersRef.current.push(marker)
         })
     }
+    return () => { markersRef.current.forEach(m => m.remove()); markersRef.current = [] }
   }, [sources, rankedSites, scopeFilter, webGlSupported])
 
   // ── 4. Fly to selected site ───────────────────────────────────────────────
@@ -341,7 +283,7 @@ export default function MapContainer() {
 
     map.flyTo({
       center: [flyToLocation.lon, flyToLocation.lat],
-      zoom: flyToLocation.zoom || 11,
+      zoom: flyToLocation.zoom ?? 11,
       speed: 1.2,
       curve: 1.4,
     })
@@ -357,8 +299,8 @@ export default function MapContainer() {
             </svg>
           </div>
           <div>
-            <div className="map-title">Pollution Movement Forecast</div>
-            <div className="map-subtitle">Predicted PM2.5 plume (Punjab → Haryana → Delhi NCR)</div>
+            <div className="map-title">Modelled plume corridors</div>
+            <div className="map-subtitle">Uncalibrated baseline · not an observed concentration field</div>
           </div>
         </div>
 
@@ -376,7 +318,7 @@ export default function MapContainer() {
             <button
               className="map-header-chip"
               onClick={() => mapRef.current?.flyTo({ center: [78.9, 22.8], zoom: 4.4, speed: 1.2 })}
-              title="Fit Entire Sovereign India (Survey of India Boundary with PoK/Ladakh)"
+              title="Fit Entire India (repository boundary)"
               type="button"
             >
               <span>🇮🇳 All India</span>
@@ -398,23 +340,26 @@ export default function MapContainer() {
         </div>
       </div>
 
+      <HeatmapControls data={heatmap.data} enabled={heatmap.enabled} onToggle={heatmap.setEnabled} opacity={heatmap.opacity} onOpacity={heatmap.setOpacity} onFit={webGlSupported ? heatmap.fit : undefined} bounds={webGlSupported ? heatmap.bounds : null} loading={loading} error={feedErrors.aqi} />
+      <p className="map-science-note">Forecast start: {corridor?.forecast_start ?? 'unavailable'}. Time controls select cumulative bands; full centrelines and ETA markers remain as forecast context. Modelled band peaks are not uniform receptor concentrations. Facility markers show up to 8 ranked sites; the facility table contains the full list.</p>
       <div className="map-canvas-area" onClick={() => isLayerMenuOpen && setIsLayerMenuOpen(false)}>
         {webGlSupported ? (
           <div ref={mapContainerRef} className="map-canvas" />
         ) : (
           <Suspense fallback={<div className="map-fallback-canvas" />}>
-            <SvgFallbackMap sources={sources} rankedSites={rankedSites} scopeFilter={scopeFilter} />
+            <SvgFallbackMap sources={sources} rankedSites={rankedSites} scopeFilter={scopeFilter} corridor={corridor} horizon={timeHorizon} heatmap={heatmap.data} heatmapEnabled={heatmap.enabled} opacity={heatmap.opacity} />
           </Suspense>
         )}
 
         {/* Sleek Top-Right Floating Layer Switcher */}
         {/* Sleek Top-Right Floating Layer Switcher (Stray dot removed) */}
-        <div className="map-layer-dock" onClick={(e) => e.stopPropagation()}>
+        <div className="map-layer-dock" onKeyDown={e => { if (e.key === 'Escape') setIsLayerMenuOpen(false) }} onClick={(e) => e.stopPropagation()}>
           <button
             className={`map-layer-trigger-btn ${isLayerMenuOpen ? 'active' : ''}`}
             onClick={() => setIsLayerMenuOpen(!isLayerMenuOpen)}
             title={`Basemap Engine: ${basemapMode}`}
             aria-label="Switch Basemap Style"
+            aria-expanded={isLayerMenuOpen}
             type="button"
           >
             <Layers size={14} />
@@ -441,8 +386,8 @@ export default function MapContainer() {
               >
                 <span className="item-icon">🪐</span>
                 <div className="item-text">
-                  <strong>3D Globe</strong>
-                  <small>Spherical Earth</small>
+                  <strong>Tilted satellite</strong>
+                  <small>Mercator · 32° tilt</small>
                 </div>
               </button>
               <button
@@ -509,7 +454,7 @@ export default function MapContainer() {
           <div className="micro-legend-divider" />
           <div className="micro-legend-item">
             <span className="micro-legend-glyph" style={{ color: '#EF4444', fontWeight: 800 }}>⊕</span>
-            <span>{scopeFilter === 'india' ? '6 Fires' : '10 Fires'}</span>
+            <span>{sources?.sources.filter(s => isValidSubcontinentCoord(s.lat, s.lon) && (scopeFilter === 'all' || s.territory === 'india')).length ?? 0} source candidates</span>
           </div>
           <div className="micro-legend-item" title="0–2h immediate plume arrival band">
             <span className="micro-legend-swatch" style={{ background: '#DC2626', width: 8, height: 7 }} />
@@ -533,7 +478,7 @@ export default function MapContainer() {
           </div>
           <div className="micro-legend-item">
             <div className="micro-legend-swatch soi" />
-            <span>SOI Border</span>
+            <span>Repository boundary</span>
           </div>
         </div>
       </div>

@@ -4,7 +4,7 @@ import { useTimeHorizon, type TimeHorizon } from '@/services/dataContext'
 import './TimeControls.css'
 
 const OPTIONS: { label: string; value: TimeHorizon; title: string }[] = [
-  { label: 'Now', value: 0, title: '0–2h initial plume footprint' },
+  { label: 'Start', value: 0, title: '0–2h initial plume footprint' },
   { label: '+2h', value: 2, title: '2–4h dispersion boundary' },
   { label: '+4h', value: 4, title: '4–8h forward transit footprint' },
   { label: '+8h', value: 8, title: '8–24h downstream corridor' },
@@ -43,9 +43,10 @@ export default function TimeControls({ showPlayToggle = true }: { showPlayToggle
         </button>
       )}
       <div className="time-pills-wrap">
-        {OPTIONS.map(({ label, value }) => (
+        {OPTIONS.map(({ label, value, title }) => (
           <button
             key={value}
+            title={title}
             className={`time-pill ${timeHorizon === value ? 'active' : ''}`}
             onClick={() => {
               setIsPlaying(false)
