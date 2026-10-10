@@ -118,7 +118,7 @@
 }
 
 .speed-icon { background: #e0f2fe; color: #0284c7; }
-.dir-icon   { background: #fef3c7; color: #d97706; }
+.dir-icon   { background: #fef3c7; color: #475569; }
 .pblh-icon  { background: #e6f4ea; color: #164e35; }
 .vent-icon  { background: #f3e8ff; color: #7c3aed; }
 
@@ -142,7 +142,7 @@
 
 .card-secondary {
   font-size: 12px;
-  color: #888;
+  color: #475569;
   margin-left: 2px;
 }
 
@@ -347,3 +347,21 @@
     grid-template-columns: 1fr;
   }
 }
+
+.wind-weather-view { min-height: 0; min-width: 0; }
+.wind-weather-view .view-title-group, .wind-weather-view .fac-main-col { min-width: 0; overflow-wrap: anywhere; }
+.wind-weather-view .view-actions, .wind-weather-view .section-header, .wind-weather-view .panel-header { flex-wrap: wrap; gap: 8px; }
+@media (max-width: 600px) {
+  .wind-weather-view { padding: 12px; gap: 12px; }
+  .wind-weather-view .view-header { flex-direction: column; padding: 12px; gap: 12px; }
+  .wind-weather-view .kpi-val-row, .wind-weather-view .card-val-row, .wind-weather-view .fac-who-row, .wind-weather-view .fac-directive-row, .wind-weather-view .pop-controls-row, .wind-weather-view .filter-pills, .wind-weather-view .filters-row, .wind-weather-view .feed-item, .wind-weather-view .settings-actions, .wind-weather-view .config-row { flex-wrap: wrap; }
+  .wind-weather-view .pop-kpi-grid, .wind-weather-view .analytics-kpi-grid, .wind-weather-view .fires-kpi-grid, .wind-weather-view .weather-kpi-grid { grid-template-columns: 1fr; }
+  .wind-weather-view .grap-progress-box { min-width: 0; width: 100%; }
+  .wind-weather-view select { max-width: 100%; min-width: 0; }
+  .wind-weather-view .table-responsive { overflow-x: auto; width: 100%; }
+}
+
+.weather-direction-values { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; }
+.wind-weather-view .card-num { overflow-wrap: anywhere; font-size: clamp(18px, 2vw, 26px); }
+.wind-weather-view .location-picker { flex-wrap: wrap; min-width: 0; }
+.weather-chart-svg { max-width: 100%; }
