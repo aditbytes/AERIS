@@ -25,7 +25,7 @@ def get_sources() -> list[dict[str, Any]]:
     if not sources_path.exists():
         return []
 
-    with sources_path.open() as f:
+    with sources_path.open(encoding="utf-8") as f:
         data = json.load(f)
 
     return data.get("sources", [])

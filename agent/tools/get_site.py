@@ -22,7 +22,7 @@ def get_site(site_id: str) -> dict[str, Any] | None:
     ranked_path = data_dir / "ranked_sites.json"
 
     if ranked_path.exists():
-        with ranked_path.open() as f:
+        with ranked_path.open(encoding="utf-8") as f:
             data = json.load(f)
         for s in data.get("sites", []):
             if s.get("site_id") == site_id:
@@ -31,7 +31,7 @@ def get_site(site_id: str) -> dict[str, Any] | None:
     # Fallback to sites.geojson
     sites_path = data_dir / "sites.geojson"
     if sites_path.exists():
-        with sites_path.open() as f:
+        with sites_path.open(encoding="utf-8") as f:
             data = json.load(f)
         for f_feat in data.get("features", []):
             props = f_feat.get("properties", {})

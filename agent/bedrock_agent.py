@@ -52,7 +52,12 @@ PM2.5 delta and occupancy. deadline_hours is before the site's ETA.
 - Authority actions: 2-4 actions for regional bodies (CAQM, DPCC, state pollution control boards, \
 education and health departments), each with a reason grounded in the tool data.
 - Summary: 2-3 plain sentences a duty officer can read in 15 seconds.
-- If the tools report no ranked sites, say so in the summary and return no site actions."""
+- If the tools report no ranked sites, say so in the summary and return no site actions.
+- Also call get_model_context. Disclose archived legacy or unknown provenance and uncalibrated parameters.
+- These are advisory review suggestions. Do not issue emergency orders, medical treatment, legal GRAP stages, mandatory restrictions or claim threshold exceedance.
+- Source type/confidence/emission strength are proxies; PM2.5 delta is a source-band peak, not receptor concentration. Risk is not health probability.
+- ETA and deadline are hours from forecast start, not hours from now. Missing ETA means deadline_hours=0 (review now); never invent an arrival time.
+- Population is a spatial proxy and its heuristic range is not a statistical confidence interval. Do not assert exposure when data_available is false."""
 
 
 class _Plan(BaseModel):
@@ -89,7 +94,12 @@ def _tools() -> list[Any]:
         """Estimated people inside the corridor: estimate, low, high."""
         return json.dumps(aeris_tools.get_exposed_population())
 
-    return [get_sources, query_corridor, get_ranked_sites, get_site, get_exposed_population]
+    @tool
+    def get_model_context() -> str:
+        """Exact source/corridor provenance, legacy status and baseline semantics."""
+        return json.dumps(aeris_tools.get_model_context(), allow_nan=False)
+
+    return [get_sources, query_corridor, get_ranked_sites, get_site, get_exposed_population, get_model_context]
 
 
 def _validate(plan: _Plan) -> None:
@@ -101,6 +111,13 @@ def _validate(plan: _Plan) -> None:
         raise ValueError("Agent returned an empty summary")
     if known and not plan.actions:
         raise ValueError("Agent returned no site actions although ranked sites exist")
+    sites = {s["site_id"]: s for s in aeris_tools.get_ranked_sites(top_n=10_000)}
+    for action in plan.actions:
+        eta = sites[action.site_id].get("eta_hours")
+        if eta is None and action.deadline_hours != 0:
+            raise ValueError("Missing arrival evidence requires immediate review, not an invented deadline")
+        if eta is not None and action.deadline_hours > eta:
+            raise ValueError("Deadline exceeds the supplied model arrival")
 
 
 def _model_ids(model_id: str | None) -> list[str]:
@@ -177,6 +194,8 @@ def generate_bedrock_plan(model_id: str | None = None, time_budget_s: float | No
         return {
             "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "generator": f"bedrock:{mid}",
+            "advisory_only": True,
+            "model_context": aeris_tools.get_model_context(),
             **plan.model_dump(),
         }
     raise RuntimeError("All Bedrock models failed: " + "; ".join(errors))

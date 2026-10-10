@@ -25,7 +25,7 @@ def query_corridor(source_id: str | None = None) -> list[dict[str, Any]]:
     if not corridor_path.exists():
         return []
 
-    with corridor_path.open() as f:
+    with corridor_path.open(encoding="utf-8") as f:
         data = json.load(f)
 
     bands = []
