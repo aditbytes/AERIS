@@ -1,40 +1,38 @@
 import { useMemo, useState } from 'react'
 import {
   Activity,
-  AlertTriangle,
   Building2,
-  CheckCircle2,
   FileSpreadsheet,
   GraduationCap,
-  TrendingUp,
 } from 'lucide-react'
 import { useAeris } from '@/services/dataContext'
 import { getRiskLevel, riskLabel } from '@/types/schemas'
 import './AnalyticsView.css'
+import { buildCsv, downloadText } from './csv'
 
 export default function AnalyticsView() {
-  const { rankedSites, aqi, sources, setActiveTab, setSelectedSiteId, setFlyToLocation } = useAeris()
+  const { rankedSites, aqi, setActiveTab, setFlyToLocation } = useAeris()
   const [hoveredBin, setHoveredBin] = useState<number | null>(null)
   const [hoveredStation, setHoveredStation] = useState<string | null>(null)
 
-  const sites = rankedSites?.sites ?? []
-  const stations = aqi?.stations ?? []
-  const sourceList = sources?.sources ?? []
+  const sites = useMemo(() => rankedSites?.sites ?? [], [rankedSites])
+  const stations = useMemo(() => aqi?.stations ?? [], [aqi])
 
   // Top Metrics
   const meanDelta = useMemo(() => {
-    if (!sites.length) return 0
+    if (!sites.length) return null
     const sum = sites.reduce((acc, s) => acc + s.pm25_delta_ugm3, 0)
     return Math.round((sum / sites.length) * 10) / 10
   }, [sites])
 
   const maxStationAqi = useMemo(() => {
-    if (!stations.length) return { aqi: 0, name: 'None' }
-    let top = stations[0]
-    for (const s of stations) {
-      if ((s.aqi ?? 0) > (top.aqi ?? 0)) top = s
+    const valid = stations.filter(station => station.aqi != null)
+    if (!valid.length) return { aqi: null, name: 'Unavailable' }
+    let top = valid[0]
+    for (const s of valid) {
+      if (s.aqi! > top.aqi!) top = s
     }
-    return { aqi: top.aqi ?? 0, name: top.name }
+    return { aqi: top.aqi!, name: top.name }
   }, [stations])
 
   const severeSiteCount = useMemo(() => {
@@ -60,7 +58,7 @@ export default function AnalyticsView() {
       { range: '50–100', min: 50, max: 100, schools: 0, hospitals: 0, total: 0 },
       { range: '100–150', min: 100, max: 150, schools: 0, hospitals: 0, total: 0 },
       { range: '150–200', min: 150, max: 200, schools: 0, hospitals: 0, total: 0 },
-      { range: '>200', min: 200, max: 9999, schools: 0, hospitals: 0, total: 0 },
+      { range: '≥200', min: 200, max: Infinity, schools: 0, hospitals: 0, total: 0 },
     ]
 
     sites.forEach((s) => {
@@ -82,11 +80,11 @@ export default function AnalyticsView() {
     const map = new Map<string, { count: number; maxDelta: number; totalOcc: number; vhCount: number }>()
 
     sites.forEach((s) => {
-      let district = 'Delhi NCR'
-      if (s.lat > 31.0) district = 'Amritsar & North Punjab'
-      else if (s.lat > 30.5) district = 'Ludhiana Corridor'
-      else if (s.lat > 30.0) district = 'Sangrur & Patiala'
-      else if (s.lat > 29.3) district = 'Karnal & Haryana'
+      let district = 'Latitude ≤29.3°N'
+      if (s.lat > 31.0) district = 'Latitude >31°N'
+      else if (s.lat > 30.5) district = 'Latitude (30.5,31]°N'
+      else if (s.lat > 30.0) district = 'Latitude (30,30.5]°N'
+      else if (s.lat > 29.3) district = 'Latitude (29.3,30]°N'
 
       const existing = map.get(district) ?? { count: 0, maxDelta: 0, totalOcc: 0, vhCount: 0 }
       existing.count++
@@ -106,7 +104,7 @@ export default function AnalyticsView() {
   const exportAnalyticsCsv = () => {
     const headers = ['Facility Name', 'Type', 'Latitude', 'Longitude', 'Occupancy', 'ETA (Hours)', 'Delta PM2.5 (ug/m3)', 'Risk Score', 'Risk Category']
     const rows = sites.map((s) => [
-      `"${s.name.replace(/"/g, '""')}"`,
+      s.name,
       s.type,
       s.lat,
       s.lon,
@@ -116,15 +114,7 @@ export default function AnalyticsView() {
       s.risk_score.toFixed(3),
       riskLabel(getRiskLevel(s.risk_score)),
     ])
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', `AERIS_Impact_Analysis_${new Date().toISOString().slice(0, 10)}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    downloadText(`AERIS_Modelled_Facility_Analysis_${new Date().toISOString().slice(0, 10)}.csv`, buildCsv(headers, rows))
   }
 
   return (
@@ -138,7 +128,7 @@ export default function AnalyticsView() {
           </div>
           <h1 className="view-title">Environmental Risk &amp; Exposure Analytics</h1>
           <p className="view-subtitle">
-            Multivariate dispersion analysis linking VIIRS satellite fire clusters to 250+ ground receptor sites and CPCB monitors.
+            Modelled plume values at {sites.length} ranked facilities and separate ground-station observations. No historical model validation is established.
           </p>
         </div>
 
@@ -155,27 +145,27 @@ export default function AnalyticsView() {
         <div className="analytics-kpi-card">
           <span className="kpi-label">Mean Plume ΔPM2.5</span>
           <div className="kpi-val-row">
-            <span className="kpi-val">+{meanDelta}</span>
+            <span className="kpi-val">{meanDelta == null ? 'Unavailable' : `+${meanDelta}`}</span>
             <span className="kpi-unit">µg/m³</span>
           </div>
           <div className="kpi-footer">
-            <span className="kpi-sub">Transboundary smoke addition over baseline</span>
+            <span className="kpi-sub">Uncalibrated model increment; source attribution is provisional</span>
           </div>
         </div>
 
         <div className="analytics-kpi-card">
           <span className="kpi-label">Peak Ground Station AQI</span>
           <div className="kpi-val-row">
-            <span className="kpi-val danger">{maxStationAqi.aqi}</span>
+            <span className="kpi-val danger">{maxStationAqi.aqi ?? 'Unavailable'}</span>
             <span className="kpi-unit">AQI</span>
           </div>
           <div className="kpi-footer">
-            <span className="kpi-sub">{maxStationAqi.name} (Severe)</span>
+            <span className="kpi-sub">{maxStationAqi.name}; observation freshness must be checked separately</span>
           </div>
         </div>
 
         <div className="analytics-kpi-card">
-          <span className="kpi-label">Severe Risk Receptors</span>
+          <span className="kpi-label">High Heuristic Risk Receptors</span>
           <div className="kpi-val-row">
             <span className="kpi-val">{severeSiteCount}</span>
             <span className="kpi-unit">of {sites.length}</span>
@@ -186,12 +176,12 @@ export default function AnalyticsView() {
         </div>
 
         <div className="analytics-kpi-card">
-          <span className="kpi-label">Model Corroboration Index</span>
+          <span className="kpi-label">Historical Model Validation</span>
           <div className="kpi-val-row">
-            <span className="kpi-val">R² = 0.88</span>
+            <span className="kpi-val">Unavailable</span>
           </div>
           <div className="kpi-footer">
-            <span className="kpi-sub">Validating CPCB ground monitors vs plume axis</span>
+            <span className="kpi-sub">No observed/model pairing or calibrated skill score is supplied</span>
           </div>
         </div>
       </div>
@@ -202,7 +192,7 @@ export default function AnalyticsView() {
         <div className="analytics-panel">
           <div className="panel-header">
             <div>
-              <h2 className="panel-title">ΔPM2.5 Exposure Histogram across 250+ Facilities</h2>
+              <h2 className="panel-title">Modelled ΔPM2.5 across {sites.length} Facilities</h2>
               <p className="panel-sub">Frequency of schools and hospitals categorized by simulated smoke delta.</p>
             </div>
           </div>
@@ -221,7 +211,7 @@ export default function AnalyticsView() {
                     onMouseLeave={() => setHoveredBin(null)}
                   >
                     <div className="hist-bar-wrapper">
-                      <div className="hist-bar-total" style={{ height: `${Math.max(8, heightPct)}%` }}>
+                      <div className="hist-bar-total" style={{ height: `${heightPct}%` }}>
                         <div
                           className="hist-seg school-seg"
                           style={{ height: `${bin.total > 0 ? (bin.schools / bin.total) * 100 : 0}%` }}
@@ -259,7 +249,7 @@ export default function AnalyticsView() {
           <div className="panel-header">
             <div>
               <h2 className="panel-title">Receptor Vulnerability Breakdown</h2>
-              <p className="panel-sub">Population exposure segmented by age and acute medical vulnerability.</p>
+              <p className="panel-sub">Reported facility capacity by type. Ages, attendance, patient cohorts, and measured exposure are unavailable.</p>
             </div>
           </div>
 
@@ -269,9 +259,9 @@ export default function AnalyticsView() {
               <div className="vuln-info">
                 <span className="vuln-name">Primary &amp; Senior Secondary Schools</span>
                 <span className="vuln-stat">{schools.length} Facilities</span>
-                <span className="vuln-occ">{schoolOccupancy.toLocaleString()} Children at Risk</span>
+                <span className="vuln-occ">{schoolOccupancy.toLocaleString()} known capacity · {schools.filter(site => site.occupancy == null).length} unknown</span>
                 <p className="vuln-desc">
-                  High respiratory sensitivity in developmental phase. Immediate indoor shelter &amp; N95 directives priority.
+                  Facility type does not establish individual ages or observed attendance.
                 </p>
               </div>
             </div>
@@ -281,9 +271,9 @@ export default function AnalyticsView() {
               <div className="vuln-info">
                 <span className="vuln-name">Hospitals &amp; Healthcare Centers</span>
                 <span className="vuln-stat">{hospitals.length} Facilities</span>
-                <span className="vuln-occ">{hospitalOccupancy.toLocaleString()} Patients &amp; Beds</span>
+                <span className="vuln-occ">{hospitalOccupancy.toLocaleString()} known capacity · {hospitals.filter(site => site.occupancy == null).length} unknown</span>
                 <p className="vuln-desc">
-                  Critical pulmonary, neonatal, and geriatric units. Directives focus on HVAC HEPA filtration and emergency oxygen reserves.
+                  Facility type does not establish patient demographics, occupied beds, or clinical exposure.
                 </p>
               </div>
             </div>
@@ -297,8 +287,8 @@ export default function AnalyticsView() {
         <div className="analytics-panel">
           <div className="panel-header">
             <div>
-              <h2 className="panel-title">CPCB Ground Station Corroboration</h2>
-              <p className="panel-sub">Observed station PM2.5 levels corroborating downwind smoke plume.</p>
+              <h2 className="panel-title">Ground Station Observations</h2>
+              <p className="panel-sub">Separate observations; they do not establish plume attribution or model skill.</p>
             </div>
           </div>
 
@@ -309,7 +299,8 @@ export default function AnalyticsView() {
                 const aqiClass = aqiVal == null ? '' : aqiVal > 400 ? 'badge-vh' : aqiVal > 300 ? 'badge-h' : 'badge-m'
 
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={st.id}
                     className={`station-row ${hoveredStation === st.id ? 'active' : ''}`}
                     onMouseEnter={() => setHoveredStation(st.id)}
@@ -321,13 +312,13 @@ export default function AnalyticsView() {
                   >
                     <div className="station-name-col">
                       <span className="st-name">{st.name}</span>
-                      <span className="st-source">{st.source} • {st.lat.toFixed(2)}°N, {st.lon.toFixed(2)}°E</span>
+                      <span className="st-source">{st.source} • {st.lat.toFixed(2)}°N, {st.lon.toFixed(2)}°E · observed {st.observed_at ?? 'time unavailable'}</span>
                     </div>
                     <div className="station-val-col">
                       <span className={`badge ${aqiClass}`}>AQI {st.aqi ?? 'N/A'}</span>
                       <span className="st-pm">PM2.5: {st.pm25 ?? 'N/A'} µg/m³</span>
                     </div>
-                  </div>
+                  </button>
                 )
               })}
             </div>
@@ -338,8 +329,8 @@ export default function AnalyticsView() {
         <div className="analytics-panel">
           <div className="panel-header">
             <div>
-              <h2 className="panel-title">Regional Impact by Corridor Zone</h2>
-              <p className="panel-sub">Aggregated facilities, peak plume addition, and total population.</p>
+              <h2 className="panel-title">Facilities by Latitude Band</h2>
+              <p className="panel-sub">Display-only latitude groups; not administrative districts. Known capacities exclude missing occupancy.</p>
             </div>
           </div>
 
