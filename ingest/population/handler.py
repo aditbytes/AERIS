@@ -55,6 +55,8 @@ def _cli() -> None:
     bbox = [float(x) for x in args.bbox.split(",")]
     try:
         result = build_population(bbox=bbox, force_download=args.force_download)
+        if not result["cells"]:
+            raise RuntimeError("WorldPop clip produced no cells; keeping existing data")
     except Exception as exc:
         import sys
         print(f"ERROR: {exc}", file=sys.stderr)

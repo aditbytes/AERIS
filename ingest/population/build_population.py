@@ -48,6 +48,7 @@ from __future__ import annotations
 
 import logging
 import os
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -123,14 +124,24 @@ def _download_worldpop(dest: Path) -> None:
     chunk_size = 8 * 1024 * 1024  # 8 MB chunks
     downloaded = 0
     last_log = 0
-    with dest.open("wb") as fh:
-        for chunk in resp.iter_content(chunk_size=chunk_size):
-            if chunk:
-                fh.write(chunk)
-                downloaded += len(chunk)
-                if downloaded - last_log >= 100 * 1024 * 1024:
-                    logger.info("[WorldPop] Downloaded %.0f MB...", downloaded / 1e6)
-                    last_log = downloaded
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=dest.parent, prefix=dest.name + ".", suffix=".part", delete=False) as fh:
+            temporary = Path(fh.name)
+            for chunk in resp.iter_content(chunk_size=chunk_size):
+                if chunk:
+                    fh.write(chunk)
+                    downloaded += len(chunk)
+                    if downloaded - last_log >= 100 * 1024 * 1024:
+                        logger.info("[WorldPop] Downloaded %.0f MB...", downloaded / 1e6)
+                        last_log = downloaded
+        if not downloaded:
+            raise ValueError("WorldPop download contained no bytes")
+        temporary.replace(dest)
+    finally:
+        resp.close()
+        if temporary is not None and temporary.exists():
+            temporary.unlink()
 
     logger.info("[WorldPop] Download complete: %.1f MB", downloaded / 1e6)
 

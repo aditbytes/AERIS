@@ -25,6 +25,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def _has_readings(result):
+    return any(any(station.get(field) is not None for field in ("pm25", "pm10", "aqi"))
+               for station in result["stations"])
+
+
 def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """AWS Lambda entry point."""
     bbox = event.get("bbox", DEFAULT_BBOX)
@@ -34,7 +39,7 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         openaq_key=secrets.get_secret("OPENAQ_API_KEY"),
         cpcb_key=secrets.get_secret("DATA_GOV_IN_KEY"),
     )
-    if not result["stations"]:
+    if not _has_readings(result):
         raise RuntimeError("No AQI stations returned; keeping existing data")
     location = storage.write_bronze("aqi", result)
     logger.info("lambda_handler: wrote %s with %d stations", location, len(result["stations"]))
@@ -53,7 +58,7 @@ def _cli() -> None:
     args = parser.parse_args()
     bbox = [float(x) for x in args.bbox.split(",")]
     result = fetch_aqi(bbox=bbox)
-    if not result["stations"]:
+    if not _has_readings(result):
         import sys
         print("ERROR: No AQI stations returned from either source.", file=sys.stderr)
         print("No data written; existing snapshot preserved.", file=sys.stderr)
