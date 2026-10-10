@@ -177,6 +177,8 @@ def check_actions(obj: Any, ranked_ids: set[str] | None = None) -> Problems:
 
 def check_aqi(obj: Any) -> Problems:
     p = _stamped(obj, "aqi")
+    if "source" in obj and not (isinstance(obj["source"], str) and obj["source"].strip()):
+        p.append("aqi: bad source")
     if not obj.get("stations"):
         p.append("aqi: no stations")
     for i, s in enumerate(obj.get("stations") or []):
