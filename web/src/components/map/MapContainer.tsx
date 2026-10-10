@@ -78,7 +78,7 @@ export default function MapContainer() {
         : windFreshness.status === 'unknown' ? 'Wind capture age unknown; forecast sample retained.'
           : windFreshness.stale ? 'Stale wind capture; forecast sample retained.'
             : 'Forecast grid sample; not an observed regional wind.'
-  const windCoverage = windData?.coverage_complete === false || incompleteWindGrid
+  const windCoverage = windData?.coverage_complete === false || windData?.usable_hourly_coverage_complete === false || incompleteWindGrid
     ? 'Incomplete wind coverage; sample only.'
     : windData?.coverage_complete === true
       ? 'All retrieval batches succeeded; plume coverage not established.'

@@ -99,6 +99,12 @@ describe('map wind sample integrity', () => {
     expect(flow().textContent).toContain('Incomplete wind coverage')
     expect(within(flow()).getByText('18.0 km/h')).toBeTruthy()
   })
+  it('reports missing hourly coverage even when all retrieval batches succeeded', () => {
+    state.wind = WindFileSchema.parse({ ...wind(), coverage_complete: true, usable_hourly_coverage_complete: false })
+    render(<MapContainer />)
+    expect(flow().textContent).toContain('Incomplete wind coverage')
+    expect(within(flow()).getByText('18.0 km/h')).toBeTruthy()
+  })
   it('distinguishes unknown coverage from successful batch retrieval without claiming plume coverage', () => {
     state.wind = wind()
     const view = render(<MapContainer />)
