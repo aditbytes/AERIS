@@ -11,6 +11,7 @@ import Sidebar from '@/components/layout/Sidebar'
 import MapContainer from '@/components/map/MapContainer'
 import TopAffectedAreas from '@/components/sites/TopAffectedAreas'
 import StaleBanner from '@/components/status/StaleBanner'
+import ErrorBoundary from '@/components/ErrorBoundary'
 import './App.css'
 
 // Lazy-loaded non-dashboard views for route-level code splitting
@@ -85,24 +86,22 @@ function SkeletonDashboard() {
   )
 }
 
-function ErrorScreen({ message }: { message: string }) {
+function ErrorScreen({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div className="error-screen">
       <div className="error-icon">⚠️</div>
       <div className="error-title">Data Unavailable</div>
       <div className="error-msg">{message}</div>
-      <div className="error-hint">
-        Ensure <code>data/live/</code> snapshot files are present, or set{' '}
-        <code>VITE_API_BASE_URL</code> to the live API endpoint.
-      </div>
+      <p>Check your connection and retry loading the feeds.</p>
+      <button type="button" className="btn-primary" onClick={onRetry}>Retry loading data</button>
     </div>
   )
 }
 
 function Dashboard() {
-  const { loading, error, activeTab } = useAeris()
+  const { loading, error, activeTab, hasData, refreshData, refreshing } = useAeris()
 
-  if (error) return <ErrorScreen message={error} />
+  if (error && !hasData) return <ErrorScreen message={error} onRetry={refreshData} />
 
   const isDedicatedView = ['map', 'analytics', 'wind', 'sources', 'population', 'shield', 'settings'].includes(activeTab)
 
@@ -112,7 +111,9 @@ function Dashboard() {
       <div className="main-content">
         <Header />
         <StaleBanner />
+        {error && <div className="feed-error-banner" role="alert"><span>{error} Available or retained feeds remain visible.</span><button type="button" onClick={refreshData} disabled={refreshing}>Retry failed feeds</button></div>}
 
+        <ErrorBoundary key={activeTab} resetKey={activeTab}>
         <Suspense fallback={<ViewSkeleton />}>
           {activeTab === 'map' && <MapExplorerView />}
           {activeTab === 'analytics' && <AnalyticsView />}
@@ -156,6 +157,7 @@ function Dashboard() {
             </div>
           )
         )}
+        </ErrorBoundary>
       </div>
 
       <Suspense fallback={null}>
