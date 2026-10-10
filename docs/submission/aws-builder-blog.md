@@ -1,16 +1,16 @@
 # Seeing the smoke before it arrives: AERIS on AWS
 
-*Draft for AWS Builder Center — Aditya (AWS lead), AERIS team. Not yet published. Before posting, replace each `<…>` with the live value.*
+*Draft for AWS Builder Center — Aditya (AWS lead), AERIS team. Not published. The architecture below is configured in SAM and includes earlier team-reported deployment notes; current remote CI, live feeds and AWS deployment were not verified in this readiness milestone. Check each remote claim and placeholder before publishing. Local evidence: [READINESS.md](READINESS.md).*
 
 ![AERIS as deployed on AWS](../assets/aeris-deployed-architecture.png)
 
 ## The problem
 
-Every October and November, crop-residue fires in Punjab and Haryana add smoke to Delhi NCR's air. The public signal is the AQI, but by the time a station reads "Severe", children have already walked to school through it. We wanted lead time: which fires matter now, where their smoke is going over the next 24 hours, which schools and hospitals sit in its path, and what each of them should do before it arrives.
+Every October and November, crop-residue fires in Punjab and Haryana add smoke to Delhi NCR's air. We wanted to explore source candidates, simulated transport paths, nearby schools and hospitals, and reviewable response suggestions. Whether this provides useful lead time requires independent historical validation.
 
-AERIS (AI Environmental Risk & Intervention System) answers those four questions on one map. We set one rule early, and it shaped everything below: **real data only**. There is no demo mode, no mocked sensor and no "typical" fallback. If a source is down, the UI says so.
+AERIS (AI Environmental Risk & Intervention System) presents that exploratory workflow on one map; it does not establish causal attribution, calibrated concentrations or operational safety. We set one rule early, and it shaped everything below: **real data only**. Production observations have no invented fallback. Offline captures are timestamped; synthetic boundary tests and optional baseline-simulated ML training are separately labelled. If a source is down, the UI says so.
 
-## What runs on AWS
+## What the SAM template configures
 
 Everything is in one SAM template in `ap-south-1` (Mumbai):
 
@@ -19,15 +19,15 @@ Everything is in one SAM template in `ap-south-1` (Mumbai):
   - OpenAQ and data.gov.in station AQI every 30 minutes
   - Open-Meteo GFS wind and boundary-layer height every 60 minutes
 
-  Each key lives in Secrets Manager under `aeris/*`. A function's role can read only its own key, and keys are cached at cold start, so a rotated key needs no redeploy. Raw results go to `s3://…/bronze/<feed>/<timestamp>.json` plus a `latest.json` pointer.
-- **Failure handling.** Every fetcher has an SQS dead-letter queue. A fetch that returns nothing raises an error instead of writing an empty file, so the last good data is never overwritten. On our first deploy the DLQ caught a real failure, so we knew it worked.
+  Each key lives in Secrets Manager under `aeris/*`. A function's role can read only its own key, and keys are cached within a running process. Verify cache refresh/cold-start behavior when rotating credentials. Raw results go to `s3://…/bronze/<feed>/<timestamp>.json` plus a `latest.json` pointer.
+- **Failure handling.** Fetchers have configured SQS dead-letter queues. Publication guards retain previous usable data on missing measurements or failed fetches. Current DLQ/deployment behavior remains unverified remotely.
 - **Pipeline.** Every 30 minutes (or via `POST /run`), Step Functions runs five Lambdas in order. Each step writes one contract file to `gold/`:
   1. *Publish* the latest feeds
   2. *Detect* sources by clustering fire detections (DBSCAN on haversine distance, weighted by fire radiative power)
   3. *Advect* a smoke corridor hour by hour along the forecast wind, producing time bands for 0–2, 2–4, 4–8 and 8–24 h
   4. *Rank* the OpenStreetMap schools and hospitals inside the corridor, and sum WorldPop population inside it
   5. *Agent*: write the action plan
-- **Agent.** The action agent uses the open-source **Strands Agents SDK** with a `BedrockModel`. Its tools only read the `gold/` files, so the model sees the same numbers the map shows. The plan comes back as a typed object, and we reject it if it names a site that is not in the ranking. If Bedrock is unavailable, a rules-based plan is built from the same data, and the `generator` field in `actions.json` records which one ran.
+- **Agent.** The action agent uses the open-source **Strands Agents SDK** with a `BedrockModel`. Its tools only read the `gold/` files, so the model sees the same numbers the map shows. The plan comes back as a typed object; validation rejects unknown sites and invalid deadlines. This does not guarantee free-form factual grounding. Both model and rules plans are advisory and require review; they do not establish clinical or legal authority. If Bedrock is unavailable, a rules-based plan is built from the same data, and the `generator` field in `actions.json` records which one ran.
 - **Serving.** An API Gateway HTTP API calls one Lambda that reads `gold/`. Every response carries `generated_at`, `age_seconds` and `stale`. CloudFront serves the React + MapLibre app from a private S3 bucket through origin access control.
 - **Operations.**
   - Each function logs to its own group with 7-day retention
@@ -35,13 +35,13 @@ Everything is in one SAM template in `ap-south-1` (Mumbai):
   - A $50 monthly budget alerts at 50%, 80% and 100%
   - `scripts/smoke_test.py` triggers a run and validates every route against our data contracts
 
-There is no NAT gateway and no always-on instance. At hackathon traffic the cost is a few dollars a month, mostly Bedrock tokens and Lambda time: `<actual figure from Cost Explorer>`.
+There is no NAT gateway and no always-on instance. Actual operating cost has not been measured here: `<owner-verified figure and date from Cost Explorer>`. Do not publish an estimated cost as an observed bill.
 
 ## What fought back
 
-**1. The smoke always went to Delhi.** Our first corridor model looked great on the map: every plume drifted neatly south-east toward Delhi. In review we found out why. The wind lookup took `abs(u)` and `-abs(v)`, which forced every trajectory south-east whatever the forecast said. It also used the first hour in the wind file, and Open-Meteo returns the previous day as well, so the model was advecting with yesterday's wind. With the real sign and the matching hour, the 7 October plumes drift 50–80 km, mostly west. The new map is less dramatic, but it is correct. Lesson: test a physical model's direction against its input, not against the story you expect it to tell.
+**1. The smoke always went to Delhi.** Our first corridor model looked great on the map: every plume drifted neatly south-east toward Delhi. In review we found out why. The wind lookup took `abs(u)` and `-abs(v)`, which forced every trajectory south-east whatever the forecast said. It also used the first hour in the wind file, and Open-Meteo returns the previous day as well, so the model was advecting with yesterday's wind. Current regression tests check signed vectors and matching forecast times; this does not establish a specific observed trajectory or forecast skill. Lesson: test a physical model's direction against its input, not against the story you expect it to tell.
 
-**2. "Latest" was empty right after midnight UTC.** With a one-day window, the first FIRMS runs after the UTC date changes return nothing until the day's first satellite pass. We now request two days and refuse empty results, so `latest` always holds the last real detections.
+**2. "Latest" was empty right after midnight UTC.** With a one-day window, the first FIRMS runs after the UTC date changes return nothing until the day's first satellite pass. The configured request spans two days. Total feed failures propagate and publication guards preserve previous usable detections; a genuine empty response is distinguished from a failed fetch.
 
 **3. Lambda's file system is read-only.** The fetchers were written to save into `data/live/`. On Lambda that path is `/var/task/data`, which is read-only, and the error went straight into the DLQ. The fix was a storage interface with two backends: local files for teammates, S3 when `AERIS_STORAGE=s3`. Teammates never needed AWS credentials.
 
@@ -54,11 +54,15 @@ There is no NAT gateway and no always-on instance. At hackathon traffic the cost
 - A missing S3 key returns `AccessDenied`, not `NoSuchKey`, unless the role also has `s3:ListBucket`. Without it, our clean 404s became 500s
 - Bedrock model availability varies by region. The model ID is a stack parameter, so switching to a cross-region inference profile is a redeploy, not a code change
 
+## Current scientific limits
+
+Saved source/corridor artifacts are identified by exact hashes, including evidenced Git LF/Windows CRLF copies. Original run/input/parameter bindings remain unknown; archived corridor values have obsolete floors. New pipeline outputs preserve hash-bound inputs, parameters and semantics through API/schema/browser paths. A checksum or replay does not establish authentication, original lineage or calibration. PM2.5 is a source-band peak, population/risk are proxies, and the station layer has no interpolation.
+
 ## What we would do next
 
 - Calibrate corridor PM2.5 against station observations along the path, using Open-Meteo history
 - Add Sentinel-5P NO₂/CO to confirm a plume really left the source
-- Replace the rule-of-thumb dispersion with a trained surrogate on SageMaker Serverless Inference, behind the same API contract
+- Evaluate the optional baseline-simulated ML surrogate independently before deployment; the production corridor remains physics-based
 
 ## Links
 

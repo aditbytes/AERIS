@@ -1,0 +1,1426 @@
+{
+  "audit_date": "2026-10-10",
+  "assessment": "Local implementation and snapshot demo ready for owner review; scientific calibration, operational deployment and external services are not verified.",
+  "toolchains": {
+    "python": {
+      "executable": "D:\\AERIS\\.venv\\Scripts\\python.exe",
+      "version": "3.14.3",
+      "platform": "Windows-11-10.0.26300-SP0",
+      "architecture": "AMD64",
+      "python312_executed_in_this_milestone": false
+    },
+    "node": {
+      "executable": "C:\\Program Files\\nodejs\\node.exe",
+      "version": "v24.16.0"
+    },
+    "browser": {
+      "name": "Microsoft Edge",
+      "version_final_run": "155.0.4283.45",
+      "playwright_version": "1.64.0",
+      "rendering": "Installed Edge with software WebGL; actual MapLibre workers and painted cells checked."
+    }
+  },
+  "preservation": {
+    "recovery_directory": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-recovery-kjtukbx2",
+    "recovery_zip_bytes": 3775057,
+    "baseline_paths_hashed": 407,
+    "protected_paths_checked": 130,
+    "protected_prefix_counts": {
+      "data/live/": 12,
+      "web/public/data/": 7,
+      "docs/audits/": 50,
+      "infra/lambda/": 56,
+      ".venv/task4-surrogate/": 3,
+      ".github/workflows/": 2
+    },
+    "mismatches": [],
+    "original_audit_reports_regenerated": false,
+    "scientific_equations_or_parameter_values_tuned": false,
+    "dependency_versions_changed": false
+  },
+  "checks": [
+    {
+      "name": "Full Python suite",
+      "cwd": "D:\\AERIS",
+      "command": ".\\.venv\\Scripts\\python.exe -B -X utf8 -m pytest -ra -p no:cacheprovider --basetemp \"$env:TEMP\\aeris-submission-full-final\"",
+      "exit_code": 0,
+      "passed": 701,
+      "failed": 0,
+      "warnings": 2,
+      "duration_seconds": 21.69,
+      "warning_details": [
+        "RequestsDependencyWarning: installed urllib3 2.6.3 / chardet 7.3.0 / charset_normalizer 3.4.6 compatibility",
+        "joblib/loky: Windows physical-core lookup WinError 2, logical-core fallback"
+      ]
+    },
+    {
+      "name": "Full frontend Vitest",
+      "cwd": "D:\\AERIS\\web",
+      "entrypoint": "node --input-type=module; vitest startVitest API",
+      "invocation": "startVitest([], {run:true,watch:false,cache:false,fsModuleCache:false,configLoader:\"runner\"}, {cacheDir:<os temporary directory>}); await context.close()",
+      "owner_reproduction": "npm.cmd test",
+      "exit_code": 0,
+      "passed": 179,
+      "failed": 0,
+      "test_files": 15,
+      "duration_seconds": 2.63
+    },
+    {
+      "name": "TypeScript",
+      "cwd": "D:\\AERIS\\web",
+      "commands": [
+        ".\\node_modules\\.bin\\tsc.cmd -p tsconfig.app.json --noEmit --incremental false --pretty false",
+        ".\\node_modules\\.bin\\tsc.cmd -p tsconfig.node.json --noEmit --incremental false --pretty false",
+        ".\\node_modules\\.bin\\tsc.cmd -p tsconfig.browser.json --noEmit --incremental false --pretty false"
+      ],
+      "exit_codes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Frontend lint",
+      "cwd": "D:\\AERIS\\web",
+      "command": ".\\node_modules\\.bin\\oxlint.cmd",
+      "exit_code": 0,
+      "errors": 0,
+      "warnings": 7,
+      "warning_details": [
+        "Four existing Fast Refresh export warnings",
+        "Two existing effect/set-state warnings",
+        "One existing ref cleanup warning"
+      ]
+    },
+    {
+      "name": "Production frontend build",
+      "entrypoint": "node --input-type=module; Vite build API",
+      "configuration": {
+        "configFile": false,
+        "plugins": [
+          "existing @vitejs/plugin-react"
+        ],
+        "base": "./",
+        "alias": "@ -> D:/AERIS/web/src",
+        "snapshot_mode_API_base": "",
+        "cacheDir": "os temporary directory",
+        "outDir": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-final-zZgu4s\\dist",
+        "sourcemap": false
+      },
+      "owner_reproduction": "npm.cmd run build",
+      "typescript_executed_separately": true,
+      "exit_code": 0,
+      "modules": 2059,
+      "build_duration_ms": 416,
+      "main_chunk_kB": 1384.67,
+      "main_chunk_gzip_kB": 387.51,
+      "worker_kB": 508.31,
+      "warnings": [
+        "Main bundle exceeds 500 kB chunk warning",
+        "Temporary output directory outside project root was not automatically emptied"
+      ]
+    },
+    {
+      "name": "Production Edge browser suite",
+      "entrypoint": "node .\\node_modules\\@playwright\\test\\cli.js test --config <temporary playwright.config.mjs>",
+      "config_file": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-final-zZgu4s\\playwright.config.mjs",
+      "report_file": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-final-zZgu4s\\results.json",
+      "preview_URL": "http://127.0.0.1:4174",
+      "owner_reproduction": "npm.cmd run build; npm.cmd run test:e2e",
+      "exit_code": 0,
+      "stats": {
+        "startTime": "2026-10-10T15:57:08.998Z",
+        "duration": 77293.92,
+        "expected": 30,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "passed": 30,
+      "failed": 0,
+      "axe_violations_in_asserted_journeys": 0,
+      "fixtures": "Basemap assets and optional external font CSS intercepted. Normal atmospheric journeys use repository captures; adversarial boundary fixtures remain test-only.",
+      "not_verified": [
+        "Every browser/device/assistive technology",
+        "Remote asset availability",
+        "Current deployed code"
+      ]
+    },
+    {
+      "name": "Static model provenance",
+      "command": ".\\.venv\\Scripts\\python.exe -B -X utf8 -m scripts.publish_model_provenance --check",
+      "exit_code": 0,
+      "captured_files_rewritten": false
+    },
+    {
+      "name": "Lambda configuration verifier",
+      "command": ".\\.venv\\Scripts\\python.exe -B -X utf8 scripts/verify_lambda_dependencies.py --config-only",
+      "exit_code": 0,
+      "functions": 10,
+      "runtime": "python3.12",
+      "architecture": "arm64",
+      "dependency_groups": 4,
+      "wheels_checked": false,
+      "new_native_package_measured": false,
+      "sam_build_executed": false
+    },
+    {
+      "name": "Historical audit syntax",
+      "method": "Strict UTF-8 JSON finite-constant parse and csv.reader(strict=True), read-only",
+      "counts": {
+        "json": 26,
+        "csv": 8
+      },
+      "exit_code": 0
+    },
+    {
+      "name": "Markdown local links",
+      "scope": "Changed tracked Markdown and new submission reports; inline file links, excluding fenced code/external URLs/anchors",
+      "exit_code": 0,
+      "checked": 65,
+      "broken": [],
+      "files_checked": 12
+    },
+    {
+      "name": "git diff --check",
+      "command": "git diff --check",
+      "exit_code": 0,
+      "notes": "Windows LF-to-CRLF advisories are not whitespace errors."
+    },
+    {
+      "name": "Pending file secret-pattern scan",
+      "method": "AWS access-key IDs, private-key headers and GitHub token patterns; inspect bytes without printing content",
+      "exit_code": 0,
+      "flagged_paths": [],
+      "exhaustive_certification": false,
+      "files_checked": 127
+    },
+    {
+      "name": "Pending Python syntax and JSON finite parsing",
+      "exit_code": 0,
+      "python_files": 41,
+      "method": "ast.parse and strict UTF-8 JSON parse; no module execution or bytecode output"
+    },
+    {
+      "name": "Web deployment shell syntax",
+      "command": "\"C:\\Program Files\\Git\\bin\\bash.exe\" -n scripts/deploy_web.sh",
+      "exit_code": 0,
+      "deployment_executed": false
+    }
+  ],
+  "resolved_test_diagnostics": [
+    "Changed AQI display labels required assertion updates; numeric and visibility checks retained.",
+    "Wind coverage implementation corrected to retain teammate batch-coverage semantics and add a separate hourly flag.",
+    "Heatmap initial-load regression retained while mount-order attachment fixed.",
+    "Browser keyboard-scroll failures fixed in actual controls. External font CSS intercepted for reproducible system-font fallback tests."
+  ],
+  "finding_dispositions": {
+    "SCI-055": "Partially mitigated; archive disclosure/integration complete; original bindings unknown.",
+    "SCI-056": "Partially mitigated; legacy floors and new lineage visible; original bindings and observational skill unknown.",
+    "SCI-022": "Explicit validated boundaries; scientific baseline unvalidated.",
+    "SCI-023": "Heuristic semantics disclosed; probabilities, land use and emission mass not established.",
+    "SCI-025": "Explicit uncalibrated baseline; independent calibration still required.",
+    "SCI-027": "Peak/receptor semantics disclosed; receptor calibration unresolved.",
+    "SCI-049": "Pre-IO trust gate verified by 18 tests; trusted pickle supplier remains an operational boundary."
+  },
+  "remaining_limitations": [
+    "No remote CI success is claimed.",
+    "Python 3.12 was not executed in this milestone.",
+    "Linux ARM64 wheels, native package-size measurement, SAM build and AWS deployment were not executed.",
+    "Live provider behavior and current website deployment remain unverified.",
+    "No independent historical calibration, held-out forecast skill, causal source attribution or measured health impact.",
+    "Companion checksums bind bytes, not suppliers; data/companion and batch publication are not atomic across objects.",
+    "AQI no-eligible-data and failed-fetch ambiguity remains; CPCB naive timestamps remain unknown.",
+    "Hourly wind flag does not prove route/time continuity.",
+    "Saved action prose is historical; model advice requires review and grounding is not guaranteed.",
+    "Local commits were authorized on a separate branch; pushes, merges, PR changes and remote verification remain outside this execution."
+  ],
+  "inventory_validation": {
+    "modified_tracked": 53,
+    "untracked": 74,
+    "total_paths": 127,
+    "commit_groups": 15,
+    "duplicate_or_missing_assignments": [],
+    "python_files_AST_valid": 41,
+    "record_scope": "Original pending inventory before local-only exclusion; subsequent approved counts are recorded separately."
+  },
+  "pre_commit_git": {
+    "head": "69442916784d10385df1ce8fa38b568b29ad27ed",
+    "branch": "feature/frontend-audit-heatmap",
+    "origin_main_local_ref": "63aa200cbf98a268d785e14fef820757880190a9",
+    "upstream_local_ref": "69442916784d10385df1ce8fa38b568b29ad27ed",
+    "ahead_behind_main": "1\t0",
+    "ahead_behind_upstream": "0\t0",
+    "index_sha256": "43355cdaf86e78cd290a8fe23c5c9f04d73c4efecd58ec332f514505074dd988",
+    "stash0_oid": "dc269a1ecf4a487e8e3e2064fa18fee3e9e67062",
+    "head_branch_index_stash_unchanged": true,
+    "git_write_operations_performed": [],
+    "pr_modified": false,
+    "billing_modified": false,
+    "record_scope": "Original implementation/verification phase before owner authorized Git operations."
+  },
+  "approved_commit_execution": {
+    "branch": "feature/submission-readiness",
+    "base_head": "69442916784d10385df1ce8fa38b568b29ad27ed",
+    "original_branch_preserved": "feature/frontend-audit-heatmap",
+    "included_paths": 126,
+    "excluded_local_only_paths": [
+      "docs/submission/COMMIT_PLAN.md"
+    ],
+    "groups": 15,
+    "remote_writes_authorized": false,
+    "status": "All 15 groups validated; groups 1–14 recorded below. Group 15 is the documentation commit containing this verification record.",
+    "commits_before_documentation_group": [
+      {
+        "group": 1,
+        "oid": "bf9847ffba6754c5e812c7652d445fad0fee1f32",
+        "message": "docs(audit): preserve repository hardcoded-data evidence",
+        "files": [
+          "docs/audits/hardcoded-data/2026-10-10/AUDIT_FILES.md",
+          "docs/audits/hardcoded-data/2026-10-10/BASELINE.json",
+          "docs/audits/hardcoded-data/2026-10-10/CENSUS.json",
+          "docs/audits/hardcoded-data/2026-10-10/CONTRIBUTOR_ATTRIBUTION.csv",
+          "docs/audits/hardcoded-data/2026-10-10/DATASET_INVENTORY.json",
+          "docs/audits/hardcoded-data/2026-10-10/DATA_PROVENANCE.md",
+          "docs/audits/hardcoded-data/2026-10-10/DOCUMENT_REVIEW.json",
+          "docs/audits/hardcoded-data/2026-10-10/EXCLUDED_REVIEW_ROWS.json",
+          "docs/audits/hardcoded-data/2026-10-10/EXECUTIVE_SUMMARY.md",
+          "docs/audits/hardcoded-data/2026-10-10/FILE_INVENTORY.csv",
+          "docs/audits/hardcoded-data/2026-10-10/FINDINGS.csv",
+          "docs/audits/hardcoded-data/2026-10-10/FORK_COMPARISON.md",
+          "docs/audits/hardcoded-data/2026-10-10/HEATMAP_PROBE.json",
+          "docs/audits/hardcoded-data/2026-10-10/HISTORICAL_EVIDENCE.json",
+          "docs/audits/hardcoded-data/2026-10-10/HISTORICAL_FINDINGS.csv",
+          "docs/audits/hardcoded-data/2026-10-10/IGNORED_ARTIFACTS.json",
+          "docs/audits/hardcoded-data/2026-10-10/LITERAL_OCCURRENCES.csv",
+          "docs/audits/hardcoded-data/2026-10-10/LOCAL_REF_COMPARISON.json",
+          "docs/audits/hardcoded-data/2026-10-10/MANUAL_VERIFICATION.md",
+          "docs/audits/hardcoded-data/2026-10-10/METHODOLOGY.md",
+          "docs/audits/hardcoded-data/2026-10-10/METRICS.json",
+          "docs/audits/hardcoded-data/2026-10-10/PROBE_RESULTS.json",
+          "docs/audits/hardcoded-data/2026-10-10/REMOTE_METADATA.json",
+          "docs/audits/hardcoded-data/2026-10-10/SECRET_SCAN.json",
+          "docs/audits/hardcoded-data/2026-10-10/STAGING_COPY_VERIFICATION.json",
+          "docs/audits/hardcoded-data/2026-10-10/VALIDATION.json",
+          "docs/audits/hardcoded-data/2026-10-10/VALIDATION.md",
+          "docs/audits/hardcoded-data/2026-10-10/assemble_findings.py",
+          "docs/audits/hardcoded-data/2026-10-10/heatmap_probe.cjs",
+          "docs/audits/hardcoded-data/2026-10-10/inventory.py",
+          "docs/audits/hardcoded-data/2026-10-10/literal_scan.cjs",
+          "docs/audits/hardcoded-data/2026-10-10/review_corrections.json",
+          "docs/audits/hardcoded-data/2026-10-10/reviewed_backend.json",
+          "docs/audits/hardcoded-data/2026-10-10/reviewed_docs.json",
+          "docs/audits/hardcoded-data/2026-10-10/reviewed_findings.json",
+          "docs/audits/hardcoded-data/2026-10-10/reviewed_frontend.json",
+          "docs/audits/hardcoded-data/2026-10-10/reviewed_science.json",
+          "docs/audits/hardcoded-data/2026-10-10/reviewed_science_history.json",
+          "docs/audits/hardcoded-data/2026-10-10/secret_scan.py",
+          "docs/audits/hardcoded-data/2026-10-10/validate_audit.py",
+          "docs/audits/hardcoded-data/2026-10-10/verification_probes.py"
+        ]
+      },
+      {
+        "group": 2,
+        "oid": "c6ca813bf3670e30a1640b9148c1957cdf71dc24",
+        "message": "docs(audit): preserve contributor attribution and remediation scope",
+        "files": [
+          "docs/audits/hardcoded-data/2026-10-10/contributor-work-tally/CONTRIBUTOR_TOTALS.csv",
+          "docs/audits/hardcoded-data/2026-10-10/contributor-work-tally/CONTRIBUTOR_WORK_TALLY.md",
+          "docs/audits/hardcoded-data/2026-10-10/contributor-work-tally/FINDING_TO_WORK_MAPPING.csv",
+          "docs/audits/hardcoded-data/2026-10-10/contributor-work-tally/PRITAM_RISK_REMEDIATION.md",
+          "docs/audits/hardcoded-data/2026-10-10/contributor-work-tally/UNASSIGNED_AND_SHARED.csv",
+          "docs/audits/hardcoded-data/contributor-breakdown-2026-10-10/BASELINE.json",
+          "docs/audits/hardcoded-data/contributor-breakdown-2026-10-10/DATASET_HISTORY.json",
+          "docs/audits/hardcoded-data/contributor-breakdown-2026-10-10/GIT_METADATA.json",
+          "docs/audits/hardcoded-data/contributor-breakdown-2026-10-10/LINE_HISTORY_EVIDENCE.json"
+        ]
+      },
+      {
+        "group": 3,
+        "oid": "c56345a8d5dd1d66f797a4f6df921c89bd63cb0a",
+        "message": "fix(training): require explicit trust before artifact reads",
+        "files": [
+          "models/training/README.md",
+          "models/training/inference.py",
+          "models/training/predict.py",
+          "models/training/tests/test_artifact_trust.py",
+          "models/training/tests/test_surrogate.py"
+        ]
+      },
+      {
+        "group": 4,
+        "oid": "d9f72c764757655a20c9f491a80d5f89735190ac",
+        "message": "feat(models): bind output provenance to exact bytes and parameters",
+        "files": [
+          "models/ARCHIVED_OUTPUTS.json",
+          "models/README.md",
+          "models/common/provenance.py",
+          "models/common/tests/test_provenance.py",
+          "models/plume/README.md",
+          "models/plume/corridor.py",
+          "models/source_detection/README.md",
+          "models/source_detection/cluster.py"
+        ]
+      },
+      {
+        "group": 5,
+        "oid": "74a1211cd7d0e6c13a8aecac05bcc3156fbc2bbd",
+        "message": "fix(ingest): reject invalid observations and preserve usable feed outputs",
+        "files": [
+          "ingest/aqi/fetch_aqi.py",
+          "ingest/aqi/handler.py",
+          "ingest/firms/fetch_fires.py",
+          "ingest/population/build_population.py",
+          "ingest/population/handler.py",
+          "ingest/tests/test_feed_boundaries.py",
+          "ingest/tests/test_submission_integrity.py",
+          "ingest/weather/fetch_wind.py",
+          "ingest/weather/handler.py"
+        ]
+      },
+      {
+        "group": 6,
+        "oid": "c99fe5324ceea11f01bf00b94602b5a3c4c7ba2b",
+        "message": "fix(agent): ground advisory plans in available evidence",
+        "files": [
+          "agent/agent.py",
+          "agent/bedrock_agent.py",
+          "agent/tests/test_advisory_integrity.py",
+          "agent/tools/__init__.py",
+          "agent/tools/get_exposed_population.py",
+          "agent/tools/get_model_context.py",
+          "agent/tools/get_ranked_sites.py",
+          "agent/tools/get_site.py",
+          "agent/tools/get_sources.py",
+          "agent/tools/query_corridor.py"
+        ]
+      },
+      {
+        "group": 7,
+        "oid": "e7ffe4a3f326f43126ec1b46484b7a80d1e475a4",
+        "message": "feat(pipeline): preserve provenance through storage API ranking and agent",
+        "files": [
+          "api/handlers/app.py",
+          "ingest/common/storage.py",
+          "pipeline/contracts.py",
+          "pipeline/steps.py",
+          "pipeline/tests/test_provenance_integration.py"
+        ]
+      },
+      {
+        "group": 8,
+        "oid": "2332782d868f8c05cc802ee7f152f9bdd5b621e9",
+        "message": "fix(dev): allow exact loopback API origins",
+        "files": [
+          "scripts/local_api.py",
+          "scripts/tests/test_local_api.py"
+        ]
+      },
+      {
+        "group": 9,
+        "oid": "c500a5ad58c50d317d353aa4e4f990c7bfcb1e95",
+        "message": "feat(publication): verify static model metadata without rewriting captures",
+        "files": [
+          "scripts/deploy_web.sh",
+          "scripts/publish_model_provenance.py",
+          "scripts/tests/test_static_provenance.py",
+          "web/public/data/model-provenance.json"
+        ]
+      },
+      {
+        "group": 10,
+        "oid": "5864f353a3d949970f3bf417e98e76070c36c109",
+        "message": "feat(web): expose verified model provenance across views",
+        "files": [
+          "web/src/App.tsx",
+          "web/src/__tests__/modelProvenance.test.ts",
+          "web/src/components/status/ModelProvenanceNotice.css",
+          "web/src/components/status/ModelProvenanceNotice.test.tsx",
+          "web/src/components/status/ModelProvenanceNotice.tsx",
+          "web/src/services/api.ts",
+          "web/src/services/modelProvenance.ts",
+          "web/src/types/schemas.ts"
+        ]
+      },
+      {
+        "group": 11,
+        "oid": "a22452ed99d06b859f9cee144975d52816481c9e",
+        "message": "fix(web): separate reported AQI and archived simulation semantics",
+        "files": [
+          "web/src/__tests__/uiRegression.test.tsx",
+          "web/src/components/analytics/AqiForecast12h.test.tsx",
+          "web/src/components/analytics/AqiForecast12h.tsx"
+        ]
+      },
+      {
+        "group": 12,
+        "oid": "886195acfa9f7572f13f1bf73a0e3397d69293bc",
+        "message": "fix(web): surface incomplete usable hourly wind coverage",
+        "files": [
+          "web/src/components/map/MapContainer.test.tsx",
+          "web/src/components/map/MapContainer.tsx"
+        ]
+      },
+      {
+        "group": 13,
+        "oid": "261d0758ecf3aa7a0a79ec8e92aef509d1504406",
+        "message": "fix(map): attach load guards and make heatmap scrolling accessible",
+        "files": [
+          "web/src/components/map/HeatmapControls.tsx",
+          "web/src/components/map/heatmap.test.tsx",
+          "web/src/components/map/useObservationHeatmap.test.tsx",
+          "web/src/components/map/useObservationHeatmap.ts",
+          "web/tests/browser/dashboard.spec.ts"
+        ]
+      },
+      {
+        "group": 14,
+        "oid": "c5d17632e77cee523d3401dffc0a153d9b1a558b",
+        "message": "fix(web): disclose advisory scheduling references in UI and exports",
+        "files": [
+          "web/src/components/agent/ActionsModal.tsx",
+          "web/src/components/agent/AgentWidget.tsx",
+          "web/src/components/agent/advisoryEvidence.test.ts",
+          "web/src/components/agent/advisoryEvidence.ts",
+          "web/src/components/analytics/RecommendedActions.tsx",
+          "web/src/components/views/ActionsWorkbenchView.tsx"
+        ]
+      }
+    ],
+    "validation_runs": [
+      {
+        "group": 1,
+        "name": "historical-audit",
+        "exit_code": 0,
+        "counts": {
+          "json": 26,
+          "csv": 8
+        }
+      },
+      {
+        "group": 1,
+        "name": "cached-check",
+        "command_argv": [
+          "git",
+          "diff",
+          "--cached",
+          "--check"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 0.038,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-01-cached-check.log"
+      },
+      {
+        "group": 2,
+        "name": "historical-audit",
+        "exit_code": 0,
+        "counts": {
+          "json": 26,
+          "csv": 8
+        }
+      },
+      {
+        "group": 2,
+        "name": "cached-check",
+        "command_argv": [
+          "git",
+          "diff",
+          "--cached",
+          "--check"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 0.037,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-02-cached-check.log"
+      },
+      {
+        "group": 3,
+        "name": "pytest",
+        "command_argv": [
+          "D:\\AERIS\\.venv\\Scripts\\python.exe",
+          "-B",
+          "-X",
+          "utf8",
+          "-m",
+          "pytest",
+          "models/training/tests",
+          "-ra",
+          "-p",
+          "no:cacheprovider",
+          "--basetemp",
+          "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\pytest-03"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 4.948,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-03-pytest.log"
+      },
+      {
+        "group": 3,
+        "name": "cached-check",
+        "command_argv": [
+          "git",
+          "diff",
+          "--cached",
+          "--check"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 0.024,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-03-cached-check.log"
+      },
+      {
+        "group": 4,
+        "name": "pytest",
+        "command_argv": [
+          "D:\\AERIS\\.venv\\Scripts\\python.exe",
+          "-B",
+          "-X",
+          "utf8",
+          "-m",
+          "pytest",
+          "models/common/tests",
+          "models/source_detection/tests",
+          "models/plume/tests",
+          "-ra",
+          "-p",
+          "no:cacheprovider",
+          "--basetemp",
+          "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\pytest-04"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 7.194,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-04-pytest.log"
+      },
+      {
+        "group": 4,
+        "name": "cached-check",
+        "command_argv": [
+          "git",
+          "diff",
+          "--cached",
+          "--check"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 0.028,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-04-cached-check.log"
+      },
+      {
+        "group": 5,
+        "name": "pytest",
+        "command_argv": [
+          "D:\\AERIS\\.venv\\Scripts\\python.exe",
+          "-B",
+          "-X",
+          "utf8",
+          "-m",
+          "pytest",
+          "ingest/tests",
+          "-ra",
+          "-p",
+          "no:cacheprovider",
+          "--basetemp",
+          "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\pytest-05"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 1.087,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-05-pytest.log"
+      },
+      {
+        "group": 5,
+        "name": "cached-check",
+        "command_argv": [
+          "git",
+          "diff",
+          "--cached",
+          "--check"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 0.023,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-05-cached-check.log"
+      },
+      {
+        "group": 6,
+        "name": "pytest",
+        "command_argv": [
+          "D:\\AERIS\\.venv\\Scripts\\python.exe",
+          "-B",
+          "-X",
+          "utf8",
+          "-m",
+          "pytest",
+          "agent/tests",
+          "-ra",
+          "-p",
+          "no:cacheprovider",
+          "--basetemp",
+          "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\pytest-06"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 0.558,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-06-pytest.log"
+      },
+      {
+        "group": 6,
+        "name": "cached-check",
+        "command_argv": [
+          "git",
+          "diff",
+          "--cached",
+          "--check"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 0.021,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-06-cached-check.log"
+      },
+      {
+        "group": 7,
+        "name": "pytest",
+        "command_argv": [
+          "D:\\AERIS\\.venv\\Scripts\\python.exe",
+          "-B",
+          "-X",
+          "utf8",
+          "-m",
+          "pytest",
+          "pipeline/tests",
+          "api/tests",
+          "ingest/tests/test_storage.py",
+          "scripts/tests/test_lambda_package_size.py",
+          "-ra",
+          "-p",
+          "no:cacheprovider",
+          "--basetemp",
+          "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\pytest-07"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 7.123,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-07-pytest.log"
+      },
+      {
+        "group": 7,
+        "name": "cached-check",
+        "command_argv": [
+          "git",
+          "diff",
+          "--cached",
+          "--check"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 0.023,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-07-cached-check.log"
+      },
+      {
+        "group": 8,
+        "name": "pytest",
+        "command_argv": [
+          "D:\\AERIS\\.venv\\Scripts\\python.exe",
+          "-B",
+          "-X",
+          "utf8",
+          "-m",
+          "pytest",
+          "scripts/tests/test_local_api.py",
+          "-ra",
+          "-p",
+          "no:cacheprovider",
+          "--basetemp",
+          "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\pytest-08"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 0.487,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-08-pytest.log"
+      },
+      {
+        "group": 8,
+        "name": "cached-check",
+        "command_argv": [
+          "git",
+          "diff",
+          "--cached",
+          "--check"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 0.025,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-08-cached-check.log"
+      },
+      {
+        "group": 9,
+        "name": "static-provenance",
+        "command_argv": [
+          "D:\\AERIS\\.venv\\Scripts\\python.exe",
+          "-B",
+          "-X",
+          "utf8",
+          "-m",
+          "scripts.publish_model_provenance",
+          "--check"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 0.087,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-09-static-provenance.log"
+      },
+      {
+        "group": 9,
+        "name": "pytest",
+        "command_argv": [
+          "D:\\AERIS\\.venv\\Scripts\\python.exe",
+          "-B",
+          "-X",
+          "utf8",
+          "-m",
+          "pytest",
+          "scripts/tests/test_static_provenance.py",
+          "-ra",
+          "-p",
+          "no:cacheprovider",
+          "--basetemp",
+          "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\pytest-09"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 0.539,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-09-pytest.log"
+      },
+      {
+        "group": 9,
+        "name": "cached-check",
+        "command_argv": [
+          "git",
+          "diff",
+          "--cached",
+          "--check"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 0.024,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-09-cached-check.log"
+      },
+      {
+        "group": 10,
+        "name": "vitest",
+        "command_argv": [
+          "C:\\WINDOWS\\System32\\cmd.exe",
+          "/d",
+          "/c",
+          "npm.cmd",
+          "test"
+        ],
+        "cwd": "D:\\AERIS\\web",
+        "exit_code": 0,
+        "elapsed_seconds": 3.884,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-10-vitest.log"
+      },
+      {
+        "group": 10,
+        "name": "typecheck",
+        "command_argv": [
+          "C:\\WINDOWS\\System32\\cmd.exe",
+          "/d",
+          "/c",
+          "npm.cmd",
+          "run",
+          "typecheck"
+        ],
+        "cwd": "D:\\AERIS\\web",
+        "exit_code": 0,
+        "elapsed_seconds": 3.888,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-10-typecheck.log"
+      },
+      {
+        "group": 10,
+        "name": "cached-check",
+        "command_argv": [
+          "git",
+          "diff",
+          "--cached",
+          "--check"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 0.026,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-10-cached-check.log"
+      },
+      {
+        "group": 11,
+        "name": "vitest",
+        "command_argv": [
+          "C:\\WINDOWS\\System32\\cmd.exe",
+          "/d",
+          "/c",
+          "npm.cmd",
+          "test",
+          "--",
+          "src/components/analytics/AqiForecast12h.test.tsx",
+          "src/__tests__/uiRegression.test.tsx"
+        ],
+        "cwd": "D:\\AERIS\\web",
+        "exit_code": 0,
+        "elapsed_seconds": 2.597,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-11-vitest.log"
+      },
+      {
+        "group": 11,
+        "name": "cached-check",
+        "command_argv": [
+          "git",
+          "diff",
+          "--cached",
+          "--check"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 0.028,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-11-cached-check.log"
+      },
+      {
+        "group": 12,
+        "name": "vitest",
+        "command_argv": [
+          "C:\\WINDOWS\\System32\\cmd.exe",
+          "/d",
+          "/c",
+          "npm.cmd",
+          "test",
+          "--",
+          "src/components/map/MapContainer.test.tsx"
+        ],
+        "cwd": "D:\\AERIS\\web",
+        "exit_code": 0,
+        "elapsed_seconds": 1.866,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-12-vitest.log"
+      },
+      {
+        "group": 12,
+        "name": "cached-check",
+        "command_argv": [
+          "git",
+          "diff",
+          "--cached",
+          "--check"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 0.028,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-12-cached-check.log"
+      },
+      {
+        "group": 13,
+        "name": "vitest",
+        "command_argv": [
+          "C:\\WINDOWS\\System32\\cmd.exe",
+          "/d",
+          "/c",
+          "npm.cmd",
+          "test"
+        ],
+        "cwd": "D:\\AERIS\\web",
+        "exit_code": 0,
+        "elapsed_seconds": 2.799,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-13-vitest.log"
+      },
+      {
+        "group": 13,
+        "name": "build",
+        "command_argv": [
+          "C:\\WINDOWS\\System32\\cmd.exe",
+          "/d",
+          "/c",
+          "npm.cmd",
+          "run",
+          "build"
+        ],
+        "cwd": "D:\\AERIS\\web",
+        "exit_code": 0,
+        "elapsed_seconds": 3.834,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-13-build.log"
+      },
+      {
+        "group": 13,
+        "name": "browser",
+        "command_argv": [
+          "C:\\WINDOWS\\System32\\cmd.exe",
+          "/d",
+          "/c",
+          "npm.cmd",
+          "run",
+          "test:e2e"
+        ],
+        "cwd": "D:\\AERIS\\web",
+        "exit_code": 0,
+        "elapsed_seconds": 246.015,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-13-browser.log"
+      },
+      {
+        "group": 13,
+        "name": "cached-check",
+        "command_argv": [
+          "git",
+          "diff",
+          "--cached",
+          "--check"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 0.023,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-13-cached-check.log"
+      },
+      {
+        "group": 14,
+        "name": "vitest",
+        "command_argv": [
+          "C:\\WINDOWS\\System32\\cmd.exe",
+          "/d",
+          "/c",
+          "npm.cmd",
+          "test"
+        ],
+        "cwd": "D:\\AERIS\\web",
+        "exit_code": 0,
+        "elapsed_seconds": 3.58,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-14-vitest.log"
+      },
+      {
+        "group": 14,
+        "name": "typecheck",
+        "command_argv": [
+          "C:\\WINDOWS\\System32\\cmd.exe",
+          "/d",
+          "/c",
+          "npm.cmd",
+          "run",
+          "typecheck"
+        ],
+        "cwd": "D:\\AERIS\\web",
+        "exit_code": 0,
+        "elapsed_seconds": 3.285,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-14-typecheck.log"
+      },
+      {
+        "group": 14,
+        "name": "build",
+        "command_argv": [
+          "C:\\WINDOWS\\System32\\cmd.exe",
+          "/d",
+          "/c",
+          "npm.cmd",
+          "run",
+          "build"
+        ],
+        "cwd": "D:\\AERIS\\web",
+        "exit_code": 0,
+        "elapsed_seconds": 3.136,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-14-build.log"
+      },
+      {
+        "group": 14,
+        "name": "browser",
+        "command_argv": [
+          "C:\\WINDOWS\\System32\\cmd.exe",
+          "/d",
+          "/c",
+          "npm.cmd",
+          "run",
+          "test:e2e"
+        ],
+        "cwd": "D:\\AERIS\\web",
+        "exit_code": 0,
+        "elapsed_seconds": 94.118,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-14-browser.log"
+      },
+      {
+        "group": 14,
+        "name": "cached-check",
+        "command_argv": [
+          "git",
+          "diff",
+          "--cached",
+          "--check"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 0.023,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-14-cached-check.log"
+      },
+      {
+        "group": 15,
+        "name": "pytest",
+        "command_argv": [
+          "D:\\AERIS\\.venv\\Scripts\\python.exe",
+          "-B",
+          "-X",
+          "utf8",
+          "-m",
+          "pytest",
+          "-ra",
+          "-p",
+          "no:cacheprovider",
+          "--basetemp",
+          "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\pytest-15"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 17.336,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-15-pytest.log"
+      },
+      {
+        "group": 15,
+        "name": "static-provenance",
+        "command_argv": [
+          "D:\\AERIS\\.venv\\Scripts\\python.exe",
+          "-B",
+          "-X",
+          "utf8",
+          "-m",
+          "scripts.publish_model_provenance",
+          "--check"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 0.074,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-15-static-provenance.log"
+      },
+      {
+        "group": 15,
+        "name": "lambda-config",
+        "command_argv": [
+          "D:\\AERIS\\.venv\\Scripts\\python.exe",
+          "-B",
+          "-X",
+          "utf8",
+          "scripts/verify_lambda_dependencies.py",
+          "--config-only"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 0.146,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-15-lambda-config.log"
+      },
+      {
+        "group": 15,
+        "name": "vitest",
+        "command_argv": [
+          "C:\\WINDOWS\\System32\\cmd.exe",
+          "/d",
+          "/c",
+          "npm.cmd",
+          "test"
+        ],
+        "cwd": "D:\\AERIS\\web",
+        "exit_code": 0,
+        "elapsed_seconds": 3.501,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-15-vitest.log"
+      },
+      {
+        "group": 15,
+        "name": "typecheck",
+        "command_argv": [
+          "C:\\WINDOWS\\System32\\cmd.exe",
+          "/d",
+          "/c",
+          "npm.cmd",
+          "run",
+          "typecheck"
+        ],
+        "cwd": "D:\\AERIS\\web",
+        "exit_code": 0,
+        "elapsed_seconds": 3.239,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-15-typecheck.log"
+      },
+      {
+        "group": 15,
+        "name": "lint",
+        "command_argv": [
+          "C:\\WINDOWS\\System32\\cmd.exe",
+          "/d",
+          "/c",
+          "npm.cmd",
+          "run",
+          "lint"
+        ],
+        "cwd": "D:\\AERIS\\web",
+        "exit_code": 0,
+        "elapsed_seconds": 0.338,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-15-lint.log"
+      },
+      {
+        "group": 15,
+        "name": "build",
+        "command_argv": [
+          "C:\\WINDOWS\\System32\\cmd.exe",
+          "/d",
+          "/c",
+          "npm.cmd",
+          "run",
+          "build"
+        ],
+        "cwd": "D:\\AERIS\\web",
+        "exit_code": 0,
+        "elapsed_seconds": 3.125,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-15-build.log"
+      },
+      {
+        "group": 15,
+        "name": "browser",
+        "command_argv": [
+          "C:\\WINDOWS\\System32\\cmd.exe",
+          "/d",
+          "/c",
+          "npm.cmd",
+          "run",
+          "test:e2e"
+        ],
+        "cwd": "D:\\AERIS\\web",
+        "exit_code": 0,
+        "elapsed_seconds": 95.037,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-15-browser.log"
+      },
+      {
+        "group": 15,
+        "name": "documentation-inventory",
+        "exit_code": 0,
+        "markdown_files": 11,
+        "local_links": 63,
+        "included": 126,
+        "excluded": 1
+      },
+      {
+        "group": 15,
+        "name": "cached-check",
+        "command_argv": [
+          "git",
+          "diff",
+          "--cached",
+          "--check"
+        ],
+        "cwd": "D:\\AERIS",
+        "exit_code": 0,
+        "elapsed_seconds": 0.023,
+        "log": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-15-cached-check.log"
+      }
+    ],
+    "operational_notes": [
+      {
+        "group": 13,
+        "issue": "All 30 browser cases passed, but automatic Windows preview shutdown stalled before runner exit.",
+        "powershell_Stop_Process": "Failed with NullReferenceException; no successful process termination.",
+        "resolution": "Elevated taskkill /PID 23700 /T /F terminated only the test Vite preview server; npm browser command and validation then exited 0.",
+        "validation_weakened": false,
+        "subsequent_browser_execution": "Elevated process execution to allow native cleanup."
+      },
+      {
+        "group": 14,
+        "issue": "Elevated shell could not read temporary helper; that attempt ran no tests.",
+        "resolution": "Approved checks ran through the accessible helper. All 30 browser cases completed; elevated taskkill /PID 7724 /T /F ended only the preview server and the browser command exited 0.",
+        "validation_weakened": false
+      },
+      {
+        "group": 15,
+        "issue": "Automatic preview-server shutdown required the same explicit session cleanup.",
+        "resolution": "After all 30 browser cases completed, elevated taskkill /PID 14824 /T /F ended only the test preview server; npm browser and group validation exited 0.",
+        "validation_weakened": false
+      }
+    ],
+    "local_execution_evidence_directory": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60",
+    "final_documentation_group": 15,
+    "final_documentation_commit_reference": "The commit containing this verification record.",
+    "original_branch_head_preserved": "69442916784d10385df1ce8fa38b568b29ad27ed",
+    "excluded_plan_sha256": "11e38b71d14b8d6cd004ff38e65cbcfae8ae9c9b46894f336e7e67c2a8169320",
+    "protected_paths_unchanged": 130,
+    "excluded_plan_tracked": false,
+    "push_merge_PR_operations": []
+  },
+  "latest_commit_group_validation": [
+    {
+      "group": 15,
+      "name": "pytest",
+      "command_argv": [
+        "D:\\AERIS\\.venv\\Scripts\\python.exe",
+        "-B",
+        "-X",
+        "utf8",
+        "-m",
+        "pytest",
+        "-ra",
+        "-p",
+        "no:cacheprovider",
+        "--basetemp",
+        "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\pytest-15"
+      ],
+      "cwd": "D:\\AERIS",
+      "exit_code": 0,
+      "elapsed_seconds": 17.336,
+      "passed": 701,
+      "log_file": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-15-pytest.log"
+    },
+    {
+      "group": 15,
+      "name": "static-provenance",
+      "command_argv": [
+        "D:\\AERIS\\.venv\\Scripts\\python.exe",
+        "-B",
+        "-X",
+        "utf8",
+        "-m",
+        "scripts.publish_model_provenance",
+        "--check"
+      ],
+      "cwd": "D:\\AERIS",
+      "exit_code": 0,
+      "elapsed_seconds": 0.074,
+      "log_file": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-15-static-provenance.log"
+    },
+    {
+      "group": 15,
+      "name": "lambda-config",
+      "command_argv": [
+        "D:\\AERIS\\.venv\\Scripts\\python.exe",
+        "-B",
+        "-X",
+        "utf8",
+        "scripts/verify_lambda_dependencies.py",
+        "--config-only"
+      ],
+      "cwd": "D:\\AERIS",
+      "exit_code": 0,
+      "elapsed_seconds": 0.146,
+      "log_file": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-15-lambda-config.log"
+    },
+    {
+      "group": 15,
+      "name": "vitest",
+      "command_argv": [
+        "C:\\WINDOWS\\System32\\cmd.exe",
+        "/d",
+        "/c",
+        "npm.cmd",
+        "test"
+      ],
+      "cwd": "D:\\AERIS\\web",
+      "exit_code": 0,
+      "elapsed_seconds": 3.501,
+      "passed": 179,
+      "log_file": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-15-vitest.log"
+    },
+    {
+      "group": 15,
+      "name": "typecheck",
+      "command_argv": [
+        "C:\\WINDOWS\\System32\\cmd.exe",
+        "/d",
+        "/c",
+        "npm.cmd",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "D:\\AERIS\\web",
+      "exit_code": 0,
+      "elapsed_seconds": 3.239,
+      "log_file": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-15-typecheck.log"
+    },
+    {
+      "group": 15,
+      "name": "lint",
+      "command_argv": [
+        "C:\\WINDOWS\\System32\\cmd.exe",
+        "/d",
+        "/c",
+        "npm.cmd",
+        "run",
+        "lint"
+      ],
+      "cwd": "D:\\AERIS\\web",
+      "exit_code": 0,
+      "elapsed_seconds": 0.338,
+      "log_file": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-15-lint.log"
+    },
+    {
+      "group": 15,
+      "name": "build",
+      "command_argv": [
+        "C:\\WINDOWS\\System32\\cmd.exe",
+        "/d",
+        "/c",
+        "npm.cmd",
+        "run",
+        "build"
+      ],
+      "cwd": "D:\\AERIS\\web",
+      "exit_code": 0,
+      "elapsed_seconds": 3.125,
+      "log_file": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-15-build.log"
+    },
+    {
+      "group": 15,
+      "name": "browser",
+      "command_argv": [
+        "C:\\WINDOWS\\System32\\cmd.exe",
+        "/d",
+        "/c",
+        "npm.cmd",
+        "run",
+        "test:e2e"
+      ],
+      "cwd": "D:\\AERIS\\web",
+      "exit_code": 0,
+      "elapsed_seconds": 95.037,
+      "passed": 30,
+      "log_file": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-15-browser.log"
+    },
+    {
+      "group": 15,
+      "name": "documentation-inventory",
+      "exit_code": 0,
+      "markdown_files": 11,
+      "local_links": 63,
+      "included": 126,
+      "excluded": 1
+    },
+    {
+      "group": 15,
+      "name": "cached-check",
+      "command_argv": [
+        "git",
+        "diff",
+        "--cached",
+        "--check"
+      ],
+      "cwd": "D:\\AERIS",
+      "exit_code": 0,
+      "elapsed_seconds": 0.023,
+      "log_file": "C:\\Users\\LENOVO\\AppData\\Local\\Temp\\aeris-submission-commits-jcy1dv60\\group-15-cached-check.log"
+    }
+  ],
+  "latest_result_summary": {
+    "python_passed": 701,
+    "python_warnings": 2,
+    "python_version": "3.14.3",
+    "vitest_passed": 179,
+    "vitest_files": 15,
+    "browser_passed": 30,
+    "browser_version": "155.0.4283.45",
+    "typecheck_exit": 0,
+    "lint_exit": 0,
+    "lint_warnings": 7,
+    "build_exit": 0,
+    "static_provenance_exit": 0,
+    "lambda_config_exit": 0,
+    "native_wheels_or_SAM_checked": false,
+    "submitted_paths": 126,
+    "excluded_local_only_paths": 1,
+    "local_markdown_links_checked": 63,
+    "local_markdown_broken_links": 0
+  }
+}

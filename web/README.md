@@ -48,4 +48,13 @@ These are **reported station measurements**, potentially taken at different time
 
 An exposure-concentration heatmap requires calibrated spatial receptor concentrations, compatible observation intervals/quality information, and adequate spatial/temporal coverage. The frontend cannot supply these missing scientific inputs. Implementation and verification details, remaining warnings and the complete changed-file inventory are recorded in [FRONTEND_AUDIT.md](FRONTEND_AUDIT.md).
 
-The changes remain unstaged for owner review. [MANUAL_COMMIT_PLAN.md](MANUAL_COMMIT_PLAN.md) lists 15 ordered commit groups, exact files, dependencies and validation commands. The complete groups keep nullable wind contracts with their compatible consumer and keep the observation heatmap with its controls, map integrations and regression dependencies.
+The original frontend foundation and data-integrity milestone are committed, including `6944291`. The subsequent submission-readiness scope is recorded in the [change inventory](../docs/submission/CHANGE_INVENTORY.json), with 15 approved groups on `feature/submission-readiness` and an explicit local-only exclusion. [MANUAL_COMMIT_PLAN.md](MANUAL_COMMIT_PLAN.md) preserves the earlier frontend foundation plan; it is not the current submission scope.
+
+
+## Model provenance in the submission demo
+
+Run `python -m scripts.publish_model_provenance --check` from the repository root before building. Regenerate the separate `web/public/data/model-provenance.json` only when deliberately replacing published model outputs. The captured source/corridor files remain byte-for-byte unchanged by this command. The browser checks SHA-256 over downloaded UTF-8 bytes, including line endings, before attaching static metadata. Both evidenced Git LF and Windows CRLF archive copies are registered individually; any other edit is unknown provenance. Checksum binding does not authenticate a supplier or establish calibration.
+
+API mode receives metadata computed from stored raw bytes and verified companions. The shared schema preserves parameters, semantics, hashes and source/wind lineage. Every view exposes archived legacy status, obsolete corridor floors and missing original bindings. Arrival times are forecast-relative; population and risk are proxies. Saved advice is historical review material, not legal or medical instructions. Full contracts and limitations are in [submission readiness](../docs/submission/READINESS.md).
+
+The local API accepts both `localhost` and `127.0.0.1` dev origins. Browser checks use Edge, local atmospheric captures, mock basemap assets and the system-font fallback; they do not verify external asset availability. HTTPS (or loopback localhost) is required for the browser SHA-256 API. Node must meet Vite's `^20.19.0 || >=22.12.0` requirement; this milestone used Node 24.16.0.

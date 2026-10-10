@@ -39,7 +39,7 @@ Numerical tests and optional ML training use separately labelled mathematical/`B
 
 **Website:** https://d2iyso2niquge7.cloudfront.net
 
-The full pipeline runs on AWS every 30 minutes. Fires refresh every 15 minutes, air quality every 30, wind every hour.
+The SAM template configures the pipeline every 30 minutes, fires every 15 minutes, air quality every 30 minutes and wind hourly. The currently published deployment and live feeds have not been reverified for this readiness milestone; the URL above is the previously documented endpoint.
 
 ## 🧭 How it works
 
@@ -52,21 +52,13 @@ The full pipeline runs on AWS every 30 minutes. Fires refresh every 15 minutes, 
 | 5. **Plan actions** | A Strands agent on Amazon Bedrock reads the results through tools and writes a prioritised plan for each site and for the authorities. Every site in the plan is checked against the ranking | `agent/` |
 | 6. **Serve and show** | An HTTP API serves every result with its age. A React + MapLibre dashboard shows source → corridor → sites → actions | `api/`, `web/` |
 
-### One real run
+### Preserved archive and current replay
 
-Pipeline run at **2026-10-08 16:14 UTC** (the numbers change every run; read the live site for current ones):
+The saved source artifact contains **10 legacy source records**, generated `2026-10-08T14:52:16.603976Z`. The current detector replay of the separately preserved **227-fire** input produces **22 candidate clusters**, referenced to that input's capture time. These are distinct artifacts; original source input/parameter bindings are unknown.
 
-| | |
-|---|---|
-| 🔥 Sources detected | 10, from 387 VIIRS fire detections |
-| 🏫 Sites ranked | 444 schools and hospitals in the corridor |
-| 🏥 Top-ranked site | Janakpuri Super Speciality Hospital, Delhi: already inside the 0–2 h band |
-| 👥 People exposed (estimate) | 7,132,123 |
-| 🤖 Plan written by | Rules generator (Bedrock fallback; see Known limitations below) |
+The saved corridor contains obsolete concentration and risk floors. Its values are historical simulations, not the current Gaussian-puff calculation, observed PM2.5 or calibrated forecasts. The source/corridor notice in the dashboard identifies exact LF/CRLF byte variants and exposes timestamps, hashes and available lineage. Saved population/ranking/action artifacts have separate timestamps; they do not establish a single original run or confirmed exposure.
 
-These are outputs from a real-input pipeline run. The exposure estimate and arrival bands are modelled results, not measured forecast accuracy or confirmed exposure.
-
-## 🏗️ Architecture (as deployed)
+## 🏗️ Architecture configured in SAM
 
 <img src="docs/assets/aeris-deployed-architecture.png" alt="AERIS deployed architecture" width="100%"/>
 
@@ -91,7 +83,7 @@ These are outputs from a real-input pipeline run. The exposure estimate and arri
 
 **AWS services:** Lambda (10 functions, Python 3.12, arm64), Step Functions, EventBridge Scheduler, S3, Secrets Manager, SQS, Amazon Bedrock, API Gateway, CloudFront, CloudWatch, SNS, AWS Budgets, IAM (one least-privilege role per function). Region: `ap-south-1` (Mumbai).
 
-The full 8-layer target design is in [`docs/aeris_architecture.drawio`](docs/aeris_architecture.drawio); its "As deployed" page shows what runs today.
+The full 8-layer target design is in [`docs/aeris_architecture.drawio`](docs/aeris_architecture.drawio); its "As deployed" page records the earlier deployment design; the current remote stack remains unverified.
 
 ## 📁 Repository layout
 
@@ -112,7 +104,7 @@ AERIS/
 ## 🚀 Getting started
 
 ### Prerequisites
-- Python 3.12, Node.js 18+
+- Python 3.12 deployment target; installed Python 3.14.3 used for this local milestone. Node.js 20.19+ on the 20.x line, or 22.12+ (Vite requirement; local Node 24.16.0).
 - Free API keys: [NASA FIRMS MAP_KEY](https://firms.modaps.eosdis.nasa.gov/api/map_key/) and [OpenAQ](https://openaq.org/); optionally [data.gov.in](https://data.gov.in/)
 - For deploying: AWS CLI v2, SAM CLI and an AWS account
 
@@ -129,18 +121,18 @@ cp .env.example .env    # then fill in FIRMS_MAP_KEY, OPENAQ_API_KEY
 ./start.sh              # installs web deps if needed, serves http://127.0.0.1:5173
 ```
 
-With `VITE_API_BASE_URL` empty, the UI reads the real snapshots in `web/public/data/`. Set it in `web/.env.local` to use an API instead.
+With `VITE_API_BASE_URL` empty, the UI reads preserved snapshots in `web/public/data/`, explicitly labelled stale and legacy where applicable. Verify separate metadata from the repository root with `python -m scripts.publish_model_provenance --check`. Set `VITE_API_BASE_URL` in `web/.env.local` to use an API instead. On Windows, the read-only demo can be started with `cd web; npm.cmd ci; npm.cmd run dev`; it requires no AWS credentials and does not regenerate snapshots.
 
 ### 3. Refresh the data and run the pipeline locally
 
-Each step reads and writes `data/live/`:
+The following refresh commands intentionally replace local working outputs and require live inputs. Keep the preserved submission captures separate; for a read-only demo use the dashboard commands above. A 48-hour plume run requires wind coverage for the entire requested path and time window:
 
 ```bash
 python -m ingest.firms.handler          # needs FIRMS_MAP_KEY
 python -m ingest.aqi.handler            # needs OPENAQ_API_KEY
 python -m ingest.weather.handler        # Open-Meteo, no key
-python -m models.source_detection.cluster
-python -m models.plume.corridor
+python -m models.source_detection.cluster --live --provenance-output data/live/sources.provenance.json
+python -m models.plume.corridor --live --provenance-output data/live/corridor.provenance.json
 python -m models.exposure.rank_sites --live
 python -m agent.agent --live            # AGENT_MODEL_PROVIDER=bedrock to use Bedrock
 ```
@@ -204,8 +196,8 @@ Region of interest: Punjab, Haryana and Delhi NCR (bbox `73.5, 28.0, 77.5, 32.5`
 - **The corridor is a fast heuristic, not a chemical transport model** (not WRF-Chem). Its spread, decay and scale constants are not yet calibrated against station history, and the exposed-population range is wide
 - **The calibration engine is ready, but historical calibration is blocked.** Valid event histories, background measurements and held-out observations are still needed; the current snapshots do not establish historical forecast accuracy. See [`models/RELEASE_AUDIT.json`](models/RELEASE_AUDIT.json)
 - **The optional ML surrogate is implemented locally and trained on `BASELINE_SIMULATED` physics outputs.** It has no real-observation validation and is not used by the production corridor pipeline, which remains physics-based. See [`models/training/README.md`](models/training/README.md)
-- **The Bedrock agent is wired up but currently falls back.** It tries Claude, then Amazon Nova, then a rules plan built from the same real data. Until Bedrock model access is sorted on the account, the plan comes from the rules generator. `actions.json` always names its `generator`
-- **Dashboard cleanup in progress:** a few panels still show static text or assumed multipliers. They are listed in [`docs/audit/data-authenticity.md`](docs/audit/data-authenticity.md) and being replaced with live values
+- **The Bedrock agent is wired up; current live model access is unverified.** It tries Claude, then Amazon Nova, then a rules plan built from the same real data. Local tests stub AWS calls; they verify fallback behavior, not current Bedrock access or the factual grounding of live model prose. The rules plan is advisory and does not issue legal or medical orders. `actions.json` always names its `generator`
+- **Dashboard scientific limits:** the observed PM2.5 layer shows occupied station cells without interpolation. Assumed intervention multipliers are explicitly illustrative and have no validated effect. Station AQI may be a PM2.5 sub-index with an unverified averaging period. Archived recommendation text is historical and requires review, not execution. See [current readiness evidence](docs/submission/READINESS.md).
 - Not yet used: a SageMaker endpoint for the optional surrogate, and Sentinel-5P satellite data
 
 ## 🗺️ Roadmap
