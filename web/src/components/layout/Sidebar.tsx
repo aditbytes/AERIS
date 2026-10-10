@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import {
   BarChart2,
   LayoutDashboard,
@@ -66,13 +65,12 @@ export default function Sidebar() {
     setActiveTab,
     isSidebarCollapsed,
     toggleSidebar,
+    setSidebarCollapsed,
     sources,
     rankedSites,
     actions,
     wind,
   } = useAeris()
-
-  const [hoveredItemId, setHoveredItemId] = useState<string | null>(null)
 
   // Compute live badge values from scientific data
   const getBadgeValue = (item: NavItemConfig): string | null => {
@@ -106,6 +104,7 @@ export default function Sidebar() {
         <button
           className="sidebar-brand-btn"
           onClick={() => setActiveTab('dashboard')}
+          aria-label="Go to AERIS Dashboard"
           title="Go to AERIS Dashboard"
           type="button"
         >
@@ -116,7 +115,6 @@ export default function Sidebar() {
             <div className="brand-title-wrap">
               <div className="brand-title-line">
                 <span className="brand-main-title">AERIS</span>
-                <span className="brand-version-pill">v2.4</span>
               </div>
               <span className="brand-sub-title">Environmental Risk AI</span>
             </div>
@@ -148,21 +146,19 @@ export default function Sidebar() {
               {section.items.map((item) => {
                 const isActive = activeTab === item.id
                 const badge = getBadgeValue(item)
-                const isHovered = hoveredItemId === item.id
 
                 return (
                   <li
                     key={item.id}
                     className="sidebar-item-wrapper"
-                    onMouseEnter={() => setHoveredItemId(item.id)}
-                    onMouseLeave={() => setHoveredItemId(null)}
                   >
                     <button
                       id={`nav-${item.id}`}
                       data-nav-id={item.id}
                       className={`sidebar-nav-item-btn ${isActive ? 'active' : ''}`}
-                      onClick={() => setActiveTab(item.id)}
+                      onClick={() => { setActiveTab(item.id); if (window.innerWidth < 768) setSidebarCollapsed(true) }}
                       aria-label={item.label}
+                      title={item.label}
                       aria-current={isActive ? 'page' : undefined}
                       type="button"
                     >
@@ -185,28 +181,10 @@ export default function Sidebar() {
                               {badge}
                             </span>
                           )}
-                          <span className="btn-shortcut-key" aria-hidden="true">{item.shortcut}</span>
                         </>
                       )}
                     </button>
 
-                    {/* Floating Glassmorphic Tooltip in Collapsed Mode */}
-                    {isSidebarCollapsed && isHovered && (
-                      <div className="floating-nav-tooltip" role="tooltip">
-                        <div className="tooltip-cat">{section.section}</div>
-                        <div className="tooltip-row">
-                          <span className="tooltip-label">{item.label}</span>
-                          {badge && (
-                            <span
-                              className={`tooltip-badge badge-${item.badgeType ?? 'neutral'}`}
-                            >
-                              {badge}
-                            </span>
-                          )}
-                        </div>
-                        <div className="tooltip-hint">Press [{item.shortcut}]</div>
-                      </div>
-                    )}
                   </li>
                 )
               })}
@@ -221,7 +199,7 @@ export default function Sidebar() {
           <div className="sidebar-expanded-footer">
             <div className="footer-status-row">
               <span className="footer-status-dot" />
-              <span className="footer-status-label">CAQM Protocol Active</span>
+              <span className="footer-status-label">Read-only data dashboard</span>
             </div>
             <button
               className="collapse-action-btn"

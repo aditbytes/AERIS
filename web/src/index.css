@@ -28,7 +28,7 @@
   --risk-vh-text:        #C92A2A;
   --risk-vh-bg:          #FFF0F0;
   --risk-vh-border:      #FFCDD2;
-  --risk-h-text:         #D4620A;
+  --risk-h-text:         #984000;
   --risk-h-bg:           #FFF4EC;
   --risk-h-border:       #FFD6B0;
   --risk-m-text:         #B45309;
@@ -41,8 +41,8 @@
   /* Neutral Text */
   --text-primary:        #1A2421;
   --text-secondary:      #4A5E56;
-  --text-tertiary:       #7A8E88;
-  --text-disabled:       #B0BEB8;
+  --text-tertiary:       #52665E;
+  --text-disabled:       #62746C;
 
   /* Spacing & Shape */
   --radius-card:         18px;
@@ -268,8 +268,7 @@ body {
 .card { animation: fadeInUp 0.35s ease both; }
 
 /* 14. MapLibre GL override — remove default attribution UI clutter */
-.maplibregl-ctrl-attrib { display: none !important; }
-.maplibregl-ctrl-logo   { display: none !important; }
+.maplibregl-ctrl-attrib { font-size: 10px; }
 
 /* 15. Accessibility & Motion Preferences (WCAG AA) */
 @media (prefers-reduced-motion: reduce) {
@@ -288,6 +287,33 @@ select:focus-visible,
 [tabindex]:focus-visible {
   outline: 2px solid var(--brand-primary) !important;
   outline-offset: 2px !important;
+}
+
+a:focus-visible, summary:focus-visible, textarea:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 2px; }
+.feed-error-banner { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; background: #fff4ec; color: #873700; padding: 8px 16px; }
+.feed-error-banner button { padding: 4px 10px; cursor: pointer; }
+.map-science-note { padding: 5px 12px; font-size: 11px; color: #4a5e56; background: #f8faf8; flex: 0 0 auto; overflow-wrap: anywhere; }
+.static-map-note { position: absolute; top: 25px; left: 12px; right: 12px; z-index: 1; font-size: 11px; color: #374151; background: #ffffffee; padding: 4px; }
+.map-area { min-height: 380px; }
+.map-header { flex-wrap: wrap; }
+.map-header-actions { flex-wrap: wrap; max-width: 100%; }
+.map-canvas-area { min-height: 200px; }
+.map-explorer-container { flex: 1; height: auto; min-height: 0; }
+.explorer-stage { min-height: 260px; }
+@media(max-width: 1100px) {
+  .map-floating-hud { position: relative; top: 0; left: 0; transform: none; flex-wrap: wrap; justify-content: center; border-radius: 0; width: 100%; gap: 4px; }
+  .hud-divider { display: none; }
+  .map-floating-fab { top: 104px; }
+  .floating-layer-panel { top: 144px; max-height: calc(100% - 160px); }
+  .map-floating-legend { max-height: 160px; overflow: auto; bottom: 38px; }
+  .floating-inspector-drawer { max-width: calc(100% - 24px); max-height: calc(100% - 150px); top: 140px; }
+}
+@media(max-width: 600px) {
+  .map-area { height: auto; min-height: 450px; }
+  .hud-preset-chip { font-size: 10px; padding: 4px 7px; }
+  .hud-time-pills { flex-wrap: wrap; }
+  .map-floating-legend { width: 190px; left: 8px; }
+  .floating-layer-panel { width: calc(100% - 24px); }
 }
 
 /* 17. Executive Briefing Print Stylesheet */
