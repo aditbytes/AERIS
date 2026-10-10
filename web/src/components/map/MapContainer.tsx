@@ -4,7 +4,7 @@ import { Map, Marker, Popup, setWorkerUrl } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
-import { Layers, Maximize2 } from 'lucide-react'
+import { Layers, Maximize2, Info } from 'lucide-react'
 import { useAeris } from '@/services/dataContext'
 import { getRiskLevel, riskLabel } from '@/types/schemas'
 import { createThermalMarkerElement, createThermalPopupHtml } from './thermalMarker'
@@ -341,7 +341,6 @@ export default function MapContainer() {
       </div>
 
       <HeatmapControls data={heatmap.data} enabled={heatmap.enabled} onToggle={heatmap.setEnabled} opacity={heatmap.opacity} onOpacity={heatmap.setOpacity} onFit={webGlSupported ? heatmap.fit : undefined} bounds={webGlSupported ? heatmap.bounds : null} loading={loading} error={feedErrors.aqi} />
-      <p className="map-science-note">Forecast start: {corridor?.forecast_start ?? 'unavailable'}. Time controls select cumulative bands; full centrelines and ETA markers remain as forecast context. Modelled band peaks are not uniform receptor concentrations. Facility markers show up to 8 ranked sites; the facility table contains the full list.</p>
       <div className="map-canvas-area" onClick={() => isLayerMenuOpen && setIsLayerMenuOpen(false)}>
         {webGlSupported ? (
           <div ref={mapContainerRef} className="map-canvas" />
@@ -481,6 +480,14 @@ export default function MapContainer() {
             <span>Repository boundary</span>
           </div>
         </div>
+      </div>
+
+      {/* Sleek Bottom Status Strip */}
+      <div className="map-card-footer">
+        <p className="map-science-note">
+          <Info size={11} className="science-note-icon" />
+          <span>Forecast start: {corridor?.forecast_start ?? 'unavailable'}. Time controls select cumulative bands; full centrelines and ETA markers remain as forecast context. Modelled band peaks are not uniform receptor concentrations. Facility markers show up to 8 ranked sites; the facility table contains the full list.</span>
+        </p>
       </div>
     </div>
   )

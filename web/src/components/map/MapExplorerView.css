@@ -1203,4 +1203,23 @@
 .legend-swatch.aqi-poor { background: #C2410C; border-radius: 50%; }
 .legend-swatch.aqi-mod { background: #B45309; border-radius: 50%; }
 
+.explorer-footer-status {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
+  background: var(--surface-subtle, #fcfdfc);
+}
+
+.explorer-footer-status .map-science-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  font-size: 10.5px;
+  color: var(--text-secondary, #4a5e56);
+  background: transparent;
+  margin: 0;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 

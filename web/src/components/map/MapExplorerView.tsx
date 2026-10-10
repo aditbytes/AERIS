@@ -7,6 +7,7 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import {
   ChevronDown,
   Compass,
+  Info,
   Layers,
   Maximize2,
   Minimize2,
@@ -415,7 +416,6 @@ export default function MapExplorerView() {
   return (
     <div className={`map-explorer-container ${isFullscreen ? 'fullscreen' : ''}`}>
       <HeatmapControls data={heatmap.data} enabled={heatmap.enabled} onToggle={heatmap.setEnabled} opacity={heatmap.opacity} onOpacity={heatmap.setOpacity} onFit={webGlSupported ? heatmap.fit : undefined} bounds={webGlSupported ? heatmap.bounds : null} loading={loading} error={feedErrors.aqi} />
-      <p className="map-science-note">Uncalibrated model corridors · forecast start: {corridor?.forecast_start ?? 'unavailable'}. Time controls select cumulative bands; full centrelines and ETA markers remain as forecast context. Station observations are separate from modelled band peaks. Facility markers show up to 12 ranked sites after filtering; the facility table contains the full list.</p>
       {/* ── Map Canvas Stage with Floating HUD Controls ───────────────────── */}
       <div className="explorer-stage" onClick={() => isRegionsOpen && setIsRegionsOpen(false)}>
         {webGlSupported ? (
@@ -936,6 +936,14 @@ export default function MapExplorerView() {
             <Compass size={16} />
           </button>
         </div>
+      </div>
+
+      {/* Sleek Bottom Status Strip */}
+      <div className="explorer-footer-status">
+        <p className="map-science-note">
+          <Info size={11} className="science-note-icon" />
+          <span>Uncalibrated model corridors · forecast start: {corridor?.forecast_start ?? 'unavailable'}. Time controls select cumulative bands; full centrelines and ETA markers remain as forecast context. Station observations are separate from modelled band peaks. Facility markers show up to 12 ranked sites after filtering; the facility table contains the full list.</span>
+        </p>
       </div>
     </div>
   )
