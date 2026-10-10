@@ -1,10 +1,10 @@
 /**
  * Source Breakdown — Dynamically computed from real VIIRS satellite cluster FRP in sources.json
+ * Enhanced with interactive donut chart, proportional micro-meter legend, and executive intelligence ticker.
  */
+import { useState } from 'react'
 import { useAeris } from '@/services/dataContext'
 import './SourceBreakdown.css'
-
-import { useState } from 'react'
 
 interface Segment {
   label: string
@@ -16,61 +16,97 @@ interface Segment {
 
 function DonutChart({
   total,
+  totalFrp,
   segments,
   activeSegment,
   setActiveSegment,
 }: {
   total: number
+  totalFrp: number
   segments: Segment[]
   activeSegment: Segment | null
   setActiveSegment: (s: Segment | null) => void
 }) {
-  const cx = 60, cy = 60, r = 44, stroke = 22
+  const cx = 58, cy = 58, r = 40, stroke = 17
   const circumference = 2 * Math.PI * r
 
   return (
-    <svg width="120" height="120" viewBox="0 0 120 120" aria-label="Source Intensity Donut Chart">
-      {/* Background ring */}
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F0F4F0" strokeWidth={stroke} />
+    <div className="donut-chart-wrap">
+      <svg
+        width="116"
+        height="116"
+        viewBox="0 0 116 116"
+        aria-label="Source Intensity Donut Chart"
+        className="donut-svg"
+      >
+        {/* Background track ring */}
+        <circle
+          cx={cx}
+          cy={cy}
+          r={r}
+          fill="none"
+          stroke="rgba(0, 0, 0, 0.05)"
+          strokeWidth={stroke}
+        />
 
-      {segments.map((seg, i) => {
-        const dash = (seg.pct / 100) * circumference
-        const offset = segments.slice(0, i).reduce((sum, previous) => sum + previous.pct / 100 * circumference, 0)
-        const gap  = circumference - dash
-        const isHovered = activeSegment?.label === seg.label
-        const el = (
-          <circle
-            key={i}
-            cx={cx}
-            cy={cy}
-            r={r}
-            fill="none"
-            stroke={seg.color}
-            strokeWidth={isHovered ? stroke + 4 : stroke}
-            strokeDasharray={`${dash} ${gap}`}
-            strokeDashoffset={-offset}
-            onMouseEnter={() => setActiveSegment(seg)}
-            onMouseLeave={() => setActiveSegment(null)}
-            style={{
-              transform: 'rotate(-90deg)',
-              transformOrigin: '60px 60px',
-              cursor: 'pointer',
-              transition: 'stroke-width 0.15s ease, opacity 0.15s ease',
-              opacity: activeSegment && !isHovered ? 0.45 : 1,
-            }}
-          />
-        )
-        return el
-      })}
+        {segments.map((seg, i) => {
+          const dash = (seg.pct / 100) * circumference
+          const offset = segments.slice(0, i).reduce((sum, prev) => sum + (prev.pct / 100) * circumference, 0)
+          const gap = circumference - dash
+          const isHovered = activeSegment?.label === seg.label
 
-      {/* Dynamic Center text */}
-      <text x={cx} y={cy - 4} textAnchor="middle" fontSize={activeSegment ? "15" : "18"} fontWeight="800" fill="#1A2421" fontFamily="Outfit, sans-serif">
-        {activeSegment ? `${activeSegment.frpMw} MW` : total}
-      </text>
-      <text x={cx} y={cy + 13} textAnchor="middle" fontSize="10" fill="#475569" fontFamily="Outfit, sans-serif">
-        {activeSegment ? `${activeSegment.count} Clusters` : 'Clusters'}
-      </text>
-    </svg>
+          return (
+            <circle
+              key={seg.label}
+              cx={cx}
+              cy={cy}
+              r={r}
+              fill="none"
+              stroke={seg.color}
+              strokeWidth={isHovered ? stroke + 4 : stroke}
+              strokeDasharray={`${dash} ${gap}`}
+              strokeDashoffset={-offset}
+              onMouseEnter={() => setActiveSegment(seg)}
+              onMouseLeave={() => setActiveSegment(null)}
+              className={`donut-segment ${isHovered ? 'active' : ''}`}
+              style={{
+                transform: 'rotate(-90deg)',
+                transformOrigin: '58px 58px',
+                cursor: 'pointer',
+                transition: 'stroke-width 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease',
+                opacity: activeSegment && !isHovered ? 0.35 : 1,
+              }}
+            />
+          )
+        })}
+
+        {/* Dynamic Center Hub Readout */}
+        <text
+          x={cx}
+          y={cy - 4}
+          textAnchor="middle"
+          fontSize={activeSegment ? "13" : "15"}
+          fontWeight="800"
+          fill={activeSegment ? activeSegment.color : "var(--text-primary, #1e2924)"}
+          fontFamily="Outfit, var(--font, sans-serif)"
+          className="donut-center-main"
+        >
+          {activeSegment ? `${activeSegment.frpMw} MW` : totalFrp > 0 ? `${Math.round(totalFrp)} MW` : total}
+        </text>
+        <text
+          x={cx}
+          y={cy + 10}
+          textAnchor="middle"
+          fontSize="9"
+          fontWeight="600"
+          fill="var(--text-tertiary, #6c8077)"
+          fontFamily="Outfit, var(--font, sans-serif)"
+          className="donut-center-sub"
+        >
+          {activeSegment ? `${Math.round(activeSegment.pct)}% · ${activeSegment.count} clus` : `${total} Clusters`}
+        </text>
+      </svg>
+    </div>
   )
 }
 
@@ -81,7 +117,6 @@ export default function SourceBreakdown() {
 
   const rawSources = sources?.sources ?? []
   const total = rawSources.length
-
   const totalFrp = rawSources.reduce((acc, s) => acc + s.total_frp_mw, 0)
 
   // Dynamic FRP emission tiers computed directly from NASA FIRMS cluster data
@@ -96,7 +131,7 @@ export default function SourceBreakdown() {
   const unknownSources = rawSources.filter(s => s.territory == null)
 
   const calcFrp = (arr: typeof rawSources) => arr.reduce((acc, s) => acc + s.total_frp_mw, 0)
-  const share = (arr: typeof rawSources) => totalFrp > 0 ? (calcFrp(arr) / totalFrp) * 100 : 0
+  const share = (arr: typeof rawSources) => (totalFrp > 0 ? (calcFrp(arr) / totalFrp) * 100 : 0)
 
   const frpSegments: Segment[] = [
     {
@@ -155,12 +190,19 @@ export default function SourceBreakdown() {
 
   const segments = viewMode === 'frp' ? frpSegments : scopeSegments
 
+  // Executive tactical insights
+  const peakSource = rawSources.length > 0
+    ? [...rawSources].sort((a, b) => b.total_frp_mw - a.total_frp_mw)[0]
+    : null
+  const domesticFrp = calcFrp(indiaSources)
+  const domesticPct = totalFrp > 0 ? Math.round((domesticFrp / totalFrp) * 100) : 0
+
   return (
     <div className="source-breakdown card">
       <div className="section-header source-breakdown-head">
-        <div>
+        <div className="breakdown-title-group">
           <h3 className="section-title">Source Intensity (% of Total FRP)</h3>
-          <span className="text-xs text-tertiary" style={{ fontSize: '10px' }}>
+          <span className="text-xs text-tertiary breakdown-sub">
             Measures share of {Math.round(totalFrp)} MW Fire Radiative Power
           </span>
         </div>
@@ -191,45 +233,79 @@ export default function SourceBreakdown() {
           </button>
         </div>
       </div>
-      {totalFrp === 0 && <p className="panel-sub">{total === 0 ? 'No source candidates available.' : 'Total FRP is zero; percentage shares are unavailable.'}</p>}
+
+      {totalFrp === 0 && (
+        <p className="panel-sub">
+          {total === 0
+            ? 'No source candidates available.'
+            : 'Total FRP is zero; percentage shares are unavailable.'}
+        </p>
+      )}
+
       <div className="breakdown-body">
         <DonutChart
           total={total}
+          totalFrp={totalFrp}
           segments={segments}
           activeSegment={activeSegment}
           setActiveSegment={setActiveSegment}
         />
+
         <ul className="breakdown-legend">
           {segments.map(seg => {
             const isHovered = activeSegment?.label === seg.label
             return (
               <li
                 key={seg.label}
-                className="legend-row"
+                className={`legend-row ${isHovered ? 'hovered' : ''}`}
                 onMouseEnter={() => setActiveSegment(seg)}
                 onMouseLeave={() => setActiveSegment(null)}
-                style={{
-                  background: isHovered ? 'var(--surface-subtle)' : 'transparent',
-                  borderRadius: '6px',
-                  padding: '2px 4px',
-                  cursor: 'pointer',
-                  fontWeight: isHovered ? '700' : '500',
-                  transition: 'background 0.15s ease',
-                }}
               >
-                <span className="legend-dot" style={{ background: seg.color }} />
-                <span className="legend-shape-icon" style={{ fontSize: '9px', color: seg.color, marginRight: '4px' }}>
-                  {seg.label.includes('Severe') ? '▲' : seg.label.includes('High') ? '■' : seg.label.includes('Moderate') ? '◆' : '●'}
-                </span>
-                <span className="legend-label">
-                  {seg.label} <small style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>({seg.count} clus)</small>
-                </span>
-                <span className="legend-pct">{totalFrp > 0 ? `${Math.round(seg.pct)}% FRP` : 'N/A'}</span>
+                <div className="legend-label-col">
+                  <span className="legend-dot" style={{ background: seg.color }} />
+                  <span className="legend-label">
+                    {seg.label} <small className="legend-count">({seg.count} clus)</small>
+                  </span>
+                </div>
+
+                <div className="legend-meter-col">
+                  <div className="legend-meter-track" title={`${Math.round(seg.pct)}% FRP share`}>
+                    <div
+                      className="legend-meter-fill"
+                      style={{
+                        width: `${Math.min(100, Math.max(0, seg.pct))}%`,
+                        background: seg.color,
+                      }}
+                    />
+                  </div>
+                  <span className="legend-pct">
+                    {totalFrp > 0 ? `${Math.round(seg.pct)}% FRP` : 'N/A'}
+                  </span>
+                </div>
               </li>
             )
           })}
         </ul>
       </div>
+
+      {totalFrp > 0 && (
+        <div className="source-breakdown-ticker">
+          {peakSource && (
+            <span className="ticker-chip" title={`Peak emitter cluster ID: ${peakSource.id}`}>
+              <span className="ticker-icon">⚡</span>
+              <span className="ticker-label">Peak:</span>
+              <strong className="ticker-val">{Math.round(peakSource.total_frp_mw)} MW</strong>
+              <small className="ticker-district">({peakSource.district || 'Unassigned'})</small>
+            </span>
+          )}
+          <span className="ticker-divider" />
+          <span className="ticker-chip">
+            <span className="ticker-icon">🇮🇳</span>
+            <span className="ticker-label">Domestic Influx:</span>
+            <strong className="ticker-val">{domesticPct}%</strong>
+          </span>
+        </div>
+      )}
     </div>
   )
 }
