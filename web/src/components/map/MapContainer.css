@@ -205,9 +205,20 @@
   overflow: hidden;
 }
 
+/* Crucial: Ensure MapLibre marker root elements are strictly absolute-positioned.
+   If marker containers inherit or define position: relative, they participate in flow,
+   causing markers to cascade downwards by their heights and end up in the ocean. */
+.map-canvas .maplibregl-marker {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+}
+
 /* ── Precision Optical Sensor Reticles (NASA / Aerospace Grade) ────────── */
 .aeris-sensor-reticle {
-  position: relative;
+  position: absolute !important;
+  top: 0;
+  left: 0;
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -883,7 +894,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
+  position: absolute !important;
+  top: 0;
+  left: 0;
   width: 22px;
   height: 22px;
   background: white;

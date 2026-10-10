@@ -261,6 +261,8 @@ export default function MapContainer() {
           const isImminent = site.eta_hours < 8
           const el = document.createElement('div')
           el.className = `dashboard-site-marker site-${site.type} ${isImminent ? 'is-imminent' : 'is-background'}`
+          el.style.width = '22px'
+          el.style.height = '22px'
           el.innerHTML = `
             <span class="d-site-ico">${isSchool ? '🏫' : '🏥'}</span>
             ${isImminent ? `<span class="d-site-eta-pill">~${site.eta_hours.toFixed(0)}h</span>` : ''}
