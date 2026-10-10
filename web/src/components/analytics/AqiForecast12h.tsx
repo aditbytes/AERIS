@@ -23,6 +23,7 @@ export default function AqiForecast12h() {
   const parsedCorridor = useMemo(() => corridor == null ? null : CorridorGeoJSONSchema.safeParse(corridor), [corridor])
   const parsedAqi = useMemo(() => aqi == null ? null : AqiFileSchema.safeParse(aqi), [aqi])
   const model = parsedCorridor?.success ? parsedCorridor.data : null
+  const legacy = model?.provenance?.artifact_status === 'ARCHIVED_LEGACY'
   const bandRows = useMemo(() => {
     const grouped = new Map<string, { from: number; to: number; peak: number }>()
     for (const feature of model?.features ?? []) {
@@ -83,9 +84,9 @@ export default function AqiForecast12h() {
         <div className="forecast-title-group">
           <div className="title-row">
             <h3 className="section-title">AQI Forecast</h3>
-            <span className="modeled-tag-badge">Uncalibrated Model</span>
+            <span className="modeled-tag-badge">{legacy ? 'Archived Legacy Simulation' : 'Uncalibrated Model'}</span>
           </div>
-          <span className="forecast-sub">Reported plume band peaks and observed station AQI</span>
+          <span className="forecast-sub">Reported plume band peaks and station AQI</span>
         </div>
         <div className="forecast-mode-toggle">
           <button type="button" className={`mode-btn ${activeTab === 'dispersion' ? 'active' : ''}`} aria-pressed={activeTab === 'dispersion'} onClick={() => setActiveTab('dispersion')}>
@@ -101,7 +102,7 @@ export default function AqiForecast12h() {
         <div className="forecast-dispersion-body">
           <div className="dispersion-kpi-col">
             <div className="baseline-readout">
-              <span className="readout-label">Observed station mean</span>
+              <span className="readout-label">Reported station mean</span>
               <div className="readout-val-wrap">
                 <span className="readout-val">{observedAverage ?? '—'}</span>
                 <span className="readout-unit">AQI</span>
@@ -110,15 +111,16 @@ export default function AqiForecast12h() {
             </div>
           </div>
           <div className="dispersion-band-col">
-            <p className="forecast-data-note" role="status" aria-label="Plume data status">
+          <p className="forecast-data-note" role="status" aria-label="Plume data status">
               {loading && 'Loading corridor data… '}{plumeStatus}
               {feedErrors.corridor && ` Corridor feed unavailable: ${feedErrors.corridor}.${model ? ' Retained model data shown.' : ''}`}
             </p>
-            {maxDelta != null && <p className="forecast-band-peak">Largest reported band peak: +{maxDelta} µg/m³</p>}
+            {legacy && <p className="forecast-data-note">Archived legacy simulation values with obsolete concentration/risk floors; no current band-peak calculation is implied.</p>}
+            {maxDelta != null && <p className="forecast-band-peak">{legacy ? 'Largest archived band value' : 'Largest reported band peak'}: +{maxDelta} µg/m³</p>}
             {bandRows.length > 0 && (
               <>
                 <table className="forecast-band-table">
-                  <caption>Largest reported source-band peak by forecast interval (µg/m³)</caption>
+                  <caption>{legacy ? 'Largest archived simulation value' : 'Largest reported source-band peak'} by forecast interval (µg/m³)</caption>
                   <thead><tr><th scope="col">Interval</th><th scope="col">ΔPM2.5 µg/m³</th></tr></thead>
                   <tbody>{bandRows.map(row => (
                     <tr key={`${row.from}-${row.to}`}><th scope="row">{row.from}–{row.to}h</th><td>+{row.peak}</td></tr>
@@ -188,7 +190,8 @@ export default function AqiForecast12h() {
       )}
       <div className="aqi-contract-disclaimer">
         <p className="panel-sub"><strong>Unavailable.</strong> A validated AQI forecasting contract is not provided.</p>
-        <p className="panel-sub">Observed station average: {observedAverage == null ? 'unavailable' : `${observedAverage} AQI`}.</p>
+        <p className="panel-sub">Reported station average: {observedAverage == null ? 'unavailable' : `${observedAverage} AQI`}.</p>
+        <p className="panel-sub">AQI may be a PM2.5 sub-index with an unverified averaging period. A reported value does not establish an official regional AQI or a compatible 24-hour observation.</p>
         <p className="panel-sub">{stationStatus}{parsedAqi?.success && aqiFreshness.stale && ' Station capture stale or age unknown.'}</p>
         <p className="panel-sub">Plume ΔPM2.5 is modelled and uncalibrated. It cannot be converted to regional AQI with a fixed multiplier.</p>
       </div>

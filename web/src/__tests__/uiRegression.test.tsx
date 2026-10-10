@@ -76,7 +76,7 @@ describe('scientific labels and missing/zero data', () => {
   it('does not convert an observed AQI baseline into an unsupported forecast', () => {
     state.avgAqi = 0
     render(<AqiForecast12h />)
-    expect(screen.getByText('Observed station average: 0 AQI.')).toBeTruthy()
+    expect(screen.getByText('Reported station average: 0 AQI.')).toBeTruthy()
     expect(screen.getByText(/validated AQI forecasting contract is not provided/)).toBeTruthy()
     expect(screen.queryByRole('img')).toBeNull()
   })
