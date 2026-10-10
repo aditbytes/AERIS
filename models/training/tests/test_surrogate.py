@@ -138,7 +138,7 @@ def test_missing_count_order_and_extra_fields_rejected(body):
 
 
 def test_metadata_serialization_and_local_inference(dataset, artifact):
-    loaded = model_fn(artifact)
+    loaded = model_fn(artifact, trusted_artifact=True)
     metadata = loaded.metadata
     assert metadata["feature_names"] == FEATURE_NAMES
     assert metadata["feature_units"] == FEATURE_UNITS
@@ -164,7 +164,7 @@ def test_metadata_serialization_and_local_inference(dataset, artifact):
 def test_repeated_training_deterministic(dataset, artifact, tmp_path):
     second = tmp_path / "second"
     train_model(dataset, second, seed=23)
-    first_model, second_model = model_fn(artifact), model_fn(second)
+    first_model, second_model = model_fn(artifact, trusted_artifact=True), model_fn(second, trusted_artifact=True)
     x, _ = arrays(dataset, "test")
     assert predict_fn(x, first_model) == predict_fn(x, second_model)
     assert (artifact / "model.pkl").read_bytes() == (second / "model.pkl").read_bytes()
@@ -178,13 +178,13 @@ def test_test_labels_do_not_affect_training(dataset, artifact, tmp_path):
             row[TARGET_NAME] += 1000
     train_model(changed, tmp_path, seed=23)
     x, _ = arrays(dataset, "test")
-    assert predict_fn(x, model_fn(artifact)) == predict_fn(x, model_fn(tmp_path))
+    assert predict_fn(x, model_fn(artifact, trusted_artifact=True)) == predict_fn(x, model_fn(tmp_path, trusted_artifact=True))
     with pytest.raises(ValueError, match="Stored target"):
-        evaluate_model(changed, model_fn(tmp_path))
+        evaluate_model(changed, model_fn(tmp_path, trusted_artifact=True))
 
 
 def test_protected_test_and_physics_comparison(dataset, artifact):
-    report = evaluate_model(dataset, model_fn(artifact))
+    report = evaluate_model(dataset, model_fn(artifact, trusted_artifact=True))
     assert report["SURROGATE_VALIDATION"] == DATA_TYPE
     assert report["REAL_OBSERVATIONAL_VALIDATION"] == "NOT_AVAILABLE"
     assert report["MODEL_DEFAULT"] == "PHYSICS_BASELINE"
@@ -199,7 +199,7 @@ def test_modified_protected_test_rejected(dataset, artifact):
     changed = copy.deepcopy(dataset)
     changed["splits"]["test"][0]["samples"][0][TARGET_NAME] += 1
     with pytest.raises(ValueError, match="Protected"):
-        evaluate_model(changed, model_fn(artifact))
+        evaluate_model(changed, model_fn(artifact, trusted_artifact=True))
 
 
 @pytest.mark.parametrize("split", ["train", "validation"])
@@ -245,11 +245,11 @@ def test_sagemaker_contract_errors(dataset, artifact, operation):
         elif operation == "malformed_json":
             input_fn("{broken", "application/json")
         elif operation == "direct_shape":
-            predict_fn(np.asarray([1, 2]), model_fn(artifact))
+            predict_fn(np.asarray([1, 2]), model_fn(artifact, trusted_artifact=True))
         else:
             row = request_row(dataset)
             row[6] = float("nan")
-            predict_fn(np.asarray([row]), model_fn(artifact))
+            predict_fn(np.asarray([row]), model_fn(artifact, trusted_artifact=True))
 
 
 @pytest.mark.parametrize("corruption", ["checksum", "order", "provenance", "physics", "software", "seed", "sizes"])
@@ -273,7 +273,7 @@ def test_artifact_corruption_rejected(artifact, tmp_path, corruption):
     (tmp_path / "model.pkl").write_bytes(blob)
     (tmp_path / "metadata.json").write_text(json.dumps(metadata), encoding="utf-8")
     with pytest.raises(ValueError):
-        model_fn(tmp_path)
+        model_fn(tmp_path, trusted_artifact=True)
 
 
 def test_sagemaker_environment_training_entrypoint(dataset, tmp_path):
@@ -287,7 +287,7 @@ def test_sagemaker_environment_training_entrypoint(dataset, tmp_path):
     result = subprocess.run([sys.executable, "-X", "utf8", str(script)], env=environment,
                             capture_output=True, text=True, timeout=60)
     assert result.returncode == 0, result.stderr
-    assert model_fn(directory).metadata["seed"] == 42
+    assert model_fn(directory, trusted_artifact=True).metadata["seed"] == 42
     assert read_dataset(channel) == dataset
 
 
@@ -295,7 +295,7 @@ def test_local_training_entrypoint(dataset, tmp_path):
     path = tmp_path / "dataset.json"
     path.write_text(json.dumps(dataset), encoding="utf-8")
     assert main(["--data", str(path), "--model-dir", str(tmp_path / "model"), "--seed", "7"]) == 0
-    assert model_fn(tmp_path / "model").metadata["seed"] == 7
+    assert model_fn(tmp_path / "model", trusted_artifact=True).metadata["seed"] == 7
 
 
 def test_explicit_model_selection_and_absent_artifact(dataset, artifact, tmp_path):
@@ -305,11 +305,11 @@ def test_explicit_model_selection_and_absent_artifact(dataset, artifact, tmp_pat
     result = predict_point(*args)
     assert result["model"] == "physics"
     assert result[TARGET_NAME] == row[TARGET_NAME]
-    assert predict_point(*args, model="surrogate", model_dir=artifact)["model"] == "surrogate"
+    assert predict_point(*args, model="surrogate", model_dir=artifact, trusted_artifact=True)["model"] == "surrogate"
     with pytest.raises(FileNotFoundError):
         predict_point(*args, model="surrogate")
     with pytest.raises(FileNotFoundError):
-        predict_point(*args, model="surrogate", model_dir=tmp_path)
+        predict_point(*args, model="surrogate", model_dir=tmp_path, trusted_artifact=True)
     with pytest.raises(ValueError):
         predict_point(*args, model="automatic")
 

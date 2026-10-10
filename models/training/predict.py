@@ -9,7 +9,7 @@ from models.training.generate import point_label, simulate_case
 
 
 def predict_point(case: dict, east_m: float, north_m: float, *, model: str = "physics",
-                  model_dir: str | Path | None = None) -> dict:
+                  model_dir: str | Path | None = None, trusted_artifact: bool | None = None) -> dict:
     """Reference-origin, steady-weather point only; coordinates are projected metres."""
     features = construct_features(case, east_m, north_m)
     if model == "physics":
@@ -22,7 +22,7 @@ def predict_point(case: dict, east_m: float, north_m: float, *, model: str = "ph
         raise FileNotFoundError("Explicit surrogate selection requires a trained local artifact")
     import numpy as np
     from models.training.inference import model_fn, predict_fn
-    loaded = model_fn(model_dir)
+    loaded = model_fn(model_dir, trusted_artifact=trusted_artifact)
     prediction = predict_fn(np.asarray([features]), loaded)
     return {"model": "surrogate", TARGET_NAME: prediction["predictions"][0],
             "validation_type": DATA_TYPE}
