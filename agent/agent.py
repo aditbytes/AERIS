@@ -85,8 +85,8 @@ def generate_action_plan(data_dir: Path | None = None) -> ActionsOutput:
     high_pop = pop_info.get("high", 0)
 
     # Earliest arrival time among ranked sites
-    etas = [s.get("eta_hours", 2.0) for s in ranked_sites]
-    min_eta = min(etas) if etas else 2.0
+    etas = [s["eta_hours"] for s in ranked_sites if "eta_hours" in s and s["eta_hours"] is not None]
+    min_eta = min(etas) if etas else None
 
     summary_parts = []
     if sources:
@@ -97,13 +97,14 @@ def generate_action_plan(data_dir: Path | None = None) -> ActionsOutput:
         summary_parts.append("Elevated environmental emission sources detected in upwind agricultural corridor.")
 
     pop_str = f"{est_pop/1_000_000:.1f}M" if est_pop >= 1_000_000 else f"{est_pop:,}"
+    eta_snippet = f" in ~{max(0.5, min_eta):.1f} hours" if min_eta is not None else ""
     if pop_info.get("data_available") is False:
         summary_parts.append(
-            f"Smoke corridor approaches NCR receptor communities in ~{max(0.5, min_eta):.1f} hours; population exposure calculation pending (population data unavailable)."
+            f"Smoke corridor approaches NCR receptor communities{eta_snippet}; population exposure calculation pending (population data unavailable)."
         )
     else:
         summary_parts.append(
-            f"Smoke corridor approaches NCR receptor communities in ~{max(0.5, min_eta):.1f} hours, exposing an estimated {pop_str} residents (exposure range: {low_pop:,} - {high_pop:,})."
+            f"Smoke corridor approaches NCR receptor communities{eta_snippet}, exposing an estimated {pop_str} residents (exposure range: {low_pop:,} - {high_pop:,})."
         )
 
     top_facility_names = [s.get("name", "vulnerable sites") for s in ranked_sites[:2]]
@@ -120,14 +121,20 @@ def generate_action_plan(data_dir: Path | None = None) -> ActionsOutput:
         site_id = site["site_id"]
         s_type = site.get("type", "school")
         name = site.get("name", f"Facility {site_id}")
-        eta = float(site.get("eta_hours", 1.0))
-        delta = float(site.get("pm25_delta_ugm3", 25.0))
+        eta = site.get("eta_hours")
+        delta = site.get("pm25_delta_ugm3")
         occ = site.get("occupancy")
 
-        deadline = round(max(0.5, eta - 0.5), 1)
+        deadline = round(max(0.5, (float(eta) - 0.5) if eta is not None else 1.0), 1)
 
-        occ_text = f", {occ:,} occupants" if occ else ""
-        reason = f"ETA {eta:.1f}h, forecast PM2.5 delta +{delta:.0f} µg/m³{occ_text}"
+        reason_elements = []
+        if eta is not None:
+            reason_elements.append(f"ETA {float(eta):.1f}h")
+        if delta is not None:
+            reason_elements.append(f"forecast PM2.5 delta +{float(delta):.0f} µg/m³")
+        if occ:
+            reason_elements.append(f"{occ:,} occupants")
+        reason = ", ".join(reason_elements) if reason_elements else "Receptor prioritized in smoke corridor"
 
         if s_type == "hospital":
             who = f"Medical Director, {name}"

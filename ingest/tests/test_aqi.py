@@ -335,8 +335,7 @@ class TestAqiFailureHandling:
     """Regression tests for AQI failure modes identified in the audit."""
 
     def test_both_sources_unavailable_returns_empty_stations(self):
-        """Both OpenAQ and CPCB fail → stations list is empty (not fabricated data).
-        The handler/CLI is responsible for rejecting and preserving existing data."""
+        """Both OpenAQ and CPCB fail → stations list is empty, source='none', sources_failed recorded."""
         from ingest.common.http import UpstreamError
 
         with patch("ingest.aqi.fetch_aqi.get", side_effect=UpstreamError("AQI", 503, "down")):
@@ -347,9 +346,11 @@ class TestAqiFailureHandling:
             )
         assert result["stations"] == []
         assert "generated_at" in result
+        assert result["source"] == "none"
+        assert result.get("sources_failed") == ["OpenAQ", "CPCB/data.gov.in"]
 
     def test_openaq_succeeds_cpcb_fails_returns_openaq_only(self):
-        """OpenAQ returns data; CPCB fails → only OpenAQ stations in result."""
+        """OpenAQ returns data; CPCB fails → only OpenAQ stations, source='OpenAQ'."""
         from ingest.common.http import UpstreamError
 
         def mock_get(url, **kwargs):
@@ -372,9 +373,11 @@ class TestAqiFailureHandling:
         sources = {s["source"] for s in result["stations"]}
         assert "OpenAQ" in sources
         assert "CPCB/data.gov.in" not in sources
+        assert result["source"] == "OpenAQ"
+        assert result.get("sources_failed") == ["CPCB/data.gov.in"]
 
     def test_cpcb_succeeds_openaq_fails_returns_cpcb_only(self):
-        """CPCB returns data; OpenAQ fails → only CPCB stations in result."""
+        """CPCB returns data; OpenAQ fails → only CPCB stations, source='CPCB/data.gov.in'."""
         from ingest.common.http import UpstreamError
 
         def mock_get(url, **kwargs):
@@ -393,6 +396,34 @@ class TestAqiFailureHandling:
         sources = {s["source"] for s in result["stations"]}
         assert "CPCB/data.gov.in" in sources
         assert "OpenAQ" not in sources
+        assert result["source"] == "CPCB/data.gov.in"
+        assert result.get("sources_failed") == ["OpenAQ"]
+
+    def test_both_sources_contribute_identifies_both_in_source(self):
+        """Both OpenAQ and CPCB return data → top-level source identifies both."""
+        def mock_get(url, **kwargs):
+            resp = MagicMock()
+            if "openaq" in url or "api.openaq" in url:
+                if "/latest" in url:
+                    resp.json.return_value = _OAQ_LOCATION_LATEST_RESP
+                else:
+                    resp.json.return_value = _OAQ_LOCATIONS_RESP
+            else:
+                resp.json.return_value = _CPCB_RESP
+            return resp
+
+        with patch("ingest.aqi.fetch_aqi.get", side_effect=mock_get):
+            result = fetch_aqi(
+                bbox=[73.5, 28.0, 77.5, 32.5],
+                openaq_key="k",
+                cpcb_key="k",
+            )
+        assert len(result["stations"]) >= 2
+        station_sources = {s["source"] for s in result["stations"]}
+        assert "OpenAQ" in station_sources
+        assert "CPCB/data.gov.in" in station_sources
+        assert result["source"] == "OpenAQ+CPCB/data.gov.in"
+        assert "sources_failed" not in result
 
     def test_cpcb_record_without_coordinates_excluded(self):
         """CPCB records missing lat/lon must not appear in the station list.
@@ -451,7 +482,7 @@ class TestAqiFailureHandling:
             assert isinstance(s["lon"], float), f"lon is {type(s['lon'])}, expected float"
 
     def test_both_sources_return_empty_valid_response(self):
-        """Both sources respond but have no data for bbox → empty stations, no error."""
+        """Both sources respond but have no data for bbox → empty stations, source='none', no failure."""
         def mock_get(url, **kwargs):
             resp = MagicMock()
             if "openaq" in url or "api.openaq" in url:
@@ -467,6 +498,8 @@ class TestAqiFailureHandling:
                 cpcb_key="k",
             )
         assert result["stations"] == []
+        assert result["source"] == "none"
+        assert "sources_failed" not in result
 
     def test_cpcb_malformed_json_skips_gracefully(self):
         """Malformed CPCB JSON → empty list, no exception propagated."""
@@ -475,4 +508,28 @@ class TestAqiFailureHandling:
         with patch("ingest.aqi.fetch_aqi.get", return_value=mock_resp):
             stations = fetch_cpcb([73.5, 28.0, 77.5, 32.5], key="k")
         assert stations == []
+
+    def test_aqi_contract_validation_with_source(self):
+        """Verify pipeline contract checker accepts AQI output with top-level source."""
+        from pipeline.contracts import check_aqi
+
+        def mock_get(url, **kwargs):
+            resp = MagicMock()
+            if "openaq" in url or "api.openaq" in url:
+                if "/latest" in url:
+                    resp.json.return_value = _OAQ_LOCATION_LATEST_RESP
+                else:
+                    resp.json.return_value = _OAQ_LOCATIONS_RESP
+            else:
+                resp.json.return_value = _CPCB_RESP
+            return resp
+
+        with patch("ingest.aqi.fetch_aqi.get", side_effect=mock_get):
+            result = fetch_aqi(
+                bbox=[73.5, 28.0, 77.5, 32.5],
+                openaq_key="k",
+                cpcb_key="k",
+            )
+        problems = check_aqi(result)
+        assert problems == [], f"check_aqi reported contract problems: {problems}"
 
