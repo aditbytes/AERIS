@@ -77,6 +77,27 @@ export default function AqiForecast12h() {
         : observationAges.some(age => age.status === 'unknown') ? 'Observation age unknown for some stations.'
           : observationAges.some(age => age.stale) ? 'Stale station observations retained.'
             : 'Recent station observations; capture time is not observation time.'
+  const observationFeed = parsedAqi?.success ? parsedAqi.data : null
+  const hasReadings = stations.some(station => [station.pm25, station.pm10, station.aqi].some(value => value != null))
+  const knownFetchGaps = observationFeed?.coverage_complete === false || !!observationFeed?.sources_failed?.length ||
+    ['PARTIAL', 'FAILED', 'UNAVAILABLE'].includes(observationFeed?.fetch_status ?? '') ||
+    Object.values(observationFeed?.source_fetch_status ?? {}).some(value => ['PARTIAL_FAILURE', 'FAILED', 'NOT_CONFIGURED'].includes(value))
+  const coverageStatus = !observationFeed
+    ? 'AQI coverage unknown; no valid feed metadata.'
+    : !hasReadings
+      ? 'AQI readings unavailable; an empty result does not establish clean air or regional coverage.'
+      : knownFetchGaps
+        ? 'Partial AQI feed: known fetch gaps; the extent of regional coverage is unknown.'
+        : observationFeed.coverage_complete === true
+          ? 'Producer reports complete AQI coverage; regional completeness and observation quality are not independently verified.'
+          : 'AQI coverage unknown; available readings do not establish complete regional coverage.'
+  const fetchLabels = {
+    COMPLETE: 'Requested fetches succeeded; this does not establish regional coverage.',
+    PARTIAL: 'Some requested fetches failed or were not configured; other results were retained.',
+    FAILED: 'Requested fetches failed; no successful reading refresh is implied.',
+    UNAVAILABLE: 'Providers were not configured; no successful reading refresh is implied.',
+    UNKNOWN: 'Fetch outcome unknown; an empty result alone does not distinguish success from failure.',
+  }
 
   return (
     <section className="aqi-forecast card" aria-label="AQI forecast availability">
@@ -180,6 +201,8 @@ export default function AqiForecast12h() {
                     <span className="stn-name" title={stn.name}>{stn.name}</span>
                     <span className="stn-pm25">{stn.pm25 != null ? `${stn.pm25.toFixed(1)} µg/m³` : 'PM2.5 unavailable'}</span>
                     <span className="stn-observation">{age.status === 'unknown' ? 'Observation age unknown' : age.stale ? 'Stale observation' : 'Observation'}{stn.observed_at && <>: <time dateTime={stn.observed_at}>{stn.observed_at}</time></>}</span>
+                    <span className="stn-observation">Source: {stn.source}.</span>
+                    {stn.observed_at == null && stn.source_timestamp && <span className="stn-observation">Source time (timezone unavailable or ambiguous): {stn.source_timestamp}</span>}
                   </div>
                   <span className="stn-aqi-chip" style={{ color: stnTier.color, background: stnTier.bg }}>{stn.aqi} AQI</span>
                 </div>
@@ -189,6 +212,17 @@ export default function AqiForecast12h() {
         </div>
       )}
       <div className="aqi-contract-disclaimer">
+        <div role="region" aria-label="AQI source and coverage">
+          <p className="panel-sub" role="status">{coverageStatus}</p>
+          <p className="panel-sub">Stored fetch metadata: {fetchLabels[observationFeed?.fetch_status ?? 'UNKNOWN']}</p>
+          <p className="panel-sub">Source identity: {observationFeed?.source ?? 'aggregate identity unavailable'}.
+            {' '}Sources with readings: {observationFeed?.sources_with_readings == null ? 'not reported' : observationFeed.sources_with_readings.join(', ') || 'none'}.</p>
+          {!!observationFeed?.sources_failed?.length && <p className="panel-sub">Sources with fetch failures (including partial failures): {observationFeed.sources_failed.join(', ')}.</p>}
+          {observationFeed?.source_fetch_status && <ul>
+            {Object.entries(observationFeed.source_fetch_status).map(([source, status]) => <li key={source}>{source}: {status.replaceAll('_', ' ').toLowerCase()}</li>)}
+          </ul>}
+          <p className="panel-sub">Metadata describes this stored capture, not subsequent ingestion attempts. Capture freshness and observation age are separate.</p>
+        </div>
         <p className="panel-sub"><strong>Unavailable.</strong> A validated AQI forecasting contract is not provided.</p>
         <p className="panel-sub">Reported station average: {observedAverage == null ? 'unavailable' : `${observedAverage} AQI`}.</p>
         <p className="panel-sub">AQI may be a PM2.5 sub-index with an unverified averaging period. A reported value does not establish an official regional AQI or a compatible 24-hour observation.</p>

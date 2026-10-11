@@ -139,4 +139,58 @@ describe('reported plume band peaks and observed AQI', () => {
     expect(screen.getByText('Reported station average: unavailable.')).toBeTruthy()
     expect(container.textContent).not.toMatch(/NaN|Infinity/)
   })
+
+  it('shows stored partial-failure metadata on both tabs while preserving zero and ambiguous time', async () => {
+    state.avgAqi = 0
+    state.aqi = { generated_at: STAMP, source: 'CPCB/data.gov.in', coverage_complete: false,
+      fetch_status: 'PARTIAL', sources_failed: ['OpenAQ'], sources_with_readings: ['CPCB/data.gov.in'],
+      source_fetch_status: { OpenAQ: 'FAILED', 'CPCB/data.gov.in': 'SUCCESS' },
+      stations: [{ id: 'ISOLATED_ZERO_TEST', name: 'Isolated zero test', lat: 29, lon: 77,
+        aqi: 0, pm25: 0, observed_at: null, source_timestamp: '10-10-2026 07:00:00', source: 'CPCB/data.gov.in' }] }
+    render(<AqiForecast12h />)
+    const coverage = screen.getByRole('region', { name: 'AQI source and coverage' })
+    expect(coverage.textContent).toContain('Partial AQI feed: known fetch gaps')
+    expect(coverage.textContent).toContain('Sources with fetch failures (including partial failures): OpenAQ')
+    expect(coverage.textContent).toContain('Source identity: CPCB/data.gov.in')
+    expect(coverage.textContent).toContain('not subsequent ingestion attempts')
+    await userEvent.click(screen.getByRole('button', { name: 'Stations (1)' }))
+    expect(screen.getByRole('region', { name: 'AQI source and coverage' }).textContent).toContain('extent of regional coverage is unknown')
+    expect(screen.getByText('0.0 µg/m³')).toBeTruthy()
+    expect(screen.getByText('Source: CPCB/data.gov.in.')).toBeTruthy()
+    const sourceTime = screen.getByText('Source time (timezone unavailable or ambiguous): 10-10-2026 07:00:00')
+    expect(sourceTime.querySelector('time')).toBeNull()
+  })
+  it.each(['COMPLETE', 'FAILED', 'UNAVAILABLE', 'UNKNOWN'] as const)('keeps empty %s input unavailable and identifies its known fetch outcome', fetchStatus => {
+    state.aqi = { generated_at: STAMP, source: 'none', stations: [], fetch_status: fetchStatus, coverage_complete: null, sources_with_readings: [] }
+    render(<AqiForecast12h />)
+    const coverage = screen.getByRole('region', { name: 'AQI source and coverage' })
+    expect(coverage.textContent).toContain('AQI readings unavailable')
+    expect(coverage.textContent).toContain('empty result does not establish clean air')
+    expect(coverage.textContent).toContain('Sources with readings: none')
+    const expected = { COMPLETE: 'Requested fetches succeeded', FAILED: 'Requested fetches failed',
+      UNAVAILABLE: 'Providers were not configured', UNKNOWN: 'Fetch outcome unknown' }
+    expect(coverage.textContent).toContain(expected[fetchStatus])
+    expect(screen.getByText('Reported station average: unavailable.')).toBeTruthy()
+  })
+  it('reports unknown legacy coverage and does not infer request success from readings', () => {
+    state.avgAqi = 0
+    state.aqi = { generated_at: STAMP, stations: [{ id: 'ISOLATED_ZERO_TEST', name: 'Isolated test', lat: 29, lon: 77, aqi: 0, source: 'TEST_ONLY' }] }
+    render(<AqiForecast12h />)
+    const coverage = screen.getByRole('region', { name: 'AQI source and coverage' })
+    expect(coverage.textContent).toContain('AQI coverage unknown')
+    expect(coverage.textContent).toContain('Fetch outcome unknown')
+    expect(screen.getByText('Reported station average: 0 AQI.')).toBeTruthy()
+  })
+  it('separates successful requested fetches from unknown regional coverage', () => {
+    state.aqi = { generated_at: STAMP, stations: [{ id: 'ISOLATED_ZERO_TEST', name: 'Isolated test', lat: 29, lon: 77, aqi: 0, source: 'TEST_ONLY' }],
+      fetch_status: 'COMPLETE', coverage_complete: null, source_fetch_status: { TEST_ONLY: 'SUCCESS' } }
+    render(<AqiForecast12h />)
+    expect(screen.getByRole('region', { name: 'AQI source and coverage' }).textContent).toContain('Requested fetches succeeded; this does not establish regional coverage')
+    expect(screen.getByRole('region', { name: 'AQI source and coverage' }).textContent).toContain('AQI coverage unknown')
+  })
+  it('discloses externally reported completeness without certifying observation quality', () => {
+    state.aqi = { generated_at: STAMP, stations: [{ id: 'ISOLATED_ZERO_TEST', name: 'Isolated test', lat: 29, lon: 77, aqi: 0, source: 'TEST_ONLY' }], coverage_complete: true }
+    render(<AqiForecast12h />)
+    expect(screen.getByRole('region', { name: 'AQI source and coverage' }).textContent).toContain('Producer reports complete AQI coverage; regional completeness and observation quality are not independently verified')
+  })
 })

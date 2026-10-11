@@ -36,11 +36,12 @@ def test_cpcb_valid_zeros_and_ambiguous_timestamp_are_preserved(monkeypatch):
 
 
 def test_total_aqi_unavailability_is_explicit(monkeypatch):
-    monkeypatch.setattr(aqi, "fetch_openaq", lambda *a: [])
-    monkeypatch.setattr(aqi, "fetch_cpcb", lambda *a: [])
+    monkeypatch.setattr(aqi, "fetch_openaq", lambda *a, **kw: [])
+    monkeypatch.setattr(aqi, "fetch_cpcb", lambda *a, **kw: [])
     result = aqi.fetch_aqi()
     assert result["data_status"] == "UNAVAILABLE_OR_EMPTY"
     assert result["coverage_complete"] is None
+    assert result["fetch_status"] == "UNKNOWN"
 
 
 @pytest.mark.parametrize("lat", [None, float("nan"), float("inf"), 91, "invalid"])

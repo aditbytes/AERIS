@@ -178,11 +178,33 @@ export const AqiStationSchema = z.object({
   source: NameSchema,
 })
 export const AqiFileSchema = z.object({
+  source: NameSchema.optional(),
+  sources_failed: z.array(NameSchema).optional(),
+  fetch_status: z.enum(['COMPLETE', 'PARTIAL', 'FAILED', 'UNAVAILABLE', 'UNKNOWN']).optional(),
+  source_fetch_status: z.record(NameSchema, z.enum(['SUCCESS', 'PARTIAL_FAILURE', 'FAILED', 'NOT_CONFIGURED', 'UNKNOWN'])).refine(value => Object.keys(value).length > 0).optional(),
   data_status: z.enum(['READINGS_AVAILABLE', 'UNAVAILABLE_OR_EMPTY']).optional(),
   coverage_complete: z.boolean().nullable().optional(),
-  sources_with_readings: z.array(z.string()).optional(),
+  sources_with_readings: z.array(NameSchema).optional(),
   generated_at: TimestampSchema,
   stations: z.array(AqiStationSchema),
+}).superRefine((file, ctx) => {
+  const statuses = Object.values(file.source_fetch_status ?? {})
+  if (file.fetch_status === 'COMPLETE' && (file.sources_failed?.length || statuses.some(value => value !== 'SUCCESS'))) {
+    ctx.addIssue({ code: 'custom', message: 'Complete fetch contradicts source status', path: ['fetch_status'] })
+  }
+  if (file.coverage_complete === true && (
+    file.sources_failed?.length || ['PARTIAL', 'FAILED', 'UNAVAILABLE'].includes(file.fetch_status ?? '') ||
+    statuses.some(value => ['PARTIAL_FAILURE', 'FAILED', 'NOT_CONFIGURED'].includes(value))
+  )) {
+    ctx.addIssue({ code: 'custom', message: 'Complete coverage contradicts known fetch gaps', path: ['coverage_complete'] })
+  }
+  const hasReadings = file.stations.some(station => [station.pm25, station.pm10, station.aqi].some(value => value != null))
+  if (file.data_status && file.data_status !== (hasReadings ? 'READINGS_AVAILABLE' : 'UNAVAILABLE_OR_EMPTY')) {
+    ctx.addIssue({ code: 'custom', message: 'Data status contradicts available readings', path: ['data_status'] })
+  }
+  if (hasReadings && ['FAILED', 'UNAVAILABLE'].includes(file.fetch_status ?? '')) {
+    ctx.addIssue({ code: 'custom', message: 'Failed/unavailable fetch contradicts available readings', path: ['fetch_status'] })
+  }
 })
 export type AqiStation = z.infer<typeof AqiStationSchema>
 export type AqiFile = z.infer<typeof AqiFileSchema>

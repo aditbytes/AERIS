@@ -66,4 +66,25 @@ describe('real data contracts', () => {
       expect(WindFileSchema.safeParse({ ...wind, coverage_complete: invalid }).success).toBe(false)
     }
   })
+
+  it('preserves aggregate AQI identity, partial failures, unknown coverage and zero readings', () => {
+    const input = { generated_at: time, source: 'OpenAQ', stations: [station], sources_failed: ['OpenAQ'],
+      sources_with_readings: ['OpenAQ'], fetch_status: 'PARTIAL', coverage_complete: false,
+      source_fetch_status: { OpenAQ: 'PARTIAL_FAILURE', 'CPCB/data.gov.in': 'SUCCESS' } }
+    expect(AqiFileSchema.parse(input)).toEqual(input)
+    expect(AqiFileSchema.parse({ generated_at: time, stations: [] }).fetch_status).toBeUndefined()
+    expect(AqiFileSchema.parse({ generated_at: time, stations: [], coverage_complete: null }).coverage_complete).toBeNull()
+  })
+  it.each([
+    { source: '' }, { sources_failed: 'OpenAQ' }, { sources_failed: [null] },
+    { sources_with_readings: [''] }, { coverage_complete: 'false' }, { fetch_status: 'SUCCESS' },
+    { source_fetch_status: {} }, { source_fetch_status: { OpenAQ: 'bad' } },
+    { coverage_complete: true, sources_failed: ['OpenAQ'] },
+    { fetch_status: 'COMPLETE', source_fetch_status: { OpenAQ: 'PARTIAL_FAILURE' } },
+    { fetch_status: 'COMPLETE', sources_failed: ['OpenAQ'] },
+    { data_status: 'UNAVAILABLE_OR_EMPTY' }, { data_status: 'bad' },
+    { fetch_status: 'FAILED' }, { fetch_status: 'UNAVAILABLE' },
+  ])('rejects invalid/contradictory AQI metadata %j', metadata => {
+    expect(AqiFileSchema.safeParse({ generated_at: time, stations: [station], ...metadata }).success).toBe(false)
+  })
 })

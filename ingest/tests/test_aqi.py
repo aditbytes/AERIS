@@ -533,3 +533,130 @@ class TestAqiFailureHandling:
         problems = check_aqi(result)
         assert problems == [], f"check_aqi reported contract problems: {problems}"
 
+
+class TestAqiFetchMetadata:
+    """Labelled provider stubs; request success is not observation completeness."""
+
+    def test_empty_success_is_distinct_from_failure_and_coverage_is_unknown(self):
+        def mock_get(url, **kwargs):
+            response = MagicMock()
+            response.json.return_value = {"results": []} if "openaq" in url else {"records": []}
+            return response
+
+        with patch("ingest.aqi.fetch_aqi.get", side_effect=mock_get):
+            result = fetch_aqi(openaq_key="TEST_KEY", cpcb_key="TEST_KEY")
+        assert result["stations"] == []
+        assert result["data_status"] == "UNAVAILABLE_OR_EMPTY"
+        assert result["fetch_status"] == "COMPLETE"
+        assert result["source_fetch_status"] == {"OpenAQ": "SUCCESS", "CPCB/data.gov.in": "SUCCESS"}
+        assert result["coverage_complete"] is None
+        assert "sources_failed" not in result
+
+    def test_total_upstream_failure_is_not_an_empty_success(self):
+        from ingest.common.http import UpstreamError
+        with patch("ingest.aqi.fetch_aqi.get", side_effect=UpstreamError("TEST", 503, "test outage")):
+            result = fetch_aqi(openaq_key="TEST_KEY", cpcb_key="TEST_KEY")
+        assert result["fetch_status"] == "FAILED"
+        assert result["coverage_complete"] is False
+        assert result["sources_failed"] == ["OpenAQ", "CPCB/data.gov.in"]
+        assert result["source"] == "none" and result["sources_with_readings"] == []
+
+    @pytest.mark.parametrize("provider", ["openaq", "cpcb"])
+    @pytest.mark.parametrize("payload", [None, {}, {"error": "TEST upstream error"}, {"results": None, "records": {}}, {"results": [None], "records": [None]}])
+    def test_malformed_provider_response_is_a_failure_not_empty_success(self, provider, payload):
+        def mock_get(url, **kwargs):
+            response = MagicMock()
+            response.json.return_value = payload if ("openaq" in url) == (provider == "openaq") else {"results": [], "records": []}
+            return response
+        with patch("ingest.aqi.fetch_aqi.get", side_effect=mock_get):
+            result = fetch_aqi(openaq_key="TEST_KEY", cpcb_key="TEST_KEY")
+        source = "OpenAQ" if provider == "openaq" else "CPCB/data.gov.in"
+        assert result["source_fetch_status"][source] == "FAILED"
+        assert result["sources_failed"] == [source]
+        assert result["fetch_status"] == "PARTIAL"
+
+    @pytest.mark.parametrize("malformed_json", [False, True])
+    def test_station_failure_retains_other_zero_readings_and_source_time(self, malformed_json):
+        import copy
+        from ingest.common.http import UpstreamError
+        locations = copy.deepcopy(_OAQ_LOCATIONS_RESP)
+        other = copy.deepcopy(locations["results"][0])
+        other["id"] = 54321
+        locations["results"].append(other)
+        zero = copy.deepcopy(_OAQ_LOCATION_LATEST_RESP)
+        zero["results"][0].update(value=0, datetime={"utc": "2026-10-10T07:00:00"})
+        def mock_get(url, **kwargs):
+            response = MagicMock()
+            if "/54321/latest" in url:
+                if not malformed_json:
+                    raise UpstreamError("TEST", 503, "test station outage")
+                response.json.side_effect = ValueError("TEST invalid JSON")
+            elif "/latest" in url:
+                response.json.return_value = zero
+            else:
+                response.json.return_value = locations if "openaq" in url else {"records": []}
+            return response
+
+        with patch("ingest.aqi.fetch_aqi.get", side_effect=mock_get):
+            result = fetch_aqi(openaq_key="TEST_KEY", cpcb_key="TEST_KEY")
+        assert len(result["stations"]) == 1
+        station = result["stations"][0]
+        assert station["pm25"] == station["aqi"] == 0
+        assert station["observed_at"] is None
+        assert station["source_timestamp"] == "2026-10-10T07:00:00"
+        assert station["timestamp_status"] == "UNAVAILABLE_OR_AMBIGUOUS"
+        assert result["source"] == "OpenAQ" and result["sources_with_readings"] == ["OpenAQ"]
+        assert result["sources_failed"] == ["OpenAQ"]
+        assert result["source_fetch_status"]["OpenAQ"] == "PARTIAL_FAILURE"
+        assert result["fetch_status"] == "PARTIAL" and result["coverage_complete"] is False
+
+    def test_missing_credentials_are_not_success_or_upstream_failures(self, monkeypatch):
+        monkeypatch.delenv("OPENAQ_API_KEY", raising=False)
+        monkeypatch.delenv("DATA_GOV_IN_KEY", raising=False)
+        with patch("ingest.aqi.fetch_aqi.get") as get:
+            result = fetch_aqi()
+        get.assert_not_called()
+        assert result["fetch_status"] == "UNAVAILABLE"
+        assert set(result["source_fetch_status"].values()) == {"NOT_CONFIGURED"}
+        assert result["coverage_complete"] is False
+        assert "sources_failed" not in result
+
+    def test_zero_success_does_not_assert_complete_regional_coverage(self):
+        response = MagicMock()
+        response.json.return_value = {"results": [], "records": [{"latitude": 28.5, "longitude": 77, "station": "ISOLATED ZERO TEST", "pm25": 0, "aqi": 0, "last_update": "10-10-2026 07:00:00"}]}
+        with patch("ingest.aqi.fetch_aqi.get", return_value=response):
+            result = fetch_aqi(openaq_key="TEST_KEY", cpcb_key="TEST_KEY")
+        assert result["stations"][0]["pm25"] == result["stations"][0]["aqi"] == 0
+        assert result["stations"][0]["observed_at"] is None
+        assert result["fetch_status"] == "COMPLETE"
+        assert result["coverage_complete"] is None
+        assert result["sources_with_readings"] == ["CPCB/data.gov.in"]
+
+    @pytest.mark.parametrize("upstream_failure", [False, True])
+    @pytest.mark.parametrize("entry_point", ["lambda", "cli"])
+    def test_empty_success_and_failure_do_not_refresh_existing_capture(self, tmp_path, monkeypatch, upstream_failure, entry_point):
+        from pathlib import Path
+        from ingest.aqi import handler
+        from ingest.common.http import UpstreamError
+        original = (Path(__file__).resolve().parents[2] / "data/live/aqi.json").read_bytes()
+        snapshot = tmp_path / "aqi.json"
+        snapshot.write_bytes(original)
+        monkeypatch.setenv("AERIS_STORAGE", "local")
+        monkeypatch.setenv("AERIS_DATA_DIR", str(tmp_path))
+        monkeypatch.setenv("OPENAQ_API_KEY", "TEST_KEY")
+        monkeypatch.setenv("DATA_GOV_IN_KEY", "TEST_KEY")
+        monkeypatch.setattr(handler.secrets, "get_secret", lambda key: "TEST_KEY")
+        response = MagicMock()
+        response.json.return_value = {"results": [], "records": []}
+        with patch("ingest.aqi.fetch_aqi.get", side_effect=UpstreamError("TEST", 503, "test outage") if upstream_failure else None, return_value=response):
+            if entry_point == "lambda":
+                with pytest.raises(RuntimeError, match="keeping existing data"):
+                    handler.lambda_handler({}, None)
+            else:
+                monkeypatch.setattr("sys.argv", ["TEST_AQI_CLI"])
+                with pytest.raises(SystemExit) as error:
+                    handler._cli()
+                assert error.value.code == 1
+        assert snapshot.read_bytes() == original
+        assert not (tmp_path / "bronze/aqi/latest.json").exists()
+
