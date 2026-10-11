@@ -1,7 +1,7 @@
 """
 agent/agent.py
 --------------
-AERIS Action Agent: generates prioritized intervention directives from
+AERIS Action Agent: generates prioritized advisory review suggestions from
 real pipeline snapshot data using Strands Agent principles.
 Follows docs/members/saba-agent-ui.md and docs/data-contracts.md.
 """
@@ -43,7 +43,7 @@ class SiteAction(BaseModel):
     who: str
     action: str
     reason: str
-    deadline_hours: float
+    deadline_hours: float = Field(ge=0, allow_inf_nan=False)
 
 
 class AuthorityAction(BaseModel):
@@ -57,6 +57,7 @@ class ActionsOutput(BaseModel):
     summary: str
     actions: list[SiteAction]
     authority_actions: list[AuthorityAction]
+    advisory_only: bool = True
 
 
 # ---------------------------------------------------------------------------
@@ -65,7 +66,7 @@ class ActionsOutput(BaseModel):
 
 def generate_action_plan(data_dir: Path | None = None) -> ActionsOutput:
     """
-    Generate the prioritized emergency action plan using tool data.
+    Generate advisory review suggestions using available tool data.
     Cites only real numbers (ETA, delta PM2.5, occupancy, exposed population).
     """
     if data_dir:
@@ -75,119 +76,46 @@ def generate_action_plan(data_dir: Path | None = None) -> ActionsOutput:
     pop_info = get_exposed_population()
     ranked_sites = get_ranked_sites(top_n=10)
 
-    # 1. Synthesize Executive Summary
-    total_fires = sum(s.get("fire_count", 0) for s in sources)
-    top_source = sources[0] if sources else {}
-    src_type = top_source.get("type", "stubble_burning").replace("_", " ")
+    def number(value):
+        import math
+        return value if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) and value >= 0 else None
 
-    est_pop = pop_info.get("estimate", 0)
-    low_pop = pop_info.get("low", 0)
-    high_pop = pop_info.get("high", 0)
-
-    # Earliest arrival time among ranked sites
-    etas = [s["eta_hours"] for s in ranked_sites if "eta_hours" in s and s["eta_hours"] is not None]
-    min_eta = min(etas) if etas else None
-
-    summary_parts = []
-    if sources:
-        summary_parts.append(
-            f"Active {src_type} cluster detected with {total_fires} fires (FRP: {top_source.get('total_frp_mw', 0):.0f} MW) and {top_source.get('emission_strength', 0)*100:.0f}% emission strength."
-        )
+    parts = [f'{len(sources)} candidate source clusters recorded; source type and confidence are heuristic proxies.'
+             if sources else 'Source evidence unavailable or empty; no emission source is asserted.']
+    etas = [value for site in ranked_sites if (value := number(site.get('eta_hours'))) is not None]
+    parts.append(f'Earliest model band arrival among ranked sites: {min(etas):.1f} hours from forecast start.'
+                 if etas else 'Arrival estimate unavailable.')
+    values = [number(pop_info.get(key)) for key in ('estimate', 'low', 'high')]
+    if pop_info.get('data_available') is False or any(v is None for v in values) or not values[1] <= values[0] <= values[2]:
+        parts.append('Population estimate unavailable (population data unavailable).')
     else:
-        summary_parts.append("Elevated environmental emission sources detected in upwind agricultural corridor.")
+        estimate, low, high = values
+        parts.append(f'Corridor population proxy: {estimate:,} (exposure range: {low:,} - {high:,}); heuristic range with no established statistical coverage or observed exposure.')
+    parts.append('Uncalibrated model outputs require review against current observations; these are advisory suggestions, not emergency orders or medical advice.')
 
-    pop_str = f"{est_pop/1_000_000:.1f}M" if est_pop >= 1_000_000 else f"{est_pop:,}"
-    eta_snippet = f" in ~{max(0.5, min_eta):.1f} hours" if min_eta is not None else ""
-    if pop_info.get("data_available") is False:
-        summary_parts.append(
-            f"Smoke corridor approaches NCR receptor communities{eta_snippet}; population exposure calculation pending (population data unavailable)."
-        )
-    else:
-        summary_parts.append(
-            f"Smoke corridor approaches NCR receptor communities{eta_snippet}, exposing an estimated {pop_str} residents (exposure range: {low_pop:,} - {high_pop:,})."
-        )
-
-    top_facility_names = [s.get("name", "vulnerable sites") for s in ranked_sites[:2]]
-    joined_names = " and ".join(top_facility_names) if top_facility_names else "vulnerable facilities"
-    summary_parts.append(
-        f"Immediate protective interventions mandated for {joined_names} before threshold exceedance."
-    )
-
-    summary = " ".join(summary_parts)
-
-    # 2. Site-specific Actions (prioritized by risk and urgency)
-    actions: list[SiteAction] = []
-    for rank, site in enumerate(ranked_sites[:8], start=1):
-        site_id = site["site_id"]
-        s_type = site.get("type", "school")
-        name = site.get("name", f"Facility {site_id}")
-        eta = site.get("eta_hours")
-        delta = site.get("pm25_delta_ugm3")
-        occ = site.get("occupancy")
-
-        deadline = round(max(0.5, (float(eta) - 0.5) if eta is not None else 1.0), 1)
-
-        reason_elements = []
-        if eta is not None:
-            reason_elements.append(f"ETA {float(eta):.1f}h")
-        if delta is not None:
-            reason_elements.append(f"forecast PM2.5 delta +{float(delta):.0f} µg/m³")
-        if occ:
-            reason_elements.append(f"{occ:,} occupants")
-        reason = ", ".join(reason_elements) if reason_elements else "Receptor prioritized in smoke corridor"
-
-        if s_type == "hospital":
-            who = f"Medical Director, {name}"
-            action = (
-                "Activate hospital HVAC HEPA filtration in ICU & pulmonary wards; "
-                "seal triage entryways and stage supplemental oxygen supplies"
-            )
-        else:
-            who = f"Principal / Administrator, {name}"
-            action = (
-                "Transition morning assembly and all sports indoors; "
-                "verify classroom air purification and distribute certified N95 masks"
-            )
-
-        actions.append(
-            SiteAction(
-                priority=rank,
-                site_id=site_id,
-                who=who,
-                action=action,
-                reason=reason,
-                deadline_hours=deadline,
-            )
-        )
-
-    # 3. Authority-level Actions (City / Regional)
-    authority_actions = [
-        AuthorityAction(
-            who="Commission for Air Quality Management (CAQM)",
-            action="Invoke Graded Response Action Plan (GRAP Stage III) advisory across northern and western transit sectors",
-            reason=f"Corridor trajectory impacts ~{pop_str} residents with forecast PM2.5 delta exceedance",
-        ),
-        AuthorityAction(
-            who="Delhi Pollution Control Committee (DPCC)",
-            action="Deploy mechanized vacuum road sweeping and continuous anti-smog mist water cannons along arterial roads",
-            reason="High particulate loading projected within the next 2-4 hour advection window",
-        ),
-        AuthorityAction(
-            who="Directorate of Education (DoE)",
-            action="Issue mandatory circular for all outdoor school activities and assemblies to remain indoors until 12:00 PM",
-            reason=f"{sum(1 for s in get_ranked_sites(top_n=100_000) if s.get('type') == 'school'):,} "
-            "ranked schools located inside the forecast corridor",
-        ),
-    ]
-
-    generated_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-
-    return ActionsOutput(
-        generated_at=generated_at,
-        summary=summary,
-        actions=actions,
-        authority_actions=authority_actions,
-    )
+    actions = []
+    for site in ranked_sites[:8]:
+        site_id = site.get('site_id')
+        if not isinstance(site_id, str) or not site_id.strip():
+            continue
+        eta = number(site.get('eta_hours'))
+        delta = number(site.get('pm25_delta_ugm3'))
+        occupancy = number(site.get('occupancy'))
+        evidence = [f'Model band arrival {eta:.1f}h from forecast start' if eta is not None else 'Arrival unavailable',
+                    f'source-band peak proxy +{delta:g} µg/m³ (not receptor concentration)' if delta is not None else 'PM2.5 change unavailable']
+        if occupancy is not None:
+            evidence.append(f'{occupancy:,} recorded occupants')
+        evidence.append('Deadline 0 means review now; future deadlines are a scheduling heuristic relative to forecast start, not a safety threshold')
+        actions.append(SiteAction(priority=len(actions)+1, site_id=site_id,
+                                  who=f"Site administrator, {site.get('name') or site_id}",
+                                  action='Review current local air-quality observations and the applicable site response protocol before deciding on protective measures',
+                                  reason='; '.join(evidence),
+                                  deadline_hours=round(max(0, eta-0.5), 1) if eta is not None else 0))
+    authority_actions = [AuthorityAction(who='Regional duty officer',
+                                         action='Verify feed freshness, wind coverage and model provenance before using this advisory plan',
+                                         reason=f'{len(ranked_sites)} ranked facilities recorded; no validated threat threshold or legal response stage is inferred')]
+    return ActionsOutput(generated_at=datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+                         summary=' '.join(parts), actions=actions, authority_actions=authority_actions)
 
 
 def run(data_dir: Path | None = None, time_budget_s: float | None = None) -> dict[str, Any]:
@@ -211,6 +139,9 @@ def run(data_dir: Path | None = None, time_budget_s: float | None = None) -> dic
             logger.exception("Bedrock agent failed (%s); using the rules-based plan", type(exc).__name__)
 
     plan = generate_action_plan(data_dir).model_dump()
+    from agent.tools import get_model_context
+
+    plan["model_context"] = get_model_context()
     plan["generator"] = "rules"
     return plan
 
@@ -227,7 +158,7 @@ def main() -> None:
     result = run(data_dir)
 
     out_file = Path(args.out) if args.out else data_dir / "actions.json"
-    with out_file.open("w") as f:
+    with out_file.open("w", encoding="utf-8") as f:
         json.dump(result, f, indent=2)
 
     logger.info("Wrote validated actions plan to %s with %d site actions", out_file, len(result["actions"]))
@@ -235,7 +166,7 @@ def main() -> None:
     # Also mirror to web/public/data if web folder exists
     if _WEB_DATA.exists():
         web_out = _WEB_DATA / "actions.json"
-        with web_out.open("w") as f:
+        with web_out.open("w", encoding="utf-8") as f:
             json.dump(result, f, indent=2)
         logger.info("Mirrored to %s", web_out)
 

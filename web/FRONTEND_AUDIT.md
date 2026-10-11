@@ -1,5 +1,19 @@
 # Frontend audit and observed PM2.5 heatmap
 
+## Submission-readiness verification — October 10, 2026
+
+This section records the submission-readiness verification baseline at HEAD `6944291`, followed by the approved commit sequence on `feature/submission-readiness`. The original audit and inventory below describe their earlier scope and are retained as historical evidence. The submitted scope is in [submission readiness](../docs/submission/READINESS.md) and the [exact change inventory](../docs/submission/CHANGE_INVENTORY.json), which separately counts local-only exclusions.
+
+The browser now verifies exact-byte model provenance in snapshot mode, while API mode preserves server-computed metadata. All eight views disclose the ten-source archive, obsolete corridor floors, unknown original bindings and uncalibrated peak/risk semantics. Reported station AQI is separate from an official averaging-period-verified AQI claim. Usable hourly wind coverage is separate from successful grid requests. Advisory schedules retain their declared forecast-relative reference or explicitly unknown reference in UI and exports; they are not countdowns or operational instructions.
+
+Browser testing reproduced a heatmap mount-order defect: the hook ran before map construction and missed the initial load event. The correction attaches after mount effects while retaining the original load guard and listener cleanup; the existing initial-load regression remains intact. Both heatmap legend and cell table now support keyboard focus and scrolling. Tests retain actual WebGL paint, visibility filtering, layer removal/restoration, XSS and missing/zero coverage.
+
+Final actual checks: **179 Vitest tests passed in 15 files**, three TypeScript configurations passed, lint passed with the same seven warnings, production Vite build passed, and **30 Edge browser tests passed** with zero axe violations in the tested views/dialog/heatmap journeys. Node was 24.16.0 and final Edge was 155.0.4283.45. The broader Python suite passed **701 tests with two environment warnings** on Windows Python 3.14.3. Commands, exit codes, temporary evidence locations and limitations are recorded in [VERIFICATION.json](../docs/submission/VERIFICATION.json).
+
+Original pre-commit validation kept build/browser output and caches outside the repository. The approved commit-group checks also ran normal npm commands, producing ignored local artifacts; none were staged. Browser tests intercept basemap assets and optional font CSS, use the system-font fallback and normal real atmospheric captures; they do not verify external asset availability. Preview-server cleanup needed explicit Windows process termination in this managed session, as recorded in the verification report. Scientific parameters and equations, captured snapshots, original hardcoded-data audit reports, the stash and CI workflows remain unchanged. Remote CI, live-feed behavior, Linux ARM64 packaging, AWS deployment and scientific calibration are not claimed verified.
+
+## Original frontend audit
+
 Audit dates: October 9–10, 2026. Actual branch: `feature/frontend-audit-heatmap`; starting HEAD: `f5e4689d59b410d3621bb65ac6f3f35b896faa4d`. The original implementation started with a clean working tree; the manual-commit review began with 78 pending paths and no staged files. All implementation changes are confined to `web/`.
 
 ## Scope and baseline

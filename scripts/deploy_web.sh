@@ -3,6 +3,7 @@
 # Usage: scripts/deploy_web.sh   (run after scripts/deploy.sh)
 set -euo pipefail
 cd "$(dirname "$0")/.."
+python3 -m scripts.publish_model_provenance --check
 
 STACK="${AERIS_STACK:-aeris-foundation}"
 REGION="${AWS_REGION:-ap-south-1}"

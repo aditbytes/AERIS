@@ -1,4 +1,5 @@
 import { act, renderHook } from '@testing-library/react'
+import { useEffect } from 'react'
 import type { Map as LibreMap } from 'maplibre-gl'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { AqiFile } from '../../types/schemas'
@@ -22,6 +23,24 @@ function testMap() {
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals() })
 
 describe('observation map lifecycle', () => {
+  it('attaches the initial-load guard to a map constructed by a later mount effect', async () => {
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true })))
+    const map = testMap()
+    const ref = { current: null as LibreMap | null }
+    const { result, unmount } = renderHook(() => {
+      const heatmap = useObservationHeatmap(aqi, ref, true)
+      useEffect(() => { ref.current = map.ref.current }, [])
+      return heatmap
+    })
+    expect(result.current.fit).toBeUndefined()
+    await act(async () => { await Promise.resolve() })
+    expect(map.listeners.get('load')?.size).toBe(1)
+    act(() => { for (const loaded of map.listeners.get('load')!) loaded() })
+    act(() => result.current.fit!())
+    expect(map.fitBounds).toHaveBeenCalledWith([[77.2, 28.6], [77.3, 28.7]], { padding: 35, maxZoom: 11, duration: 0 })
+    unmount()
+    expect(map.listeners.get('load')?.size).toBe(0)
+  })
   it('waits for initial map load before offering fit, then fits reported cell bounds', () => {
     vi.useFakeTimers(); vi.setSystemTime('2026-10-10T06:00:00Z')
     vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true })))

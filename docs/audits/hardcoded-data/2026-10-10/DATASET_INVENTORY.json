@@ -1,0 +1,361 @@
+[
+  {
+    "file": "data/live/actions.json",
+    "bytes": 4382,
+    "lines": 88,
+    "sha256": "66768a4d5abb98c325016e3e39d6e99dc8dd85a7fd1e38d862f0b96bb7457695",
+    "metrics": {
+      "scalar_entries": 60,
+      "array_entries": 11,
+      "records_actions": 8,
+      "records_authority_actions": 3
+    },
+    "generated_at": "2026-10-09T06:00:03.651716Z",
+    "source_metadata": null,
+    "unique_dataset": "actions.json",
+    "copy_of": null
+  },
+  {
+    "file": "data/live/aqi.json",
+    "bytes": 17956,
+    "lines": 725,
+    "sha256": "d94e8234ce56fec586fb09fba364732174a8649d4fbac314b3776dae0962b09c",
+    "metrics": {
+      "scalar_entries": 601,
+      "array_entries": 60,
+      "coordinate_positions": 60,
+      "records_stations": 60
+    },
+    "generated_at": "2026-10-07T18:58:03.921942Z",
+    "source_metadata": null,
+    "unique_dataset": "aqi.json",
+    "copy_of": null,
+    "pm25_records": 59,
+    "pm25_range": [
+      1.1,
+      235.0
+    ],
+    "pm10_records": 0,
+    "station_sources": {
+      "OpenAQ": 60
+    },
+    "time_range": [
+      "2026-09-30T18:58:57Z",
+      "2026-10-07T08:00:00Z"
+    ]
+  },
+  {
+    "file": "data/live/corridor.geojson",
+    "bytes": 86677,
+    "lines": 4518,
+    "sha256": "32f81bc4e31b03fdc2ea9282bc447da410b80c2d1a6a245d7767b60b10fbd603",
+    "metrics": {
+      "scalar_entries": 2314,
+      "array_entries": 2890,
+      "coordinate_positions": 850,
+      "records_features": 50
+    },
+    "generated_at": "2026-10-08T14:52:16.643513Z",
+    "source_metadata": null,
+    "unique_dataset": "corridor.geojson",
+    "copy_of": null
+  },
+  {
+    "file": "data/live/fires.json",
+    "bytes": 57583,
+    "lines": 2282,
+    "sha256": "5518f832f4a1554af4354597fb4b17309937440c426b6226b9a2193f01429b4c",
+    "metrics": {
+      "scalar_entries": 1822,
+      "array_entries": 231,
+      "coordinate_positions": 227,
+      "records_fires": 227
+    },
+    "generated_at": "2026-10-07T18:41:50.671283Z",
+    "source_metadata": "NASA FIRMS VIIRS_NOAA21_NRT+VIIRS_NOAA20_NRT+VIIRS_SNPP_NRT",
+    "unique_dataset": "fires.json",
+    "copy_of": null,
+    "time_range": [
+      "2026-10-07T07:44:00Z",
+      "2026-10-07T08:41:00Z"
+    ]
+  },
+  {
+    "file": "data/live/india-boundary.geojson",
+    "bytes": 157627,
+    "lines": 9318,
+    "sha256": "0cbd04d50e1b3d27cb12d576388568ec9eb8a8789683ba3158d29bf13218b366",
+    "metrics": {
+      "scalar_entries": 4655,
+      "array_entries": 6979,
+      "coordinate_positions": 2326,
+      "records_features": 1
+    },
+    "generated_at": null,
+    "source_metadata": null,
+    "unique_dataset": "india-boundary.geojson",
+    "copy_of": null
+  },
+  {
+    "file": "data/live/population.json",
+    "bytes": 18308191,
+    "lines": 1113980,
+    "sha256": "5cecfce0a9e77ea79c616ec5ce17fecbf58bca5fd34c2b3e5952b71a6b204d36",
+    "metrics": {
+      "scalar_entries": 668388,
+      "array_entries": 222796,
+      "coordinate_positions": 222792,
+      "records_cells": 222792
+    },
+    "generated_at": "2026-10-09T01:28:11.818637Z",
+    "source_metadata": {
+      "name": "WorldPop India 2020, 1 km aggregated population raster",
+      "url": "https://worldpop-public-data.soton.ac.uk/GIS/Population/Global_2000_2020_1km/2020/IND/ind_ppp_2020_1km_Aggregated.tif",
+      "doi": "10.5258/SOTON/WP00647",
+      "year": 2020,
+      "license": "CC BY 4.0",
+      "citation": "WorldPop (www.worldpop.org \u2014 School of Geography and Environmental Science, University of Southampton; Department of Geography and Geosciences, University of Louisville; Departement de Geographie, Universite de Namur) and Center for International Earth Science Information Network (CIESIN), Columbia University (2018). Global High Resolution Population Denominators Project. https://dx.doi.org/10.5258/SOTON/WP00647"
+    },
+    "unique_dataset": "population.json",
+    "copy_of": null
+  },
+  {
+    "file": "data/live/ranked_sites.json",
+    "bytes": 144182,
+    "lines": 5784,
+    "sha256": "41e2cd70e9bacc7c8be8458b5d898e177e06e20ae6ace2f57674e742d15495f3",
+    "metrics": {
+      "scalar_entries": 4890,
+      "array_entries": 444,
+      "coordinate_positions": 444,
+      "records_sites": 444
+    },
+    "generated_at": "2026-10-09T02:05:47.935603Z",
+    "source_metadata": null,
+    "unique_dataset": "ranked_sites.json",
+    "copy_of": null,
+    "exposed_population": {
+      "estimate": 7132123,
+      "low": 7132123,
+      "high": 14488106,
+      "method": "Population cells inside corridor bands with band risk \u2265 0.30 (estimate). Low: threshold raised to 0.45. High: threshold lowered to 0.15. This is a threshold sensitivity range, not a statistical confidence interval.",
+      "data_available": true
+    },
+    "null_occupancy_records": 444,
+    "pm25_delta_values": [
+      15.0
+    ]
+  },
+  {
+    "file": "data/live/sites.geojson",
+    "bytes": 1324780,
+    "lines": 59515,
+    "sha256": "4862bf41e95d538d6389423969fb9da52386f45a4869670c122e91ad23c529bd",
+    "metrics": {
+      "scalar_entries": 34455,
+      "array_entries": 9396,
+      "coordinate_positions": 3132,
+      "records_features": 3132
+    },
+    "generated_at": "2026-10-07T18:49:16.377954Z",
+    "source_metadata": "\u00a9 OpenStreetMap contributors",
+    "unique_dataset": "sites.geojson",
+    "copy_of": null
+  },
+  {
+    "file": "data/live/sources.json",
+    "bytes": 3571,
+    "lines": 135,
+    "sha256": "900b5925955635660d90295b2324083fc52a23a3596aaab9450f518a7221135a",
+    "metrics": {
+      "scalar_entries": 111,
+      "array_entries": 10,
+      "coordinate_positions": 10,
+      "records_sources": 10
+    },
+    "generated_at": "2026-10-08T14:52:16.603976Z",
+    "source_metadata": null,
+    "unique_dataset": "sources.json",
+    "copy_of": null,
+    "fire_count_sum": 215,
+    "types": {
+      "stubble_burning": 8,
+      "industrial_fire": 2
+    },
+    "time_range": [
+      "2026-10-07T07:44:00Z",
+      "2026-10-07T08:41:00Z"
+    ]
+  },
+  {
+    "file": "data/live/wind.json",
+    "bytes": 3202964,
+    "lines": 125976,
+    "sha256": "b9bba4ad4e5d2bdd8fa4f6b8b77a267951fa9697a9db87545c0df3a741f6ca09",
+    "metrics": {
+      "scalar_entries": 93672,
+      "array_entries": 15827,
+      "coordinate_positions": 323,
+      "records_points": 323,
+      "records_wind_hours": 15504
+    },
+    "generated_at": "2026-10-07T18:37:57.090632Z",
+    "source_metadata": "Open-Meteo GFS",
+    "unique_dataset": "wind.json",
+    "copy_of": null,
+    "time_range": [
+      "2026-10-06T18:30:00Z",
+      "2026-10-08T17:30:00Z"
+    ]
+  },
+  {
+    "file": "web/public/data/actions.json",
+    "bytes": 4382,
+    "lines": 88,
+    "sha256": "66768a4d5abb98c325016e3e39d6e99dc8dd85a7fd1e38d862f0b96bb7457695",
+    "metrics": {
+      "scalar_entries": 60,
+      "array_entries": 11,
+      "records_actions": 8,
+      "records_authority_actions": 3
+    },
+    "generated_at": "2026-10-09T06:00:03.651716Z",
+    "source_metadata": null,
+    "unique_dataset": "actions.json",
+    "copy_of": "data/live/actions.json"
+  },
+  {
+    "file": "web/public/data/aqi.json",
+    "bytes": 17956,
+    "lines": 725,
+    "sha256": "d94e8234ce56fec586fb09fba364732174a8649d4fbac314b3776dae0962b09c",
+    "metrics": {
+      "scalar_entries": 601,
+      "array_entries": 60,
+      "coordinate_positions": 60,
+      "records_stations": 60
+    },
+    "generated_at": "2026-10-07T18:58:03.921942Z",
+    "source_metadata": null,
+    "unique_dataset": "aqi.json",
+    "copy_of": "data/live/aqi.json",
+    "pm25_records": 59,
+    "pm25_range": [
+      1.1,
+      235.0
+    ],
+    "pm10_records": 0,
+    "station_sources": {
+      "OpenAQ": 60
+    },
+    "time_range": [
+      "2026-09-30T18:58:57Z",
+      "2026-10-07T08:00:00Z"
+    ]
+  },
+  {
+    "file": "web/public/data/corridor.geojson",
+    "bytes": 86677,
+    "lines": 4518,
+    "sha256": "32f81bc4e31b03fdc2ea9282bc447da410b80c2d1a6a245d7767b60b10fbd603",
+    "metrics": {
+      "scalar_entries": 2314,
+      "array_entries": 2890,
+      "coordinate_positions": 850,
+      "records_features": 50
+    },
+    "generated_at": "2026-10-08T14:52:16.643513Z",
+    "source_metadata": null,
+    "unique_dataset": "corridor.geojson",
+    "copy_of": "data/live/corridor.geojson"
+  },
+  {
+    "file": "web/public/data/india-boundary.geojson",
+    "bytes": 157627,
+    "lines": 9318,
+    "sha256": "0cbd04d50e1b3d27cb12d576388568ec9eb8a8789683ba3158d29bf13218b366",
+    "metrics": {
+      "scalar_entries": 4655,
+      "array_entries": 6979,
+      "coordinate_positions": 2326,
+      "records_features": 1
+    },
+    "generated_at": null,
+    "source_metadata": null,
+    "unique_dataset": "india-boundary.geojson",
+    "copy_of": "data/live/india-boundary.geojson"
+  },
+  {
+    "file": "web/public/data/ranked_sites.json",
+    "bytes": 144182,
+    "lines": 5784,
+    "sha256": "41e2cd70e9bacc7c8be8458b5d898e177e06e20ae6ace2f57674e742d15495f3",
+    "metrics": {
+      "scalar_entries": 4890,
+      "array_entries": 444,
+      "coordinate_positions": 444,
+      "records_sites": 444
+    },
+    "generated_at": "2026-10-09T02:05:47.935603Z",
+    "source_metadata": null,
+    "unique_dataset": "ranked_sites.json",
+    "copy_of": "data/live/ranked_sites.json",
+    "exposed_population": {
+      "estimate": 7132123,
+      "low": 7132123,
+      "high": 14488106,
+      "method": "Population cells inside corridor bands with band risk \u2265 0.30 (estimate). Low: threshold raised to 0.45. High: threshold lowered to 0.15. This is a threshold sensitivity range, not a statistical confidence interval.",
+      "data_available": true
+    },
+    "null_occupancy_records": 444,
+    "pm25_delta_values": [
+      15.0
+    ]
+  },
+  {
+    "file": "web/public/data/sources.json",
+    "bytes": 3571,
+    "lines": 135,
+    "sha256": "900b5925955635660d90295b2324083fc52a23a3596aaab9450f518a7221135a",
+    "metrics": {
+      "scalar_entries": 111,
+      "array_entries": 10,
+      "coordinate_positions": 10,
+      "records_sources": 10
+    },
+    "generated_at": "2026-10-08T14:52:16.603976Z",
+    "source_metadata": null,
+    "unique_dataset": "sources.json",
+    "copy_of": "data/live/sources.json",
+    "fire_count_sum": 215,
+    "types": {
+      "stubble_burning": 8,
+      "industrial_fire": 2
+    },
+    "time_range": [
+      "2026-10-07T07:44:00Z",
+      "2026-10-07T08:41:00Z"
+    ]
+  },
+  {
+    "file": "web/public/data/wind.json",
+    "bytes": 3202964,
+    "lines": 125976,
+    "sha256": "b9bba4ad4e5d2bdd8fa4f6b8b77a267951fa9697a9db87545c0df3a741f6ca09",
+    "metrics": {
+      "scalar_entries": 93672,
+      "array_entries": 15827,
+      "coordinate_positions": 323,
+      "records_points": 323,
+      "records_wind_hours": 15504
+    },
+    "generated_at": "2026-10-07T18:37:57.090632Z",
+    "source_metadata": "Open-Meteo GFS",
+    "unique_dataset": "wind.json",
+    "copy_of": "data/live/wind.json",
+    "time_range": [
+      "2026-10-06T18:30:00Z",
+      "2026-10-08T17:30:00Z"
+    ]
+  }
+]

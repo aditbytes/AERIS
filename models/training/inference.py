@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import pickle
 import sys
 from dataclasses import dataclass
@@ -28,7 +29,14 @@ class LoadedModel:
     metadata: dict
 
 
-def model_fn(model_dir, context=None) -> LoadedModel:
+def model_fn(model_dir, context=None, *, trusted_artifact: bool | None = None) -> LoadedModel:
+    """Require caller/deployer trust before deserialization; checksums cannot grant it."""
+    if trusted_artifact is not None and not isinstance(trusted_artifact, bool):
+        raise ValueError("trusted_artifact must be a bool or None")
+    trusted = (os.environ.get("AERIS_TRUST_MODEL_ARTIFACT") == "1"
+               if trusted_artifact is None else trusted_artifact)
+    if not trusted:
+        raise PermissionError("Only trusted training artifacts may be loaded; explicitly acknowledge the trusted supplier before loading pickle")
     directory = Path(model_dir)
     metadata = json.loads((directory / "metadata.json").read_text(encoding="utf-8"))
     expected = {"schema_version": 1, "model_type": MODEL_TYPE, "scope": SCOPE,

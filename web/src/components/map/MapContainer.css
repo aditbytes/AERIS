@@ -1037,6 +1037,18 @@
   white-space: nowrap;
 }
 
+.storyline-node.flow {
+  align-items: flex-start;
+  flex: 2;
+}
+
+.storyline-node.flow .story-sub,
+.storyline-node.impact .story-sub {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
 .storyline-connector {
   color: var(--text-tertiary);
   font-size: 11px;

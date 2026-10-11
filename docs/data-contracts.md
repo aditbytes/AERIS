@@ -37,6 +37,43 @@ sites.geojson, population.json ────────────────�
 }
 ```
 
+Optional AQI fetch metadata is preserved through bronze storage, gold publication,
+`GET /aqi` / `GET /stations`, frontend validation and the AQI panel. Old captures
+without these fields remain valid; missing metadata means unknown, never success.
+
+- `source` names providers contributing usable readings, or `none` when no provider
+  contributes a reading. Each station retains its own `source`.
+- `sources_with_readings` lists contributing providers; legitimate zero PM2.5 or AQI
+  counts as a reading. `sources_failed` lists providers with full **or partial**
+  fetch failures, so a provider can appear in both lists.
+- `source_fetch_status` maps provider names to `SUCCESS`, `PARTIAL_FAILURE`,
+  `FAILED`, `NOT_CONFIGURED` or `UNKNOWN`. OpenAQ station-level request failures
+  retain other station readings and mark that provider `PARTIAL_FAILURE`.
+  An explicit valid empty `results` / `records` array is a successful response;
+  malformed JSON, missing arrays and upstream errors are failures. Uninstrumented
+  helper results do not establish that distinction and remain `UNKNOWN`.
+- `fetch_status` is `COMPLETE` when the selected requests succeeded, `PARTIAL`
+  when known failures/unconfigured providers coexist with successful requests,
+  `FAILED` when configured requests failed without successful requests,
+  `UNAVAILABLE` when no provider is configured, or `UNKNOWN` without sufficient
+  evidence. This describes request outcomes, **not regional sensor coverage**.
+- `coverage_complete` is `false` for known fetch gaps and `null` when completeness
+  cannot be established. This fetcher never emits `true`: caps, pagination,
+  eligibility, missing observations and unknown averaging periods prevent a claim
+  of complete regional coverage. An external `true` is displayed only as a
+  producer claim and is rejected if accompanied by known fetch gaps.
+- `data_status` is `READINGS_AVAILABLE` or `UNAVAILABLE_OR_EMPTY`; successful empty
+  responses and failures both lack readings, distinguished only by available fetch
+  evidence. Neither empty state proves clean air. Empty/all-null results are never
+  published as a successful refresh by the ingestion handler or pipeline.
+
+`generated_at` is a capture time, not a measurement time. `observed_at` is UTC only
+when the source timezone is known; ambiguous source times remain `null` with the
+original `source_timestamp` and `timestamp_status` disclosure. AQI sub-index and
+averaging-period limitations remain unchanged. A retained capture's fetch metadata
+does not report subsequent failed ingestion attempts; the API has no separate
+latest-attempt status channel. Freshness and observation age remain distinct.
+
 ## `wind.json` (Meenal)
 Point forecasts on a coarse grid (about 0.25°), hourly for 0–48 h.
 ```json

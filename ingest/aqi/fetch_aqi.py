@@ -42,6 +42,7 @@ Usage (CLI):
 from __future__ import annotations
 
 import logging
+import math
 import os
 import time
 import concurrent.futures
@@ -91,6 +92,38 @@ _CPCB_BREAKPOINTS: list[tuple[float, float, int, int, str]] = [
 # AQI calculation
 # ---------------------------------------------------------------------------
 
+def _nonnegative(value: Any) -> float | None:
+    if isinstance(value, bool):
+        return None
+    try:
+        result = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return result if math.isfinite(result) and result >= 0 else None
+
+
+def _coordinate(value: Any, limit: float) -> float | None:
+    if isinstance(value, bool):
+        return None
+    try:
+        result = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return result if math.isfinite(result) and -limit <= result <= limit else None
+
+
+def _aware_timestamp(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if dt.utcoffset() is None:
+            return None  # The source timezone is unknown; do not silently assert UTC.
+        return dt.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+    except ValueError:
+        return None
+
+
 def compute_pm25_aqi(pm25: float) -> tuple[int, str]:
     """
     Compute CPCB sub-index AQI and category from a PM2.5 reading (µg/m³).
@@ -101,8 +134,8 @@ def compute_pm25_aqi(pm25: float) -> tuple[int, str]:
     Returns (aqi_value, category_string).
     Clamps AQI to [0, 500].
     """
-    if pm25 < 0:
-        raise ValueError(f"PM2.5 must be non-negative, got {pm25}")
+    if _nonnegative(pm25) is None:
+        raise ValueError(f"PM2.5 must be finite and non-negative, got {pm25}")
     for c_lo, c_hi, aqi_lo, aqi_hi, category in _CPCB_BREAKPOINTS:
         if c_lo <= pm25 <= c_hi:
             aqi = int(
@@ -138,17 +171,25 @@ def _fetch_openaq_locations(
         source_name="OpenAQ/locations",
         timeout=30,
     )
-    data = resp.json()
-    return data.get("results", [])
+    return _response_rows(resp.json(), "results")
+
+
+def _response_rows(payload: Any, field: str) -> list[dict[str, Any]]:
+    """An explicit empty array is success; a missing/malformed array is not."""
+    if not isinstance(payload, dict) or not isinstance(payload.get(field), list):
+        raise ValueError(f"Invalid AQI response: expected {field} array")
+    if not all(isinstance(row, dict) for row in payload[field]):
+        raise ValueError(f"Invalid AQI response: expected objects in {field}")
+    return payload[field]
 
 
 def _fetch_location_latest(
-    loc_id: int, key: str
+    loc_id: int, key: str, raise_on_error: bool = False
 ) -> list[dict[str, Any]]:
     """
     Fetch the latest measurements for all sensors at a given location.
 
-    Returns the list of measurement dicts or empty list on error.
+    Returns the list of measurement dicts or empty list on error, unless strict.
     Uses /v3/locations/{id}/latest.
     """
     try:
@@ -158,8 +199,10 @@ def _fetch_location_latest(
             source_name="OpenAQ/location-latest",
             timeout=20,
         )
-        return resp.json().get("results", [])
+        return _response_rows(resp.json(), "results")
     except (UpstreamError, ValueError):
+        if raise_on_error:
+            raise
         return []
 
 
@@ -167,6 +210,7 @@ def fetch_openaq(
     bbox: list[float],
     key: str,
     raise_on_error: bool = False,
+    diagnostics: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """
     Fetch PM2.5 readings from OpenAQ v3 for all recently-active stations in bbox.
@@ -177,21 +221,31 @@ def fetch_openaq(
       3. For each active PM2.5 sensor, GET /v3/sensors/{id}/measurements?limit=1&datetime_from=7d-ago
       4. Normalise to aqi.json contract
 
-    Returns a list of station dicts. Returns empty list on error (unless raise_on_error=True).
+    Returns a list of station dicts. Returns empty list on discovery error unless
+    raise_on_error=True. Optional diagnostics distinguish request outcomes; station
+    failures retain other readings and do not prove complete regional coverage.
     """
+    if diagnostics is not None:
+        diagnostics["status"] = "UNKNOWN"
     if not key:
+        if diagnostics is not None:
+            diagnostics["status"] = "NOT_CONFIGURED"
         logger.warning("[OpenAQ] No API key; skipping OpenAQ fetch.")
         return []
 
     logger.info("[OpenAQ] Fetching locations in bbox %s", bbox)
     try:
         locations = _fetch_openaq_locations(bbox, key, param_id=PARAM_ID_PM25)
-    except UpstreamError as exc:
-        logger.error("[OpenAQ] Failed to fetch locations: %s", exc)
+    except (UpstreamError, ValueError) as exc:
+        logger.error("[OpenAQ] Failed to fetch locations (%s)", type(exc).__name__)
+        if diagnostics is not None:
+            diagnostics["status"] = "FAILED"
         if raise_on_error:
             raise
         return []
 
+    if diagnostics is not None:
+        diagnostics["status"] = "SUCCESS"
     if not locations:
         logger.info("[OpenAQ] No stations found in bbox.")
         return []
@@ -221,9 +275,11 @@ def fetch_openaq(
     def fetch_single_station(loc: dict[str, Any]) -> dict[str, Any] | None:
         loc_id = loc.get("id")
         coords = loc.get("coordinates") or {}
-        lat = coords.get("latitude")
-        lon = coords.get("longitude")
+        lat = _coordinate(coords.get("latitude"), 90)
+        lon = _coordinate(coords.get("longitude"), 180)
         if loc_id is None or lat is None or lon is None:
+            return None
+        if not (bbox[1] <= lat <= bbox[3] and bbox[0] <= lon <= bbox[2]):
             return None
         name = loc.get("name", f"openaq_{loc_id}")
 
@@ -240,11 +296,12 @@ def fetch_openaq(
             return None  # no PM2.5 sensor
 
         # Fetch latest measurements for all sensors at this location in one call
-        latest_results = _fetch_location_latest(loc_id, key)
+        latest_results = _fetch_location_latest(loc_id, key, raise_on_error=True)
         
         pm25_val: float | None = None
         pm10_val: float | None = None
         observed_at: str | None = None
+        source_timestamp: Any = None
 
         for res in latest_results:
             sid = res.get("sensorsId")
@@ -253,13 +310,14 @@ def fetch_openaq(
                 continue
             
             if sid == pm25_sensor_id:
-                pm25_val = float(val)
+                pm25_val = _nonnegative(val)
                 # Keep timestamp of the PM2.5 reading
                 dt_utc = (res.get("datetime") or {}).get("utc")
                 if dt_utc:
                     observed_at = dt_utc
+                    source_timestamp = dt_utc
             elif sid == pm10_sensor_id:
-                pm10_val = float(val)
+                pm10_val = _nonnegative(val)
 
         if pm25_val is None:
             return None
@@ -271,12 +329,7 @@ def fetch_openaq(
             aqi_val, aqi_cat = compute_pm25_aqi(pm25_val)
 
         # Normalise timestamp
-        if observed_at:
-            try:
-                dt = datetime.fromisoformat(observed_at.replace("Z", "+00:00"))
-                observed_at = dt.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
-            except ValueError:
-                observed_at = None
+        observed_at = _aware_timestamp(observed_at)
 
         return {
             "id": f"OAQ_{loc_id}",
@@ -288,16 +341,27 @@ def fetch_openaq(
             "aqi": aqi_val,
             "aqi_category": aqi_cat,
             "observed_at": observed_at,
+            "source_timestamp": str(source_timestamp) if source_timestamp is not None else None,
             "source": "OpenAQ",
+            "aqi_method": "PM25_SUBINDEX_AVERAGING_PERIOD_UNVERIFIED",
+            "timestamp_status": "SOURCE_TIMEZONE_KNOWN" if observed_at else "UNAVAILABLE_OR_AMBIGUOUS",
         }
 
     # Use ThreadPoolExecutor to fetch stations concurrently (rate-limited by max_workers=5)
+    failed_requests = 0
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        results = list(executor.map(fetch_single_station, active_locs))
-        
-    for res in results:
-        if res is not None:
-            stations.append(res)
+        futures = [executor.submit(fetch_single_station, loc) for loc in active_locs]
+        for future in futures:
+            try:
+                res = future.result()
+            except (UpstreamError, ValueError, TypeError, KeyError, AttributeError) as exc:
+                failed_requests += 1
+                logger.warning("[OpenAQ] Station fetch failed (%s); retaining other readings", type(exc).__name__)
+                continue
+            if res is not None:
+                stations.append(res)
+    if failed_requests and diagnostics is not None:
+        diagnostics["status"] = "PARTIAL_FAILURE"
 
     logger.info("[OpenAQ] Normalised %d station(s) with readings.", len(stations))
     return stations
@@ -319,6 +383,7 @@ def fetch_cpcb(
     bbox: list[float],
     key: str,
     raise_on_error: bool = False,
+    diagnostics: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """
     Fetch real-time AQI readings from data.gov.in CPCB dataset.
@@ -327,7 +392,11 @@ def fetch_cpcb(
     Returns a list of normalised station dicts.
     Returns an empty list on error (unless raise_on_error=True) or if no key provided.
     """
+    if diagnostics is not None:
+        diagnostics["status"] = "UNKNOWN"
     if not key:
+        if diagnostics is not None:
+            diagnostics["status"] = "NOT_CONFIGURED"
         logger.warning("[CPCB] No DATA_GOV_IN_KEY; skipping CPCB fetch.")
         return []
 
@@ -347,17 +416,24 @@ def fetch_cpcb(
         )
     except UpstreamError as exc:
         logger.error("[CPCB] Failed to fetch: %s", exc)
+        if diagnostics is not None:
+            diagnostics["status"] = "FAILED"
         if raise_on_error:
             raise
         return []
 
     try:
-        payload = resp.json()
+        records = _response_rows(resp.json(), "records")
     except ValueError as exc:
-        logger.error("[CPCB] Malformed JSON response: %s", exc)
+        logger.error("[CPCB] Invalid JSON response (%s)", type(exc).__name__)
+        if diagnostics is not None:
+            diagnostics["status"] = "FAILED"
+        if raise_on_error:
+            raise
         return []
 
-    records = payload.get("records", [])
+    if diagnostics is not None:
+        diagnostics["status"] = "SUCCESS"
     if not records:
         logger.info("[CPCB] No records returned from data.gov.in.")
         return []
@@ -372,8 +448,8 @@ def fetch_cpcb(
             state = str(rec.get("state", "")).lower()
             city = str(rec.get("city", ""))
             station_name = str(rec.get("station", city))
-            lat_raw = rec.get("latitude") or rec.get("lat")
-            lon_raw = rec.get("longitude") or rec.get("lon")
+            lat_raw = rec.get("latitude", rec.get("lat"))
+            lon_raw = rec.get("longitude", rec.get("lon"))
 
             # Reject records without valid coordinates: a station with null lat/lon
             # cannot be placed in the geospatial dataset and would cause downstream
@@ -382,8 +458,10 @@ def fetch_cpcb(
             if lat_raw is None or lon_raw is None:
                 logger.debug("[CPCB] Skipping record without coordinates: %s", station_name)
                 continue
-            lat = float(lat_raw)
-            lon = float(lon_raw)
+            lat = _coordinate(lat_raw, 90)
+            lon = _coordinate(lon_raw, 180)
+            if lat is None or lon is None:
+                continue
             # Bbox filter
             if not (s <= lat <= n and w <= lon <= e):
                 continue
@@ -393,47 +471,40 @@ def fetch_cpcb(
 
             # Some datasets use different field layouts
             if pm25_raw is None and pm10_raw is None:
-                pm25_raw = rec.get("pm2_5") or rec.get("pm25")
+                pm25_raw = rec.get("pm2_5", rec.get("pm25"))
                 pm10_raw = rec.get("pm10")
 
             pm25_val: float | None = None
             pm10_val: float | None = None
             if pm25_raw not in (None, "", "NA", "N/A"):
                 try:
-                    pm25_val = float(pm25_raw)
+                    pm25_val = _nonnegative(pm25_raw)
                 except ValueError:
                     pass
             if pm10_raw not in (None, "", "NA", "N/A"):
                 try:
-                    pm10_val = float(pm10_raw)
+                    pm10_val = _nonnegative(pm10_raw)
                 except ValueError:
                     pass
 
             # Timestamp
-            last_update = rec.get("last_update") or rec.get("timestamp") or rec.get("pollutant_min")
-            observed_at: str | None = None
-            if last_update:
-                for fmt in ("%d-%m-%Y %H:%M:%S", "%Y-%m-%d %H:%M:%S", "%d/%m/%Y %H:%M"):
-                    try:
-                        dt = datetime.strptime(str(last_update).strip(), fmt).replace(
-                            tzinfo=timezone.utc
-                        )
-                        observed_at = dt.isoformat().replace("+00:00", "Z")
-                        break
-                    except ValueError:
-                        pass
+            last_update = rec.get("last_update") or rec.get("timestamp")
+            observed_at = _aware_timestamp(last_update)
 
             aqi_raw = rec.get("aqi")
             aqi_val: int | None = None
             if aqi_raw not in (None, "", "NA"):
                 try:
-                    aqi_val = int(float(aqi_raw))
+                    number = _nonnegative(aqi_raw)
+                    aqi_val = int(number) if number is not None and number <= 500 else None
                 except ValueError:
                     pass
 
+            aqi_method = "PROVIDER_REPORTED" if aqi_val is not None else "UNAVAILABLE"
             aqi_cat: str | None = None
             if aqi_val is None and pm25_val is not None and pm25_val >= 0:
                 aqi_val, aqi_cat = compute_pm25_aqi(pm25_val)
+                aqi_method = "PM25_SUBINDEX_AVERAGING_PERIOD_UNVERIFIED"
             elif aqi_val is not None:
                 # Back-calculate category from AQI value
                 for _, _, a_lo, a_hi, cat in _CPCB_BREAKPOINTS:
@@ -454,6 +525,9 @@ def fetch_cpcb(
                 "aqi_category": aqi_cat,
                 "observed_at": observed_at,
                 "source": "CPCB/data.gov.in",
+                "aqi_method": aqi_method,
+                "source_timestamp": str(last_update) if last_update is not None else None,
+                "timestamp_status": "SOURCE_TIMEZONE_KNOWN" if observed_at else "UNAVAILABLE_OR_AMBIGUOUS",
             })
 
         except (ValueError, TypeError, KeyError) as exc:
@@ -462,6 +536,21 @@ def fetch_cpcb(
 
     logger.info("[CPCB] Normalised %d station(s) after bbox/state filter.", len(stations))
     return stations
+
+
+def _fetch_status(statuses: list[str]) -> str:
+    """Request outcome only: success never proves regional observation coverage."""
+    if all(status == "SUCCESS" for status in statuses):
+        return "COMPLETE"
+    if all(status == "NOT_CONFIGURED" for status in statuses):
+        return "UNAVAILABLE"
+    if all(status in ("FAILED", "NOT_CONFIGURED") for status in statuses):
+        return "FAILED"
+    if "PARTIAL_FAILURE" in statuses or (
+        "SUCCESS" in statuses and any(status in ("FAILED", "NOT_CONFIGURED") for status in statuses)
+    ):
+        return "PARTIAL"
+    return "UNKNOWN"
 
 
 # ---------------------------------------------------------------------------
@@ -490,36 +579,40 @@ def fetch_aqi(
 
     openaq_stations: list[dict[str, Any]] = []
     cpcb_stations: list[dict[str, Any]] = []
-    sources_failed: list[str] = []
+    diagnostics = {name: {"status": "UNKNOWN"} for name in ("OpenAQ", "CPCB/data.gov.in")}
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-        f_openaq = executor.submit(fetch_openaq, bbox, openaq_key, raise_on_error=True)
-        f_cpcb = executor.submit(fetch_cpcb, bbox, cpcb_key, raise_on_error=True)
+        f_openaq = executor.submit(fetch_openaq, bbox, openaq_key, raise_on_error=True, diagnostics=diagnostics["OpenAQ"])
+        f_cpcb = executor.submit(fetch_cpcb, bbox, cpcb_key, raise_on_error=True, diagnostics=diagnostics["CPCB/data.gov.in"])
         try:
             openaq_stations = f_openaq.result()
         except UpstreamError as exc:
             logger.error("[OpenAQ] Upstream failure: %s", exc)
-            sources_failed.append("OpenAQ")
+            diagnostics["OpenAQ"]["status"] = "FAILED"
         except Exception as exc:
-            logger.error("[OpenAQ] Unexpected failure: %s", exc)
-            sources_failed.append("OpenAQ")
+            logger.error("[OpenAQ] Unexpected failure (%s)", type(exc).__name__)
+            diagnostics["OpenAQ"]["status"] = "FAILED"
 
         try:
             cpcb_stations = f_cpcb.result()
         except UpstreamError as exc:
             logger.error("[CPCB] Upstream failure: %s", exc)
-            sources_failed.append("CPCB/data.gov.in")
+            diagnostics["CPCB/data.gov.in"]["status"] = "FAILED"
         except Exception as exc:
-            logger.error("[CPCB] Unexpected failure: %s", exc)
-            sources_failed.append("CPCB/data.gov.in")
+            logger.error("[CPCB] Unexpected failure (%s)", type(exc).__name__)
+            diagnostics["CPCB/data.gov.in"]["status"] = "FAILED"
+
+    source_fetch_status = {name: detail["status"] for name, detail in diagnostics.items()}
+    sources_failed = [name for name, status in source_fetch_status.items() if status in ("FAILED", "PARTIAL_FAILURE")]
+    known_gaps = any(status in ("FAILED", "PARTIAL_FAILURE", "NOT_CONFIGURED") for status in source_fetch_status.values())
 
     # Combine: OpenAQ first, then CPCB records not already covered
     combined = openaq_stations + cpcb_stations
 
     contributing: list[str] = []
-    if openaq_stations:
+    if any(any(s.get(k) is not None for k in ("pm25", "pm10", "aqi")) for s in openaq_stations):
         contributing.append("OpenAQ")
-    if cpcb_stations:
+    if any(any(s.get(k) is not None for k in ("pm25", "pm10", "aqi")) for s in cpcb_stations):
         contributing.append("CPCB/data.gov.in")
 
     source_label = "+".join(contributing) if contributing else "none"
@@ -528,6 +621,12 @@ def fetch_aqi(
         "generated_at": generated_at,
         "source": source_label,
         "stations": combined,
+        "data_status": "READINGS_AVAILABLE" if any(any(s.get(k) is not None for k in ("pm25", "pm10", "aqi")) for s in combined) else "UNAVAILABLE_OR_EMPTY",
+        "sources_with_readings": contributing,
+        "source_fetch_status": source_fetch_status,
+        "fetch_status": _fetch_status(list(source_fetch_status.values())),
+        # Caps, pagination and eligibility prevent an assertion of regional completeness.
+        "coverage_complete": False if known_gaps else None,
     }
     if sources_failed:
         result["sources_failed"] = sources_failed

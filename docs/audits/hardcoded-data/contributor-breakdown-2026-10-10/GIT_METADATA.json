@@ -1,0 +1,2283 @@
+{
+  "identities": [
+    {
+      "git_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "commits": 144,
+      "sample_commits": [
+        "f5e4689d59b410d3621bb65ac6f3f35b896faa4d",
+        "0941fa5ec788330e958d1e6ab155da9a9e0124a7",
+        "551aadf874b97e0007327c95d8ca0ecb27454195"
+      ],
+      "mapping": "Aditya"
+    },
+    {
+      "git_name": "Meenal Sinha",
+      "email_sha256": "f5c9c98632f3b9ace14063ba7c5eb38bdbd5d4555a3e85f78a087db234cd4fda",
+      "commits": 7,
+      "sample_commits": [
+        "e73814366d4f31082e6707172f86ed4f688bc5be",
+        "6629edb1d4c5a525e5031f41b2fc4424055e5638",
+        "8215925955d5a81a805143b2a65f22131daec859"
+      ],
+      "mapping": "Meenal"
+    },
+    {
+      "git_name": "MeenalSinha",
+      "email_sha256": "f5c9c98632f3b9ace14063ba7c5eb38bdbd5d4555a3e85f78a087db234cd4fda",
+      "commits": 10,
+      "sample_commits": [
+        "df7b0c6a99007ab0c062e6fcb735cba42d0d5e4e",
+        "3789d0815b3d5562979bde237c2383e5a527c2b1",
+        "422685bfb1b6405e378c61a5706416d76eca03e8"
+      ],
+      "mapping": "Meenal"
+    },
+    {
+      "git_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "commits": 37,
+      "sample_commits": [
+        "7cf0572049d69b550cbb42d7e74cf5472d521793",
+        "221d420704e8a39ab1a95743fd5c1dcec8781651",
+        "0a5f64bf15c0dcb872c1a3af744b897694036dcc"
+      ],
+      "mapping": "Pritam"
+    },
+    {
+      "git_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "commits": 22,
+      "sample_commits": [
+        "d775db0db281d4a783d2938c4f3feae48061344d",
+        "d5dfafa3cb6e8046f864d422570563c21be76df0",
+        "60af675b0bdfb11d6b8648efe8778ca25a313c3a"
+      ],
+      "mapping": "Saba"
+    }
+  ],
+  "commits": [
+    {
+      "commit": "7cf0572049d69b550cbb42d7e74cf5472d521793",
+      "parents": [
+        "221d420704e8a39ab1a95743fd5c1dcec8781651"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-10T11:44:58+05:30",
+      "subject": "docs(web): document frontend findings and observation heatmap limits"
+    },
+    {
+      "commit": "221d420704e8a39ab1a95743fd5c1dcec8781651",
+      "parents": [
+        "0a5f64bf15c0dcb872c1a3af744b897694036dcc"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-10T11:44:50+05:30",
+      "subject": "test(web): verify real map rendering and accessible browser journeys"
+    },
+    {
+      "commit": "0a5f64bf15c0dcb872c1a3af744b897694036dcc",
+      "parents": [
+        "dcaa9848f573134f0970dd371ba71ba3cbdb8573"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-10T11:44:44+05:30",
+      "subject": "test(web): cover scientific labels and dashboard interaction regressions"
+    },
+    {
+      "commit": "dcaa9848f573134f0970dd371ba71ba3cbdb8573",
+      "parents": [
+        "19e5405f1e440bb2cef905341c1b2c2bf4b3dd51"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-10T11:44:37+05:30",
+      "subject": "fix(web): retain usable views and offer feed and render recovery"
+    },
+    {
+      "commit": "19e5405f1e440bb2cef905341c1b2c2bf4b3dd51",
+      "parents": [
+        "3c81173358ce98abe3a0f67dad0a271e389541b3"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-10T11:44:29+05:30",
+      "subject": "fix(web): make navigation and data status accessible and accurate"
+    },
+    {
+      "commit": "3c81173358ce98abe3a0f67dad0a271e389541b3",
+      "parents": [
+        "038a5dfde5a3d994b5a0e76d12ac43a8d1700938"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-10T11:44:23+05:30",
+      "subject": "fix(web): make recommendation dialogs keyboard accessible"
+    },
+    {
+      "commit": "038a5dfde5a3d994b5a0e76d12ac43a8d1700938",
+      "parents": [
+        "97c2af3432151dfbe916e14f46dd64ba550f74f0"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-10T11:44:15+05:30",
+      "subject": "fix(web): share snapshot-scoped local recommendation checklists"
+    },
+    {
+      "commit": "97c2af3432151dfbe916e14f46dd64ba550f74f0",
+      "parents": [
+        "42570f60a3884066736feed8e0a16a2f4ab0fe1f"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-10T11:44:09+05:30",
+      "subject": "fix(web): remove unsupported AQI forecasts and validation claims"
+    },
+    {
+      "commit": "42570f60a3884066736feed8e0a16a2f4ab0fe1f",
+      "parents": [
+        "fab0872a8036bac47e53a62f4fef6fee3935b3a4"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-10T11:44:02+05:30",
+      "subject": "fix(web): expose all facilities and disclose forecast-relative arrival times"
+    },
+    {
+      "commit": "fab0872a8036bac47e53a62f4fef6fee3935b3a4",
+      "parents": [
+        "c211d923a2b8368d7cf6a244efb61bf86f472687"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-10T11:43:51+05:30",
+      "subject": "fix(web): report measured FRP shares and export safe source CSV"
+    },
+    {
+      "commit": "c211d923a2b8368d7cf6a244efb61bf86f472687",
+      "parents": [
+        "51b18ba04f42de68d612901ef7e65a4b102de858"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-10T11:43:43+05:30",
+      "subject": "fix(web): preserve zero metrics and disclose observation and scenario limits"
+    },
+    {
+      "commit": "51b18ba04f42de68d612901ef7e65a4b102de858",
+      "parents": [
+        "59e28389789c18089c2b0ed039ef92cd7302603e"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-10T11:43:32+05:30",
+      "subject": "feat(web): render observed PM2.5 cells with reliable map lifecycle"
+    },
+    {
+      "commit": "59e28389789c18089c2b0ed039ef92cd7302603e",
+      "parents": [
+        "89464e90b453ff9dbe73328206ceb5662a7f5da1"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-10T11:42:52+05:30",
+      "subject": "fix(web): escape source popup content and enable keyboard markers"
+    },
+    {
+      "commit": "89464e90b453ff9dbe73328206ceb5662a7f5da1",
+      "parents": [
+        "857f6121b69fe4c2148c47c69ba9bc5c83eeaf29"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-10T11:41:30+05:30",
+      "subject": "fix(web): validate scientific feeds and recover refresh failures"
+    },
+    {
+      "commit": "857f6121b69fe4c2148c47c69ba9bc5c83eeaf29",
+      "parents": [
+        "f5e4689d59b410d3621bb65ac6f3f35b896faa4d"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-10T11:37:15+05:30",
+      "subject": "test(web): add unit and browser test infrastructure"
+    },
+    {
+      "commit": "f5e4689d59b410d3621bb65ac6f3f35b896faa4d",
+      "parents": [
+        "0941fa5ec788330e958d1e6ab155da9a9e0124a7"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-09T17:28:05+05:30",
+      "subject": "Delete docs/audit/whatsapp-team-update.md"
+    },
+    {
+      "commit": "0941fa5ec788330e958d1e6ab155da9a9e0124a7",
+      "parents": [
+        "551aadf874b97e0007327c95d8ca0ecb27454195",
+        "508cd7f16870c4641614ed2eeafc666efc28335d"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-09T17:24:28+05:30",
+      "subject": "Merge pull request #19 from sinhaaditya5/feature/python312-lambda-verification"
+    },
+    {
+      "commit": "551aadf874b97e0007327c95d8ca0ecb27454195",
+      "parents": [
+        "e73814366d4f31082e6707172f86ed4f688bc5be",
+        "27a8a9688d08e5cfa9bc4e9de8900ac0a2134729"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-09T17:22:32+05:30",
+      "subject": "Merge pull request #20 from sinhaaditya5/feature/self-hosted-runner-diagnostic"
+    },
+    {
+      "commit": "27a8a9688d08e5cfa9bc4e9de8900ac0a2134729",
+      "parents": [
+        "e73814366d4f31082e6707172f86ed4f688bc5be"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-09T17:15:29+05:30",
+      "subject": "ci: add manual self-hosted runner diagnostic"
+    },
+    {
+      "commit": "508cd7f16870c4641614ed2eeafc666efc28335d",
+      "parents": [
+        "1b464a0966804a44a6930bbd861cdef11ad265f8"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-09T16:53:35+05:30",
+      "subject": "chore(ci): remove CircleCI alternative"
+    },
+    {
+      "commit": "1b464a0966804a44a6930bbd861cdef11ad265f8",
+      "parents": [
+        "7d7b5ba54df319fdfff2063d962892b2c6b06a25"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-09T16:36:40+05:30",
+      "subject": "ci: add free CircleCI verification pipeline"
+    },
+    {
+      "commit": "7d7b5ba54df319fdfff2063d962892b2c6b06a25",
+      "parents": [
+        "775d8d7595c436b82a247377e496f7f3ac75d4b5"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-09T15:55:49+05:30",
+      "subject": "test: read ranking snapshots as UTF-8"
+    },
+    {
+      "commit": "775d8d7595c436b82a247377e496f7f3ac75d4b5",
+      "parents": [
+        "96c979cde727ce7221ee35c9cb7aa92267a08dbb"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-09T15:33:03+05:30",
+      "subject": "docs(audit): explain Python 3.12 and Lambda verification"
+    },
+    {
+      "commit": "96c979cde727ce7221ee35c9cb7aa92267a08dbb",
+      "parents": [
+        "6fa4ad54868b02923b4a76216135c546b9e0a3ed"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-09T15:31:26+05:30",
+      "subject": "docs(audit): record Lambda package sizes and provenance"
+    },
+    {
+      "commit": "6fa4ad54868b02923b4a76216135c546b9e0a3ed",
+      "parents": [
+        "c509c4ff3777726ca72fcf4921d66ec25b297b6f"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-09T15:29:25+05:30",
+      "subject": "ci(lambda): enforce Python 3.12 tests and built-package limits"
+    },
+    {
+      "commit": "c509c4ff3777726ca72fcf4921d66ec25b297b6f",
+      "parents": [
+        "9099baf620f84febd42695fe575d864249a1ee86"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-09T15:25:54+05:30",
+      "subject": "test(lambda): cover size layers pruning and staged runtime"
+    },
+    {
+      "commit": "9099baf620f84febd42695fe575d864249a1ee86",
+      "parents": [
+        "1adbe263344ca5df3f8e3032f7c838adb31f5e60"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-09T15:24:37+05:30",
+      "subject": "build(lambda): prune reviewed non-runtime artifact contents"
+    },
+    {
+      "commit": "1adbe263344ca5df3f8e3032f7c838adb31f5e60",
+      "parents": [
+        "781430e9a6eb84431e5612a30d5b9fd3726d3681"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-09T15:22:10+05:30",
+      "subject": "feat(lambda): share runtime-only source staging"
+    },
+    {
+      "commit": "781430e9a6eb84431e5612a30d5b9fd3726d3681",
+      "parents": [
+        "657682381313a29c972d9939e107eb618eb3b56e"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-09T15:16:56+05:30",
+      "subject": "test(lambda): cover configuration and wheel resolver failures"
+    },
+    {
+      "commit": "657682381313a29c972d9939e107eb618eb3b56e",
+      "parents": [
+        "a5f7b6c7a5ab502005d407cbc001007c68c3bd96"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-09T15:14:38+05:30",
+      "subject": "feat(lambda): verify configuration dependencies and artifact sizes"
+    },
+    {
+      "commit": "a5f7b6c7a5ab502005d407cbc001007c68c3bd96",
+      "parents": [
+        "9082eff76779822c23915a202cbb28d9df9c71f2"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-09T15:11:55+05:30",
+      "subject": "fix(lambda): target cp312 wheels without build bytecode"
+    },
+    {
+      "commit": "9082eff76779822c23915a202cbb28d9df9c71f2",
+      "parents": [
+        "e4ee706824919ffd1f0a09b8a3da999e1d606d74"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-09T14:18:57+05:30",
+      "subject": "build(deps): declare runtime and packaging dependencies"
+    },
+    {
+      "commit": "e4ee706824919ffd1f0a09b8a3da999e1d606d74",
+      "parents": [
+        "e73814366d4f31082e6707172f86ed4f688bc5be"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-09T14:18:30+05:30",
+      "subject": "test: make JSON snapshot reads UTF-8 explicit"
+    },
+    {
+      "commit": "e73814366d4f31082e6707172f86ed4f688bc5be",
+      "parents": [
+        "270fcf9fa1d5ac476be683f7710266b635c3dfc3",
+        "df7b0c6a99007ab0c062e6fcb735cba42d0d5e4e"
+      ],
+      "author_name": "Meenal Sinha",
+      "email_sha256": "f5c9c98632f3b9ace14063ba7c5eb38bdbd5d4555a3e85f78a087db234cd4fda",
+      "author_date": "2026-10-09T11:52:57+05:30",
+      "subject": "Merge pull request #18 from sinhaaditya5/fix/exposure-schema-range-reporting"
+    },
+    {
+      "commit": "df7b0c6a99007ab0c062e6fcb735cba42d0d5e4e",
+      "parents": [
+        "270fcf9fa1d5ac476be683f7710266b635c3dfc3"
+      ],
+      "author_name": "MeenalSinha",
+      "email_sha256": "f5c9c98632f3b9ace14063ba7c5eb38bdbd5d4555a3e85f78a087db234cd4fda",
+      "author_date": "2026-10-09T11:50:14+05:30",
+      "subject": "fix: finalize exposure schema and range reporting"
+    },
+    {
+      "commit": "270fcf9fa1d5ac476be683f7710266b635c3dfc3",
+      "parents": [
+        "6629edb1d4c5a525e5031f41b2fc4424055e5638",
+        "b886e2ede79d58e67b5742bac392f5e97b713eb9"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-09T10:12:15+05:30",
+      "subject": "Merge pull request #13 from aditbytes/feature/pritam-models"
+    },
+    {
+      "commit": "6629edb1d4c5a525e5031f41b2fc4424055e5638",
+      "parents": [
+        "8215925955d5a81a805143b2a65f22131daec859"
+      ],
+      "author_name": "Meenal Sinha",
+      "email_sha256": "f5c9c98632f3b9ace14063ba7c5eb38bdbd5d4555a3e85f78a087db234cd4fda",
+      "author_date": "2026-10-09T08:39:45+05:30",
+      "subject": "Add MIT License to the project"
+    },
+    {
+      "commit": "8215925955d5a81a805143b2a65f22131daec859",
+      "parents": [
+        "8a166dfe2deab3617149036f3e4abff59cf48c70",
+        "3789d0815b3d5562979bde237c2383e5a527c2b1"
+      ],
+      "author_name": "Meenal Sinha",
+      "email_sha256": "f5c9c98632f3b9ace14063ba7c5eb38bdbd5d4555a3e85f78a087db234cd4fda",
+      "author_date": "2026-10-09T08:13:47+05:30",
+      "subject": "Merge pull request #17 from aditbytes/feat/ingestion-snapshots"
+    },
+    {
+      "commit": "3789d0815b3d5562979bde237c2383e5a527c2b1",
+      "parents": [
+        "422685bfb1b6405e378c61a5706416d76eca03e8"
+      ],
+      "author_name": "MeenalSinha",
+      "email_sha256": "f5c9c98632f3b9ace14063ba7c5eb38bdbd5d4555a3e85f78a087db234cd4fda",
+      "author_date": "2026-10-09T08:09:35+05:30",
+      "subject": "perf: optimize exposure ranking and AQI fetching"
+    },
+    {
+      "commit": "8a166dfe2deab3617149036f3e4abff59cf48c70",
+      "parents": [
+        "5def533a56b38e80ad5e4595888fb677b0cf6084",
+        "422685bfb1b6405e378c61a5706416d76eca03e8"
+      ],
+      "author_name": "Meenal Sinha",
+      "email_sha256": "f5c9c98632f3b9ace14063ba7c5eb38bdbd5d4555a3e85f78a087db234cd4fda",
+      "author_date": "2026-10-09T06:55:25+05:30",
+      "subject": "Merge pull request #16 from aditbytes/feat/ingestion-snapshots"
+    },
+    {
+      "commit": "422685bfb1b6405e378c61a5706416d76eca03e8",
+      "parents": [
+        "8c9ecd0d2cb1c461fad457febbf686cb7da6fa65",
+        "5def533a56b38e80ad5e4595888fb677b0cf6084"
+      ],
+      "author_name": "MeenalSinha",
+      "email_sha256": "f5c9c98632f3b9ace14063ba7c5eb38bdbd5d4555a3e85f78a087db234cd4fda",
+      "author_date": "2026-10-09T06:53:05+05:30",
+      "subject": "Merge branch 'main' into feat/ingestion-snapshots"
+    },
+    {
+      "commit": "b886e2ede79d58e67b5742bac392f5e97b713eb9",
+      "parents": [
+        "ad4886640534cd84aa59fa7b714ff2a530a1e84d",
+        "5def533a56b38e80ad5e4595888fb677b0cf6084"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-08T23:59:19+05:30",
+      "subject": "Merge origin/main into feature/pritam-models"
+    },
+    {
+      "commit": "ad4886640534cd84aa59fa7b714ff2a530a1e84d",
+      "parents": [
+        "e29988b5e5b9e383597ed857619ebc34a296888c"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-08T23:40:55+05:30",
+      "subject": "Finalize AERIS source and plume modeling"
+    },
+    {
+      "commit": "e29988b5e5b9e383597ed857619ebc34a296888c",
+      "parents": [
+        "a8b4a1762e48a347ea55b905fb00e5e3c4bcdb0e"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-08T23:13:33+05:30",
+      "subject": "Add optional plume ML surrogate"
+    },
+    {
+      "commit": "5def533a56b38e80ad5e4595888fb677b0cf6084",
+      "parents": [
+        "aba29a6508841f3ee29b969762db6d07c0227119",
+        "972c6a0a9a67e98f623d8b6e7f0828c062a81834"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T23:05:57+05:30",
+      "subject": "Merge pull request #15 from aditbytes/aditya_8oct_phases_2_to_4"
+    },
+    {
+      "commit": "972c6a0a9a67e98f623d8b6e7f0828c062a81834",
+      "parents": [
+        "58dd53144916e417e363b96d1973cb893cb7b6d1"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T23:05:00+05:30",
+      "subject": "Rewrite README to match the deployed system, real data sources and team"
+    },
+    {
+      "commit": "aba29a6508841f3ee29b969762db6d07c0227119",
+      "parents": [
+        "dfb0b169dbb9258eba4f1a8f03e00e6e1f8e17be",
+        "58dd53144916e417e363b96d1973cb893cb7b6d1"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T23:00:55+05:30",
+      "subject": "Merge pull request #14 from aditbytes/aditya_8oct_phases_2_to_4"
+    },
+    {
+      "commit": "a8b4a1762e48a347ea55b905fb00e5e3c4bcdb0e",
+      "parents": [
+        "d91f4205c77900fbb7100334e938b1f28561b226"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-08T22:51:48+05:30",
+      "subject": "Add calibration-ready plume engine"
+    },
+    {
+      "commit": "58dd53144916e417e363b96d1973cb893cb7b6d1",
+      "parents": [
+        "cd58c7e5eda26aae8210b02f86efdbb81b8d9a54"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T22:39:01+05:30",
+      "subject": "Add audit index with headline answers and next steps"
+    },
+    {
+      "commit": "cd58c7e5eda26aae8210b02f86efdbb81b8d9a54",
+      "parents": [
+        "c34661f0a458445d62efc3f1a4781fc510ee428b"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T22:39:01+05:30",
+      "subject": "Add ready-to-paste WhatsApp status update for the team"
+    },
+    {
+      "commit": "c34661f0a458445d62efc3f1a4781fc510ee428b",
+      "parents": [
+        "c62369bb1323c3c21f280e13e7d81eacfdd4473c"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T22:39:01+05:30",
+      "subject": "Add short Hinglish explanation of what AERIS does"
+    },
+    {
+      "commit": "c62369bb1323c3c21f280e13e7d81eacfdd4473c",
+      "parents": [
+        "b41d253f281da3d7d100d3854deaecec59cdf7a6"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T22:39:01+05:30",
+      "subject": "Add prioritised list of improvements from the audit"
+    },
+    {
+      "commit": "b41d253f281da3d7d100d3854deaecec59cdf7a6",
+      "parents": [
+        "a3cc923cfae18ed6db12f6d4e1dfa2167960820a"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T22:39:01+05:30",
+      "subject": "Add summary of the AWS, integration and docs work done by Aditya"
+    },
+    {
+      "commit": "a3cc923cfae18ed6db12f6d4e1dfa2167960820a",
+      "parents": [
+        "a03c7a851cee8028b71293c5f3ab802496028d9e"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T22:39:01+05:30",
+      "subject": "Add measured and estimated daily and monthly running cost"
+    },
+    {
+      "commit": "a03c7a851cee8028b71293c5f3ab802496028d9e",
+      "parents": [
+        "e8c34e46102fc6c860bfef193ede2b56612f2ded"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T22:39:01+05:30",
+      "subject": "Add data authenticity audit listing fake and hard-coded values in the UI"
+    },
+    {
+      "commit": "e8c34e46102fc6c860bfef193ede2b56612f2ded",
+      "parents": [
+        "1a8f65e6465aeb08efb187e85678d64c11c75832"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T22:39:01+05:30",
+      "subject": "Add audit of work left per member against their task files"
+    },
+    {
+      "commit": "1a8f65e6465aeb08efb187e85678d64c11c75832",
+      "parents": [
+        "d023115f18da2587b253586619bd845869d5c275"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T22:39:01+05:30",
+      "subject": "Gitignore docs/audit/private for account-specific audit notes"
+    },
+    {
+      "commit": "d91f4205c77900fbb7100334e938b1f28561b226",
+      "parents": [
+        "19db97d872cfd308a40163287625c1f64a694678"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-08T22:22:24+05:30",
+      "subject": "Document calibration data limitations"
+    },
+    {
+      "commit": "19db97d872cfd308a40163287625c1f64a694678",
+      "parents": [
+        "63212253021ec1c77fd79fe66c2b54b19161d6cd"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-08T22:14:49+05:30",
+      "subject": "Implement Lagrangian plume baseline"
+    },
+    {
+      "commit": "63212253021ec1c77fd79fe66c2b54b19161d6cd",
+      "parents": [
+        "eef0d3b6d39b16488d801541450b14cb42490142"
+      ],
+      "author_name": "Pritam Singh",
+      "email_sha256": "793cae0fb8aaafb3bf4adcc5dbe9c18af65eb7954afd71b74b67ff4466c2af1e",
+      "author_date": "2026-10-08T21:41:18+05:30",
+      "subject": "Implement source detection baseline"
+    },
+    {
+      "commit": "dfb0b169dbb9258eba4f1a8f03e00e6e1f8e17be",
+      "parents": [
+        "eef0d3b6d39b16488d801541450b14cb42490142",
+        "d023115f18da2587b253586619bd845869d5c275"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T21:33:06+05:30",
+      "subject": "Merge pull request #12 from aditbytes/aditya_8oct_phases_2_to_4"
+    },
+    {
+      "commit": "d023115f18da2587b253586619bd845869d5c275",
+      "parents": [
+        "774e34ad608d86efeed4e605b3fa299b10f368fc"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T21:29:35+05:30",
+      "subject": "Filter Cost Explorer amounts in awk; the CLI query cannot compare string amounts"
+    },
+    {
+      "commit": "774e34ad608d86efeed4e605b3fa299b10f368fc",
+      "parents": [
+        "3c23b6f3fadaf806d2cf091255d768f12f74f7df"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T21:28:08+05:30",
+      "subject": "Always pass agent model parameters on deploy so stale stack values cannot persist"
+    },
+    {
+      "commit": "3c23b6f3fadaf806d2cf091255d768f12f74f7df",
+      "parents": [
+        "561fb9bffd34e7e5f813f8813a60ea71a7f549dd"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T21:22:11+05:30",
+      "subject": "Record the live Bedrock agent findings and quota actions in the Phase 3 report"
+    },
+    {
+      "commit": "561fb9bffd34e7e5f813f8813a60ea71a7f549dd",
+      "parents": [
+        "14c020ab26dddf3a9f341f4c641e5acf51e8d5b7"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T21:21:57+05:30",
+      "subject": "Fall back to Nova Pro, Lite and Micro via apac profiles; batch tool calls to save tokens"
+    },
+    {
+      "commit": "14c020ab26dddf3a9f341f4c641e5acf51e8d5b7",
+      "parents": [
+        "83c048b0ab3264bfdc886c51af7e93ad8207953b"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T21:16:55+05:30",
+      "subject": "Raise the agent Lambda timeout to 600 s for the model fallback chain"
+    },
+    {
+      "commit": "83c048b0ab3264bfdc886c51af7e93ad8207953b",
+      "parents": [
+        "ee7932eb81ba7a5f5fc7a93a864c3f67f366280a"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T21:16:55+05:30",
+      "subject": "Pin strands-agents to a version with retry strategy and turn limits"
+    },
+    {
+      "commit": "ee7932eb81ba7a5f5fc7a93a864c3f67f366280a",
+      "parents": [
+        "0a6b8a1fa31e75e777e847fe6ee64b8ea142da51"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T21:16:55+05:30",
+      "subject": "Pass the agent Lambda's remaining time to the Bedrock attempts, keeping 30 s for the fallback"
+    },
+    {
+      "commit": "0a6b8a1fa31e75e777e847fe6ee64b8ea142da51",
+      "parents": [
+        "20f508efbb856b19064ac2c35e243f9ad523c4ba"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T21:16:55+05:30",
+      "subject": "Bound each Bedrock model attempt and stop trying models before the Lambda times out"
+    },
+    {
+      "commit": "20f508efbb856b19064ac2c35e243f9ad523c4ba",
+      "parents": [
+        "1742d43f888de1f29fe201041586759342a00ee1"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T21:05:15+05:30",
+      "subject": "Document the Claude-then-Nova agent fallback in the Phase 3 report"
+    },
+    {
+      "commit": "1742d43f888de1f29fe201041586759342a00ee1",
+      "parents": [
+        "c54f4e814505a47d50546d157ba0ebf9e84a2b8a"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T21:05:02+05:30",
+      "subject": "Pass AGENT_FALLBACK_MODEL_IDS through deploy.sh and list it in .env.example"
+    },
+    {
+      "commit": "c54f4e814505a47d50546d157ba0ebf9e84a2b8a",
+      "parents": [
+        "2bfad5e9cce7be15f6e37884631ccd1fb0b936d5"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T21:05:02+05:30",
+      "subject": "Add AgentFallbackModelIds and default the agent to the Sonnet 4.6 global profile"
+    },
+    {
+      "commit": "2bfad5e9cce7be15f6e37884631ccd1fb0b936d5",
+      "parents": [
+        "e62b989f3d6170635470d0947f5d5ccacf737b4c"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T21:05:02+05:30",
+      "subject": "Test the Bedrock model fallback order with the model call stubbed"
+    },
+    {
+      "commit": "e62b989f3d6170635470d0947f5d5ccacf737b4c",
+      "parents": [
+        "56664e3ec574dbf722aab9ae6e32418a1f149d7c"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T21:05:02+05:30",
+      "subject": "Try fallback Bedrock models in order, defaulting to Amazon Nova after Claude"
+    },
+    {
+      "commit": "eef0d3b6d39b16488d801541450b14cb42490142",
+      "parents": [
+        "2600fd268a5afef5a1a440f8191970212e3ad815",
+        "56664e3ec574dbf722aab9ae6e32418a1f149d7c"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T21:00:32+05:30",
+      "subject": "Merge pull request #11 from aditbytes/aditya_8oct_phases_2_to_4"
+    },
+    {
+      "commit": "56664e3ec574dbf722aab9ae6e32418a1f149d7c",
+      "parents": [
+        "24d6193934ca8f8fb7a92f00df99296a0725ce80"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:58:41+05:30",
+      "subject": "Record the live deployment in the phase 4-hardening-submission report"
+    },
+    {
+      "commit": "24d6193934ca8f8fb7a92f00df99296a0725ce80",
+      "parents": [
+        "36040dc27ad6014f39a3fa157c1f235aa9ea2495"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:58:41+05:30",
+      "subject": "Record the live deployment in the phase 3-models-agent-api report"
+    },
+    {
+      "commit": "36040dc27ad6014f39a3fa157c1f235aa9ea2495",
+      "parents": [
+        "a3294e8dc6924ee289ac89734deb17bc3d6793e3"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:58:41+05:30",
+      "subject": "Record the live deployment in the phase 2-ingestion report"
+    },
+    {
+      "commit": "2600fd268a5afef5a1a440f8191970212e3ad815",
+      "parents": [
+        "28cb5bd5cf5481cbd7ba9a217047950776dd3d5b",
+        "a3294e8dc6924ee289ac89734deb17bc3d6793e3"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:47:42+05:30",
+      "subject": "Merge pull request #10 from aditbytes/aditya_8oct_phases_2_to_4"
+    },
+    {
+      "commit": "a3294e8dc6924ee289ac89734deb17bc3d6793e3",
+      "parents": [
+        "e1a78df2a4a467a19fe78f02d618715b551c140f"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:37:22+05:30",
+      "subject": "Point completion reports at the renamed branch"
+    },
+    {
+      "commit": "e1a78df2a4a467a19fe78f02d618715b551c140f",
+      "parents": [
+        "29920284626dd0e8811c05ff55ca73a94202eb49"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:37:00+05:30",
+      "subject": "Link completion reports and list scripts in Aditya's work index"
+    },
+    {
+      "commit": "29920284626dd0e8811c05ff55ca73a94202eb49",
+      "parents": [
+        "41f4e18c2992d42cb02f8533f8a7977314dc182b"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:36:49+05:30",
+      "subject": "Add Phase 4 completion report"
+    },
+    {
+      "commit": "41f4e18c2992d42cb02f8533f8a7977314dc182b",
+      "parents": [
+        "830fa864ebc590f3d66eef847455734b6f41480e"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:35:57+05:30",
+      "subject": "Add read-only cost check for idle-billable resources and month-to-date spend"
+    },
+    {
+      "commit": "830fa864ebc590f3d66eef847455734b6f41480e",
+      "parents": [
+        "4fac462e314ba09daedf0946f8d91750ef1d522c"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:35:45+05:30",
+      "subject": "Add submission checklist"
+    },
+    {
+      "commit": "4fac462e314ba09daedf0946f8d91750ef1d522c",
+      "parents": [
+        "e2b0d78ca25daab058716562146afb7bf6304872"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:35:45+05:30",
+      "subject": "Draft the AWS Builder Center blog post"
+    },
+    {
+      "commit": "e2b0d78ca25daab058716562146afb7bf6304872",
+      "parents": [
+        "c00d8ee44d73729d880c772230af26ed7f0600a1"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:35:05+05:30",
+      "subject": "Warn that demo-script numbers must come from the live dashboard"
+    },
+    {
+      "commit": "c00d8ee44d73729d880c772230af26ed7f0600a1",
+      "parents": [
+        "f70cc818935507995a6d593670747d9ed3603190"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:34:58+05:30",
+      "subject": "Match the demo script's AWS segment to the deployed architecture"
+    },
+    {
+      "commit": "f70cc818935507995a6d593670747d9ed3603190",
+      "parents": [
+        "063f2ee9f8d92a79de99a8d04952cdf3ae2e035c"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:34:46+05:30",
+      "subject": "Export the as-deployed architecture as a PNG for the blog and video"
+    },
+    {
+      "commit": "063f2ee9f8d92a79de99a8d04952cdf3ae2e035c",
+      "parents": [
+        "2ed5316ff51389f8e08e1c25d0aae7eef5ef986a"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:34:46+05:30",
+      "subject": "Add an 'As deployed' page to the architecture diagram"
+    },
+    {
+      "commit": "2ed5316ff51389f8e08e1c25d0aae7eef5ef986a",
+      "parents": [
+        "07b5c08337b61cccf03c853e5ad1826c6d1e03fd"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:33:21+05:30",
+      "subject": "Show a stale-data banner when the API serves an old real result"
+    },
+    {
+      "commit": "07b5c08337b61cccf03c853e5ad1826c6d1e03fd",
+      "parents": [
+        "7152c4bfc586cf92ce417746b1f85b1e7ed94a67"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:32:46+05:30",
+      "subject": "Expose stale feeds from the data context"
+    },
+    {
+      "commit": "7152c4bfc586cf92ce417746b1f85b1e7ed94a67",
+      "parents": [
+        "4f9498b260b20d963be1830f436d6e2510df5397"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:32:32+05:30",
+      "subject": "Record API stale flags before schema parsing drops them"
+    },
+    {
+      "commit": "4f9498b260b20d963be1830f436d6e2510df5397",
+      "parents": [
+        "5140854dc670f9758b450d48810392a926d527b4"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:32:17+05:30",
+      "subject": "Add a local HTTP server for the API Lambda over data/live snapshots"
+    },
+    {
+      "commit": "5140854dc670f9758b450d48810392a926d527b4",
+      "parents": [
+        "f1a63d981bb25aca14b05beb2f0c7be11452a5b3"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:32:17+05:30",
+      "subject": "Report an unreachable web URL as a smoke-test failure instead of crashing"
+    },
+    {
+      "commit": "f1a63d981bb25aca14b05beb2f0c7be11452a5b3",
+      "parents": [
+        "6dc63879877e2949da31534ca0997132ffd72853"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:31:37+05:30",
+      "subject": "Add end-to-end smoke test: trigger a run, validate every route, check CORS"
+    },
+    {
+      "commit": "6dc63879877e2949da31534ca0997132ffd72853",
+      "parents": [
+        "80ec1ffb8d24d1061e742981354679d4544a46da"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:31:14+05:30",
+      "subject": "Test contract checks on real snapshots and broken copies of them"
+    },
+    {
+      "commit": "80ec1ffb8d24d1061e742981354679d4544a46da",
+      "parents": [
+        "631151dfb0cc73fb7ebe9a6009366740634cc043"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:31:14+05:30",
+      "subject": "Add contract checks for every gold/ file"
+    },
+    {
+      "commit": "631151dfb0cc73fb7ebe9a6009366740634cc043",
+      "parents": [
+        "e2fcc2886c35d71d4f4f0142eed657002436ee60"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:30:22+05:30",
+      "subject": "Delete leftover auto-created Lambda log groups on teardown"
+    },
+    {
+      "commit": "e2fcc2886c35d71d4f4f0142eed657002436ee60",
+      "parents": [
+        "70ffe87ac90fdd59f3e025171708161f88720285"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:30:15+05:30",
+      "subject": "Email alarms for Lambda errors, DLQ depth and failed pipeline runs via SNS"
+    },
+    {
+      "commit": "70ffe87ac90fdd59f3e025171708161f88720285",
+      "parents": [
+        "5950cf32ee0b8ceda157f95e4e418ddb9cce3910"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:30:13+05:30",
+      "subject": "Send every Lambda's logs to its own log group with 7-day retention"
+    },
+    {
+      "commit": "5950cf32ee0b8ceda157f95e4e418ddb9cce3910",
+      "parents": [
+        "934ec817076a29e86579f1f7c190846c6edd34c8"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:29:30+05:30",
+      "subject": "Add Phase 3 completion report"
+    },
+    {
+      "commit": "934ec817076a29e86579f1f7c190846c6edd34c8",
+      "parents": [
+        "be4ae1a3f14a011d39693814c79d53a45ef4aa89"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:28:41+05:30",
+      "subject": "Document stale flags, route aliases and the one-run-at-a-time rule in the API list"
+    },
+    {
+      "commit": "be4ae1a3f14a011d39693814c79d53a45ef4aa89",
+      "parents": [
+        "389abad9025fa5aa957e0c9b7c3a31492a47637a"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:28:41+05:30",
+      "subject": "Document corridor timestamps and the actions generator field in the contracts"
+    },
+    {
+      "commit": "389abad9025fa5aa957e0c9b7c3a31492a47637a",
+      "parents": [
+        "9668f4f72339def8faf11964ec90d88f8920f160"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:28:30+05:30",
+      "subject": "List AGENT_MODEL_ID in .env.example"
+    },
+    {
+      "commit": "9668f4f72339def8faf11964ec90d88f8920f160",
+      "parents": [
+        "9fd7b6bfb342ba20ce55e0cad799a5c8eb604d6e"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:28:23+05:30",
+      "subject": "Add web deploy script: build against the API, sync to S3, invalidate CloudFront"
+    },
+    {
+      "commit": "9fd7b6bfb342ba20ce55e0cad799a5c8eb604d6e",
+      "parents": [
+        "2c0938959ffab23be77c87633b4dcbc887120028"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:28:06+05:30",
+      "subject": "Show '\u2014' in map telemetry instead of 0h ETA and 571K exposure when data is missing"
+    },
+    {
+      "commit": "2c0938959ffab23be77c87633b4dcbc887120028",
+      "parents": [
+        "6a0396ea5447336a52ac6cd89711fb76bb94871b"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:28:05+05:30",
+      "subject": "Do not colour stations without an AQI reading as if they read 200"
+    },
+    {
+      "commit": "6a0396ea5447336a52ac6cd89711fb76bb94871b",
+      "parents": [
+        "1e26ee26669c37919241825509e86952d79ab1dc"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:27:52+05:30",
+      "subject": "Use real counts in sidebar badges; hide them when data is missing"
+    },
+    {
+      "commit": "1e26ee26669c37919241825509e86952d79ab1dc",
+      "parents": [
+        "9c7ef51a18107360ae612b74bcd2767455d4a8ec"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:27:43+05:30",
+      "subject": "Show an empty state in What If We Act when no exposure estimate exists"
+    },
+    {
+      "commit": "9c7ef51a18107360ae612b74bcd2767455d4a8ec",
+      "parents": [
+        "9683b130a8754219ab636ab77ceb9e2c86fde060"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:27:31+05:30",
+      "subject": "Skip the AQI forecast chart when no station AQI exists instead of assuming 180"
+    },
+    {
+      "commit": "9683b130a8754219ab636ab77ceb9e2c86fde060",
+      "parents": [
+        "ec708add060f6bfd64524e9bfb09e44df90754ca"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:27:23+05:30",
+      "subject": "Show 'No data' on the AQI card instead of a fixed 179 when no station reports"
+    },
+    {
+      "commit": "ec708add060f6bfd64524e9bfb09e44df90754ca",
+      "parents": [
+        "3114407094bb6ee7e10e061f42c9df8cef84d46f"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:27:06+05:30",
+      "subject": "Drop hard-coded 571K exposure fallbacks from the KPI grid"
+    },
+    {
+      "commit": "3114407094bb6ee7e10e061f42c9df8cef84d46f",
+      "parents": [
+        "96a99a0f7a055d0635d71cad51787021b11b010f"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:27:01+05:30",
+      "subject": "Show '\u2014' in the agent brief when data is missing instead of snapshot-era numbers"
+    },
+    {
+      "commit": "96a99a0f7a055d0635d71cad51787021b11b010f",
+      "parents": [
+        "c53f98da78a194d407e89c4aaa727ccb8c2c69dc"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:26:53+05:30",
+      "subject": "Return null exposure when ranked sites are missing instead of a hard-coded 570,938"
+    },
+    {
+      "commit": "c53f98da78a194d407e89c4aaa727ccb8c2c69dc",
+      "parents": [
+        "cc5144899d58def4840e01561d8e4cddbe2bb948"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:25:53+05:30",
+      "subject": "Serve the web bucket through CloudFront with origin access control"
+    },
+    {
+      "commit": "cc5144899d58def4840e01561d8e4cddbe2bb948",
+      "parents": [
+        "d673edb0ff1319481b24765c9036f5287b12f92c"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:25:53+05:30",
+      "subject": "Add HTTP API with throttling and an API Lambda for every read route plus /run"
+    },
+    {
+      "commit": "d673edb0ff1319481b24765c9036f5287b12f92c",
+      "parents": [
+        "47609a2b99af893b1c648ebcdd798d39ac56d018"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:25:53+05:30",
+      "subject": "Add pipeline Lambdas and a Step Functions state machine on a 30-minute schedule"
+    },
+    {
+      "commit": "47609a2b99af893b1c648ebcdd798d39ac56d018",
+      "parents": [
+        "6fe6f2a4c705337694f1dc30b53a17f2fd39eb54"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:23:40+05:30",
+      "subject": "Gitignore the staged Lambda package copies"
+    },
+    {
+      "commit": "6fe6f2a4c705337694f1dc30b53a17f2fd39eb54",
+      "parents": [
+        "5e1bd7f34da6bc0bfbb9fee2b994d80397e2a592"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:23:40+05:30",
+      "subject": "Stage models, agent, pipeline and api packages for the SAM build"
+    },
+    {
+      "commit": "5e1bd7f34da6bc0bfbb9fee2b994d80397e2a592",
+      "parents": [
+        "a437064dbbfab4aaa210e99c828c7ee315d25366"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:23:31+05:30",
+      "subject": "Add Lambda build targets and requirements for pipeline, agent and API"
+    },
+    {
+      "commit": "a437064dbbfab4aaa210e99c828c7ee315d25366",
+      "parents": [
+        "55f04f3ba8514c275c6f76838ed59d89c4bdbbbb"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:23:23+05:30",
+      "subject": "Allow one pipeline run at a time on the public POST /run route"
+    },
+    {
+      "commit": "55f04f3ba8514c275c6f76838ed59d89c4bdbbbb",
+      "parents": [
+        "c31b648372eaf4a7d8b239999ba79485f6f3ca6f"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:23:12+05:30",
+      "subject": "Fall back to bronze/sites when reference/sites has not been written yet"
+    },
+    {
+      "commit": "c31b648372eaf4a7d8b239999ba79485f6f3ca6f",
+      "parents": [
+        "6f17ea1c6f21f244a07d8ffd054beac2e12700bb"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:22:30+05:30",
+      "subject": "Refresh web snapshot data from the regenerated pipeline outputs"
+    },
+    {
+      "commit": "6f17ea1c6f21f244a07d8ffd054beac2e12700bb",
+      "parents": [
+        "68523c889edd5bd516052e18f5dde5f95b5f10d8"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:22:30+05:30",
+      "subject": "Regenerate derived snapshots with the corrected wind advection"
+    },
+    {
+      "commit": "68523c889edd5bd516052e18f5dde5f95b5f10d8",
+      "parents": [
+        "0b52a3119dd047a656798909289f2107d9d1d740"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:22:30+05:30",
+      "subject": "Test API routes, filters, 404s and stale flagging on real snapshots"
+    },
+    {
+      "commit": "0b52a3119dd047a656798909289f2107d9d1d740",
+      "parents": [
+        "c3c090570225669b8513cc05a9b0b26bea2a4fc0"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:22:30+05:30",
+      "subject": "Add read API Lambda serving gold/ files with stale flags, summary and run routes"
+    },
+    {
+      "commit": "c3c090570225669b8513cc05a9b0b26bea2a4fc0",
+      "parents": [
+        "2c109c24857e2856578e1897cd13e57fad426851"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:21:17+05:30",
+      "subject": "Test the pipeline chain end to end on the real data/live snapshots"
+    },
+    {
+      "commit": "2c109c24857e2856578e1897cd13e57fad426851",
+      "parents": [
+        "87b8a31204d3c8eb97548bfbb0a06ccab47f3e50"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:21:17+05:30",
+      "subject": "Add pipeline step handlers: publish, detect, corridor, rank, agent"
+    },
+    {
+      "commit": "87b8a31204d3c8eb97548bfbb0a06ccab47f3e50",
+      "parents": [
+        "26a720223bb17675d0fe6890272dce37d77b2076"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:20:25+05:30",
+      "subject": "Cite the real ranked-school count instead of a fixed 'Top 50' in the DoE action"
+    },
+    {
+      "commit": "26a720223bb17675d0fe6890272dce37d77b2076",
+      "parents": [
+        "7639e9953c21ea1a48f2ffe2ace0f2b7761d32db"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:20:18+05:30",
+      "subject": "Select the Bedrock agent with AGENT_MODEL_PROVIDER and fall back to the rules plan"
+    },
+    {
+      "commit": "7639e9953c21ea1a48f2ffe2ace0f2b7761d32db",
+      "parents": [
+        "da0a0a979ba5806bdcc8c1f98176d5204efcaa6c"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:20:18+05:30",
+      "subject": "Add Strands Agents action agent on Amazon Bedrock with plan validation"
+    },
+    {
+      "commit": "da0a0a979ba5806bdcc8c1f98176d5204efcaa6c",
+      "parents": [
+        "d4fb59c260bdd1689853b67dc40b612ea139c35a"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:19:21+05:30",
+      "subject": "Test corridor advection against the real wind snapshot"
+    },
+    {
+      "commit": "d4fb59c260bdd1689853b67dc40b612ea139c35a",
+      "parents": [
+        "fa2edf5ac71f0b134f9ad14bc186cf23e19cf5eb"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:19:14+05:30",
+      "subject": "Advect corridor with the real wind sign instead of forcing a south-east drift"
+    },
+    {
+      "commit": "fa2edf5ac71f0b134f9ad14bc186cf23e19cf5eb",
+      "parents": [
+        "5036543942a0e57dc7715855664f6c89e05ee049"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:17:22+05:30",
+      "subject": "Add Phase 2 completion report"
+    },
+    {
+      "commit": "5036543942a0e57dc7715855664f6c89e05ee049",
+      "parents": [
+        "4f4d19d047c2f5e86ae60917cf05a63fe09870d7"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:16:03+05:30",
+      "subject": "Add script to upload real one-time snapshots to reference/"
+    },
+    {
+      "commit": "4f4d19d047c2f5e86ae60917cf05a63fe09870d7",
+      "parents": [
+        "53f6aadc57faf46e25209bdcca75402f97638eda"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:15:12+05:30",
+      "subject": "Let the sites fetcher role write reference/"
+    },
+    {
+      "commit": "53f6aadc57faf46e25209bdcca75402f97638eda",
+      "parents": [
+        "8394e7ab6014ee406fc3545b23e5b13ca59ff836"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:15:06+05:30",
+      "subject": "Write population to reference/ from Lambda and refuse an empty clip"
+    },
+    {
+      "commit": "8394e7ab6014ee406fc3545b23e5b13ca59ff836",
+      "parents": [
+        "d70867fac39c46922ea19081560579d203dae9c0"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:15:06+05:30",
+      "subject": "Write sites to reference/ so the one-time OSM pull never expires"
+    },
+    {
+      "commit": "d70867fac39c46922ea19081560579d203dae9c0",
+      "parents": [
+        "28cb5bd5cf5481cbd7ba9a217047950776dd3d5b"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T20:14:57+05:30",
+      "subject": "Add write_reference for one-time datasets under a non-expiring prefix"
+    },
+    {
+      "commit": "8c9ecd0d2cb1c461fad457febbf686cb7da6fa65",
+      "parents": [
+        "049cfa83d158278f61ae8b482b035d85fb100e27"
+      ],
+      "author_name": "MeenalSinha",
+      "email_sha256": "f5c9c98632f3b9ace14063ba7c5eb38bdbd5d4555a3e85f78a087db234cd4fda",
+      "author_date": "2026-10-08T19:01:39+05:30",
+      "subject": "docs: update population snapshot metadata and resolve outdated claims"
+    },
+    {
+      "commit": "28cb5bd5cf5481cbd7ba9a217047950776dd3d5b",
+      "parents": [
+        "104cccf717ece80bf7df3b953e1642f46624d681",
+        "049cfa83d158278f61ae8b482b035d85fb100e27"
+      ],
+      "author_name": "Meenal Sinha",
+      "email_sha256": "f5c9c98632f3b9ace14063ba7c5eb38bdbd5d4555a3e85f78a087db234cd4fda",
+      "author_date": "2026-10-08T18:55:10+05:30",
+      "subject": "Merge pull request #9 from aditbytes/feat/ingestion-snapshots"
+    },
+    {
+      "commit": "049cfa83d158278f61ae8b482b035d85fb100e27",
+      "parents": [
+        "21784b6a14186fe737a70a1d2fff6a52df25f7b8"
+      ],
+      "author_name": "MeenalSinha",
+      "email_sha256": "f5c9c98632f3b9ace14063ba7c5eb38bdbd5d4555a3e85f78a087db234cd4fda",
+      "author_date": "2026-10-08T18:51:24+05:30",
+      "subject": "feat: complete real population and exposure pipeline"
+    },
+    {
+      "commit": "104cccf717ece80bf7df3b953e1642f46624d681",
+      "parents": [
+        "35448763db25e531ee9fdcd894835a076f2e72ec",
+        "21784b6a14186fe737a70a1d2fff6a52df25f7b8"
+      ],
+      "author_name": "Meenal Sinha",
+      "email_sha256": "f5c9c98632f3b9ace14063ba7c5eb38bdbd5d4555a3e85f78a087db234cd4fda",
+      "author_date": "2026-10-08T18:07:32+05:30",
+      "subject": "Merge pull request #8 from aditbytes/feat/ingestion-snapshots"
+    },
+    {
+      "commit": "21784b6a14186fe737a70a1d2fff6a52df25f7b8",
+      "parents": [
+        "3d3db8f267d3f5fc334e54c154d8fe181a5ac960"
+      ],
+      "author_name": "MeenalSinha",
+      "email_sha256": "f5c9c98632f3b9ace14063ba7c5eb38bdbd5d4555a3e85f78a087db234cd4fda",
+      "author_date": "2026-10-08T18:03:41+05:30",
+      "subject": "feat: complete population and exposure ranking pipeline"
+    },
+    {
+      "commit": "35448763db25e531ee9fdcd894835a076f2e72ec",
+      "parents": [
+        "d5dfafa3cb6e8046f864d422570563c21be76df0",
+        "3d3db8f267d3f5fc334e54c154d8fe181a5ac960"
+      ],
+      "author_name": "Meenal Sinha",
+      "email_sha256": "f5c9c98632f3b9ace14063ba7c5eb38bdbd5d4555a3e85f78a087db234cd4fda",
+      "author_date": "2026-10-08T17:37:14+05:30",
+      "subject": "Merge pull request #6 from aditbytes/feat/ingestion-snapshots"
+    },
+    {
+      "commit": "3d3db8f267d3f5fc334e54c154d8fe181a5ac960",
+      "parents": [
+        "648dedcca7dc8b9c33d9103ae70926927a4daac8"
+      ],
+      "author_name": "MeenalSinha",
+      "email_sha256": "f5c9c98632f3b9ace14063ba7c5eb38bdbd5d4555a3e85f78a087db234cd4fda",
+      "author_date": "2026-10-08T17:32:58+05:30",
+      "subject": "chore: use real population data from main"
+    },
+    {
+      "commit": "648dedcca7dc8b9c33d9103ae70926927a4daac8",
+      "parents": [
+        "243fe3fc5bda9fa1f5d6a09dc756eb5c173afadc",
+        "d5dfafa3cb6e8046f864d422570563c21be76df0"
+      ],
+      "author_name": "MeenalSinha",
+      "email_sha256": "f5c9c98632f3b9ace14063ba7c5eb38bdbd5d4555a3e85f78a087db234cd4fda",
+      "author_date": "2026-10-08T17:30:36+05:30",
+      "subject": "Merge origin/main"
+    },
+    {
+      "commit": "d775db0db281d4a783d2938c4f3feae48061344d",
+      "parents": [
+        "d5dfafa3cb6e8046f864d422570563c21be76df0"
+      ],
+      "author_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "author_date": "2026-10-08T14:59:37+05:30",
+      "subject": "feat(web): redesign KPI decision cards and fix dashboard layout issues"
+    },
+    {
+      "commit": "d5dfafa3cb6e8046f864d422570563c21be76df0",
+      "parents": [
+        "a34abb0619578f6f46953434a8a9030b056c3757",
+        "60af675b0bdfb11d6b8648efe8778ca25a313c3a"
+      ],
+      "author_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "author_date": "2026-10-08T13:37:23+05:30",
+      "subject": "Merge pull request #7 from aditbytes/saba-8-oct-2026"
+    },
+    {
+      "commit": "60af675b0bdfb11d6b8648efe8778ca25a313c3a",
+      "parents": [
+        "904c0ca7dc763700412cc05b5154831048775688"
+      ],
+      "author_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "author_date": "2026-10-08T13:36:37+05:30",
+      "subject": "fix(dashboard): resolve map overflow and card overlay on dashboard"
+    },
+    {
+      "commit": "243fe3fc5bda9fa1f5d6a09dc756eb5c173afadc",
+      "parents": [
+        "a34abb0619578f6f46953434a8a9030b056c3757"
+      ],
+      "author_name": "MeenalSinha",
+      "email_sha256": "f5c9c98632f3b9ace14063ba7c5eb38bdbd5d4555a3e85f78a087db234cd4fda",
+      "author_date": "2026-10-08T11:23:10+05:30",
+      "subject": "feat: add real environmental data fetchers and live snapshots"
+    },
+    {
+      "commit": "a34abb0619578f6f46953434a8a9030b056c3757",
+      "parents": [
+        "014d40baa5dda817c1994a4ff1ee2986203bcb9e",
+        "1d87fa9d0804120758c02c9cbb4b00937c2a48dc"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T09:29:38+05:30",
+      "subject": "Merge pull request #5 from aditbytes/aditya_8oct_phase2"
+    },
+    {
+      "commit": "1d87fa9d0804120758c02c9cbb4b00937c2a48dc",
+      "parents": [
+        "e7955e14c92d27c993f1906615f1ea361237cd7f"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T09:02:51+05:30",
+      "subject": "Redact API keys from upstream error messages and logs"
+    },
+    {
+      "commit": "e7955e14c92d27c993f1906615f1ea361237cd7f",
+      "parents": [
+        "6f0358e120719b7b650c8a2581370621740f44f0"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T08:56:29+05:30",
+      "subject": "Schedule FIRMS with a 2-day window to avoid empty latest after UTC rollover"
+    },
+    {
+      "commit": "6f0358e120719b7b650c8a2581370621740f44f0",
+      "parents": [
+        "7463510f86997266d251fc02951ac90e6b550dd7"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T08:54:11+05:30",
+      "subject": "Point Lambdas at the S3 storage backend"
+    },
+    {
+      "commit": "904c0ca7dc763700412cc05b5154831048775688",
+      "parents": [
+        "66b31478e778732430c75b8d0857ada74bd38f45"
+      ],
+      "author_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "author_date": "2026-10-08T08:53:20+05:30",
+      "subject": "feat(web): audit & optimize AERIS dashboard for CAQM/DPCC operations"
+    },
+    {
+      "commit": "7463510f86997266d251fc02951ac90e6b550dd7",
+      "parents": [
+        "e334439052e2367d2530d98247d41888ef551730"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T08:46:34+05:30",
+      "subject": "Build Lambdas with SAM makefile and deploy via sam"
+    },
+    {
+      "commit": "e334439052e2367d2530d98247d41888ef551730",
+      "parents": [
+        "97f5ab78d13c96b61680c0d265a5c59ff61ff11a"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T08:46:34+05:30",
+      "subject": "Add ingestion Lambdas, schedules, DLQ and per-function secret roles to template"
+    },
+    {
+      "commit": "97f5ab78d13c96b61680c0d265a5c59ff61ff11a",
+      "parents": [
+        "298c71c45a0d90a42a694ac02b63eb5958e23fbc"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T08:45:36+05:30",
+      "subject": "Write Lambda fetches to bronze, read keys from Secrets Manager, refuse empty results"
+    },
+    {
+      "commit": "298c71c45a0d90a42a694ac02b63eb5958e23fbc",
+      "parents": [
+        "16bdfb4bc68f8888c851204e6b87b8d02d77ac7c"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T08:45:36+05:30",
+      "subject": "Add write_bronze for timestamped and latest bronze objects"
+    },
+    {
+      "commit": "16bdfb4bc68f8888c851204e6b87b8d02d77ac7c",
+      "parents": [
+        "014d40baa5dda817c1994a4ff1ee2986203bcb9e"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T08:45:36+05:30",
+      "subject": "Add Secrets Manager lookup with module-scope cache"
+    },
+    {
+      "commit": "014d40baa5dda817c1994a4ff1ee2986203bcb9e",
+      "parents": [
+        "7b856010b902916b0a7a0645f86c78d8419f4a06",
+        "a1f9cfb6068631cc7126fe9a94c7838ce5111478"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T08:37:51+05:30",
+      "subject": "Merge pull request #4 from aditbytes/aditya_8oct_phase1_report"
+    },
+    {
+      "commit": "a1f9cfb6068631cc7126fe9a94c7838ce5111478",
+      "parents": [
+        "7b856010b902916b0a7a0645f86c78d8419f4a06"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T08:30:52+05:30",
+      "subject": "Add Phase 1 completion report"
+    },
+    {
+      "commit": "7b856010b902916b0a7a0645f86c78d8419f4a06",
+      "parents": [
+        "d1faa11e2c237ecbdfc5d7533e3351acda44e3c2",
+        "6f0ca45658dabc4fb6e5b4f855c947c9079b1e8e"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T08:13:43+05:30",
+      "subject": "Merge pull request #3 from aditbytes/aditya_8oct_phase1"
+    },
+    {
+      "commit": "6f0ca45658dabc4fb6e5b4f855c947c9079b1e8e",
+      "parents": [
+        "13a3a8860e48dbf530e6bb5f7e9fe77694d1d4cb"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T08:08:17+05:30",
+      "subject": "List deploy and S3 prefix variables in .env.example"
+    },
+    {
+      "commit": "13a3a8860e48dbf530e6bb5f7e9fe77694d1d4cb",
+      "parents": [
+        "21daec481fe29bf885c00b31a395f1a32496ac98"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T08:08:17+05:30",
+      "subject": "Add deploy and teardown scripts"
+    },
+    {
+      "commit": "21daec481fe29bf885c00b31a395f1a32496ac98",
+      "parents": [
+        "ac9b06273fc6b62079765f1cb9943e2c2d3a7f83"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T08:08:17+05:30",
+      "subject": "Add foundation CloudFormation template: buckets, roles, budget"
+    },
+    {
+      "commit": "ac9b06273fc6b62079765f1cb9943e2c2d3a7f83",
+      "parents": [
+        "a82c7fb525ac4609d8e4af4eb518980dd80f54c7"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T08:08:17+05:30",
+      "subject": "Add local and S3 backends to storage interface"
+    },
+    {
+      "commit": "a82c7fb525ac4609d8e4af4eb518980dd80f54c7",
+      "parents": [
+        "f5559fd803594bd7160f357a9d08fa611243f986"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T08:08:17+05:30",
+      "subject": "Gitignore AWS key folder and key files"
+    },
+    {
+      "commit": "d1faa11e2c237ecbdfc5d7533e3351acda44e3c2",
+      "parents": [
+        "7e32a1a00845219dee617ac83a0a918b7ccfe4b2",
+        "f5559fd803594bd7160f357a9d08fa611243f986"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T08:00:12+05:30",
+      "subject": "Merge pull request #2 from aditbytes/docs/aditya-work-phases"
+    },
+    {
+      "commit": "f5559fd803594bd7160f357a9d08fa611243f986",
+      "parents": [
+        "40f8cead77df83efcc9be3f96170d8c8b8d15b0d"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T07:59:41+05:30",
+      "subject": "Add index for Aditya's work docs"
+    },
+    {
+      "commit": "40f8cead77df83efcc9be3f96170d8c8b8d15b0d",
+      "parents": [
+        "e9d47f8757bfacb6d64c5efc49f06a17c901fb6f"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T07:59:41+05:30",
+      "subject": "Add Aditya phase 4 docs: hardening and submission"
+    },
+    {
+      "commit": "e9d47f8757bfacb6d64c5efc49f06a17c901fb6f",
+      "parents": [
+        "754992c534050dfce7432804c817fdcc83e6b307"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T07:59:41+05:30",
+      "subject": "Add Aditya phase 3 docs: models, agent, API, web"
+    },
+    {
+      "commit": "754992c534050dfce7432804c817fdcc83e6b307",
+      "parents": [
+        "600133e3638e7c042455fa71ecdeacdefd581217"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T07:59:41+05:30",
+      "subject": "Add Aditya phase 2 docs: ingestion"
+    },
+    {
+      "commit": "600133e3638e7c042455fa71ecdeacdefd581217",
+      "parents": [
+        "7e32a1a00845219dee617ac83a0a918b7ccfe4b2"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T07:59:41+05:30",
+      "subject": "Add Aditya phase 1 docs: foundation"
+    },
+    {
+      "commit": "7e32a1a00845219dee617ac83a0a918b7ccfe4b2",
+      "parents": [
+        "6fed17abcd364faefcd1048cd71d5a2d23b8d497",
+        "8b0526c3b65efe8d4692a31d3228375597e65e4b"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T07:49:31+05:30",
+      "subject": "Merge PR #1: real environmental data fetchers and live snapshots"
+    },
+    {
+      "commit": "8b0526c3b65efe8d4692a31d3228375597e65e4b",
+      "parents": [
+        "55c869f796c7857749bed32668d7da070a5d10b1",
+        "6fed17abcd364faefcd1048cd71d5a2d23b8d497"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T07:49:06+05:30",
+      "subject": "Merge main into feat/data-ingestion-pipeline; resolve .env.example conflict"
+    },
+    {
+      "commit": "6fed17abcd364faefcd1048cd71d5a2d23b8d497",
+      "parents": [
+        "0e1d800ac3fc77e7c0fe297874ec0e2f5b0047ff"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T07:45:04+05:30",
+      "subject": "Add .env.example with variable names only"
+    },
+    {
+      "commit": "0e1d800ac3fc77e7c0fe297874ec0e2f5b0047ff",
+      "parents": [
+        "274c4f4b635c562ca0aa49113bd0efdca07f1197"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T07:45:03+05:30",
+      "subject": "Scaffold data/live for real snapshots"
+    },
+    {
+      "commit": "274c4f4b635c562ca0aa49113bd0efdca07f1197",
+      "parents": [
+        "37dcb5cdc781e61dcf22c2e93f6f76faf5648688"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T07:45:03+05:30",
+      "subject": "Scaffold infra/ and scripts/ directories"
+    },
+    {
+      "commit": "37dcb5cdc781e61dcf22c2e93f6f76faf5648688",
+      "parents": [
+        "0eca8e79d564aa5bfd3a93e3c3e984e761b7ba9e"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T07:45:03+05:30",
+      "subject": "Scaffold web/ (src components, layers, api, public)"
+    },
+    {
+      "commit": "0eca8e79d564aa5bfd3a93e3c3e984e761b7ba9e",
+      "parents": [
+        "42956b2d47117d48126d1ad6aa761f79c25737e3"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T07:45:03+05:30",
+      "subject": "Scaffold api/ (handlers, schemas, tests)"
+    },
+    {
+      "commit": "42956b2d47117d48126d1ad6aa761f79c25737e3",
+      "parents": [
+        "9604bcbb2fc64f4ee250aa3840dee33f9245ed56"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T07:45:03+05:30",
+      "subject": "Scaffold agent/ package (tools, prompts, tests)"
+    },
+    {
+      "commit": "9604bcbb2fc64f4ee250aa3840dee33f9245ed56",
+      "parents": [
+        "a226f6f8ee6550387028d01d483e3b630ab986c2"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T07:45:03+05:30",
+      "subject": "Scaffold models/ package (source_detection, plume, exposure, training, common, tests)"
+    },
+    {
+      "commit": "a226f6f8ee6550387028d01d483e3b630ab986c2",
+      "parents": [
+        "0ed95f3552d767ce5524101040653a5a5fa396d1"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-08T07:45:03+05:30",
+      "subject": "Scaffold ingest/ package (firms, aqi, weather, sites, population, common, tests)"
+    },
+    {
+      "commit": "66b31478e778732430c75b8d0857ada74bd38f45",
+      "parents": [
+        "2792b38562585ff64c60d7fa982cfef1f9a3f26a"
+      ],
+      "author_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "author_date": "2026-10-08T07:36:19+05:30",
+      "subject": "fix(map): optimize geospatial coordinate logic, boundary geometry, and UI/UX"
+    },
+    {
+      "commit": "2792b38562585ff64c60d7fa982cfef1f9a3f26a",
+      "parents": [
+        "42db1a7147a48ed7ddb0e1c6199fca69ebaaefe9"
+      ],
+      "author_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "author_date": "2026-10-08T06:28:47+05:30",
+      "subject": "fix(dashboard-map): declutter map by removing floating top bar, relocating controls, and unstacking reticle icons"
+    },
+    {
+      "commit": "42db1a7147a48ed7ddb0e1c6199fca69ebaaefe9",
+      "parents": [
+        "b6791b3988efedaa27230a656db7f49daeb0253e"
+      ],
+      "author_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "author_date": "2026-10-08T05:55:43+05:30",
+      "subject": "feat(gis): implement photorealistic satellite imagery, 3D globe projection, and NASA optical sensor reticles"
+    },
+    {
+      "commit": "b6791b3988efedaa27230a656db7f49daeb0253e",
+      "parents": [
+        "084df3b8c455915d243e080dca6fe59085195995"
+      ],
+      "author_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "author_date": "2026-10-08T05:35:34+05:30",
+      "subject": "feat(analytics): add airshed scope segmentation and district metadata to FireSourcesView and SourceBreakdown"
+    },
+    {
+      "commit": "084df3b8c455915d243e080dca6fe59085195995",
+      "parents": [
+        "b1440801bd26e59bbc70b108117dc1bd90d5110c"
+      ],
+      "author_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "author_date": "2026-10-08T05:31:45+05:30",
+      "subject": "feat(map): enhance fire markers with radiant thermal animations, accurate district attribution, and transboundary scope filters"
+    },
+    {
+      "commit": "b1440801bd26e59bbc70b108117dc1bd90d5110c",
+      "parents": [
+        "973d11bd54e86f096515a67ef454e433904ce72b"
+      ],
+      "author_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "author_date": "2026-10-08T04:57:58+05:30",
+      "subject": "feat(dashboard): de-clutter Dashboard Map widget with clean header, quick action capsule, micro-legend, and auto-play"
+    },
+    {
+      "commit": "973d11bd54e86f096515a67ef454e433904ce72b",
+      "parents": [
+        "7b492275ca6543bdd5de38bb3e4973974565d0b2"
+      ],
+      "author_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "author_date": "2026-10-08T04:43:41+05:30",
+      "subject": "feat(map): de-clutter Map Explorer UI with floating glassmorphic Command HUD and collapsible layer FAB"
+    },
+    {
+      "commit": "7b492275ca6543bdd5de38bb3e4973974565d0b2",
+      "parents": [
+        "0dd9ded15b707d70f1c20ab89dc9235251f719b6"
+      ],
+      "author_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "author_date": "2026-10-08T04:13:11+05:30",
+      "subject": "fix(nav): eliminate double buttons, remove redundant ticker, and streamline top navbar"
+    },
+    {
+      "commit": "0dd9ded15b707d70f1c20ab89dc9235251f719b6",
+      "parents": [
+        "dd106a572a7a61954022236082056bb21bb3c56b"
+      ],
+      "author_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "author_date": "2026-10-08T04:02:19+05:30",
+      "subject": "feat(nav): implement collapsible multi-mode sidebar, interactive breadcrumbs, live ticker, and Cmd+B/Cmd+K shortcuts"
+    },
+    {
+      "commit": "dd106a572a7a61954022236082056bb21bb3c56b",
+      "parents": [
+        "2a6e5f51a6e10c1ad006ba7903c2653913937832"
+      ],
+      "author_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "author_date": "2026-10-08T03:46:20+05:30",
+      "subject": "layout(web): arrange 3 analytics tabs in row and relocate Top Affected Areas with actions to lower row"
+    },
+    {
+      "commit": "2a6e5f51a6e10c1ad006ba7903c2653913937832",
+      "parents": [
+        "f49d6e74c7f0711000d33d2908da8342e45355d1"
+      ],
+      "author_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "author_date": "2026-10-08T03:33:18+05:30",
+      "subject": "layout(web): expand map canvas to 3 columns and relocate Top Affected Areas to lower row"
+    },
+    {
+      "commit": "f49d6e74c7f0711000d33d2908da8342e45355d1",
+      "parents": [
+        "35e3d97ab7eed25b6d88d3737578929299d496c8"
+      ],
+      "author_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "author_date": "2026-10-08T03:24:51+05:30",
+      "subject": "feat(web): implement dedicated analytical views, interactive simulation, and notification hub"
+    },
+    {
+      "commit": "35e3d97ab7eed25b6d88d3737578929299d496c8",
+      "parents": [
+        "3f238facb3b56a3a0a129946a718a4fdc33adc29"
+      ],
+      "author_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "author_date": "2026-10-08T02:31:07+05:30",
+      "subject": "feat(map): add dedicated GIS Map Explorer view, free zoom-out down to zoom 2.8, camera presets, and interactive receptor markers"
+    },
+    {
+      "commit": "3f238facb3b56a3a0a129946a718a4fdc33adc29",
+      "parents": [
+        "755397e62b8642f1ff21c7cb1dd6ad7bb01da95e"
+      ],
+      "author_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "author_date": "2026-10-08T02:08:46+05:30",
+      "subject": "fix(map): add Survey of India sovereign boundary with PoK/Ladakh and remove green patch HUD overlay"
+    },
+    {
+      "commit": "755397e62b8642f1ff21c7cb1dd6ad7bb01da95e",
+      "parents": [
+        "b27b098e44acee90863aeafb53ee90456d343cdd"
+      ],
+      "author_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "author_date": "2026-10-08T01:57:56+05:30",
+      "subject": "fix(ui): align dashboard grid to exact 4-column ratio with Map, Top Areas (5 items), and Agent side-by-side"
+    },
+    {
+      "commit": "b27b098e44acee90863aeafb53ee90456d343cdd",
+      "parents": [
+        "fd74490cb7a95cad40526ae240b9d3aa6cffd75a"
+      ],
+      "author_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "author_date": "2026-10-08T01:42:49+05:30",
+      "subject": "feat: eliminate all mock/fallback data, dynamically wire real OpenAQ stations and plume advection model into all analytics"
+    },
+    {
+      "commit": "fd74490cb7a95cad40526ae240b9d3aa6cffd75a",
+      "parents": [
+        "3d7ce9627701b501543c6af3dfbdf635856d29e6"
+      ],
+      "author_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "author_date": "2026-10-08T01:32:56+05:30",
+      "subject": "feat: add start.sh startup script for local dev, preview, and testing"
+    },
+    {
+      "commit": "3d7ce9627701b501543c6af3dfbdf635856d29e6",
+      "parents": [
+        "55c869f796c7857749bed32668d7da070a5d10b1"
+      ],
+      "author_name": "Saba Saeed",
+      "email_sha256": "5bc1dbb8e86278db82a31962f80adb9658c0435a885e57c9ca6236d2780c6d38",
+      "author_date": "2026-10-08T01:25:41+05:30",
+      "subject": "feat: complete AERIS dashboard, Strands action agent, and real snapshot pipeline"
+    },
+    {
+      "commit": "55c869f796c7857749bed32668d7da070a5d10b1",
+      "parents": [
+        "0ed95f3552d767ce5524101040653a5a5fa396d1"
+      ],
+      "author_name": "MeenalSinha",
+      "email_sha256": "f5c9c98632f3b9ace14063ba7c5eb38bdbd5d4555a3e85f78a087db234cd4fda",
+      "author_date": "2026-10-08T00:35:43+05:30",
+      "subject": "feat: add real environmental data fetchers and live snapshots"
+    },
+    {
+      "commit": "0ed95f3552d767ce5524101040653a5a5fa396d1",
+      "parents": [
+        "3d346851b7abdc5265f29b4e31c1149f559efd75"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-07T19:55:03+05:30",
+      "subject": "Work split: link API list"
+    },
+    {
+      "commit": "3d346851b7abdc5265f29b4e31c1149f559efd75",
+      "parents": [
+        "5e851239d59bf9428633a71aec82d379a3ae2fdf"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-07T19:55:03+05:30",
+      "subject": "Add API list: external data APIs, AERIS API routes, AWS service calls"
+    },
+    {
+      "commit": "5e851239d59bf9428633a71aec82d379a3ae2fdf",
+      "parents": [
+        "8e4191058b1cb7c41e280fd946ee51adaafee375"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-07T19:53:35+05:30",
+      "subject": "README: mark example scenario as illustrative, state real-data-only"
+    },
+    {
+      "commit": "8e4191058b1cb7c41e280fd946ee51adaafee375",
+      "parents": [
+        "b046cb3e5a7ddfb52810d173e279fa1cb30cc524"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-07T19:53:28+05:30",
+      "subject": "Structure doc: rename data/sample to data/live (real snapshots only)"
+    },
+    {
+      "commit": "b046cb3e5a7ddfb52810d173e279fa1cb30cc524",
+      "parents": [
+        "e66a832644e02c762c366525243e2238829dba2a"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-07T19:53:28+05:30",
+      "subject": "Work split: add no-demo-data disclaimer, use real snapshots in data/live"
+    },
+    {
+      "commit": "e66a832644e02c762c366525243e2238829dba2a",
+      "parents": [
+        "2334c68b59d2fd4007c33a07ba7d790817040a97"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-07T19:53:28+05:30",
+      "subject": "Data contracts: add no-demo-data disclaimer, mark examples as placeholders"
+    },
+    {
+      "commit": "2334c68b59d2fd4007c33a07ba7d790817040a97",
+      "parents": [
+        "716819891811a9ba545376b8957b967f57a6b6fc"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-07T19:53:28+05:30",
+      "subject": "Saba doc: add no-demo-data disclaimer, read real snapshots instead of samples"
+    },
+    {
+      "commit": "716819891811a9ba545376b8957b967f57a6b6fc",
+      "parents": [
+        "86c926e7d24ce9822eeaa944aa4c8082502bc6af"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-07T19:53:28+05:30",
+      "subject": "Pritam doc: add no-demo-data disclaimer, remove sample and demo-driven tuning"
+    },
+    {
+      "commit": "86c926e7d24ce9822eeaa944aa4c8082502bc6af",
+      "parents": [
+        "d6ec6eaca5467e24f83353270a79bfec3937d0de"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-07T19:53:28+05:30",
+      "subject": "Meenal doc: add no-demo-data disclaimer, replace sample scenario with real snapshots"
+    },
+    {
+      "commit": "d6ec6eaca5467e24f83353270a79bfec3937d0de",
+      "parents": [
+        "0f7265858011aa6e8b0bb2d4e081a8781f575420"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-07T19:53:28+05:30",
+      "subject": "Aditya doc: add no-demo-data disclaimer, replace demo fallback with stale real data"
+    },
+    {
+      "commit": "0f7265858011aa6e8b0bb2d4e081a8781f575420",
+      "parents": [
+        "99046f46160787d954372fbb22457a308a86e691"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-07T19:48:26+05:30",
+      "subject": "Add detailed per-member task docs and data contracts"
+    },
+    {
+      "commit": "99046f46160787d954372fbb22457a308a86e691",
+      "parents": [
+        "13c75d0bceccbd7216cd9227278f8a1977815c1f"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-07T19:41:25+05:30",
+      "subject": "Reassign work: Aditya owns all AWS, split remaining work across 3 members"
+    },
+    {
+      "commit": "13c75d0bceccbd7216cd9227278f8a1977815c1f",
+      "parents": [
+        "f5f4eb3e571c36bafdf809216403554a8ed2f526"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-07T19:27:53+05:30",
+      "subject": "Add 4-part work split"
+    },
+    {
+      "commit": "f5f4eb3e571c36bafdf809216403554a8ed2f526",
+      "parents": [
+        "2f992359c9bb99ba17bbdc6f7b2db2f1bd67f8ee"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-07T19:24:38+05:30",
+      "subject": "Add file and folder structure doc"
+    },
+    {
+      "commit": "2f992359c9bb99ba17bbdc6f7b2db2f1bd67f8ee",
+      "parents": [
+        "8a158a13b7a9b99b6db36c9ea8c49c305b0a0411"
+      ],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-07T19:20:37+05:30",
+      "subject": "Restyle README with centered header, badges, overview; add logo"
+    },
+    {
+      "commit": "8a158a13b7a9b99b6db36c9ea8c49c305b0a0411",
+      "parents": [],
+      "author_name": "Aditya",
+      "email_sha256": "b4fb61286c0bf910056904fbaa298395c7ef262a919254916ca61f090ba2498e",
+      "author_date": "2026-10-07T19:13:40+05:30",
+      "subject": "Initial commit: AERIS README, architecture diagram"
+    }
+  ]
+}

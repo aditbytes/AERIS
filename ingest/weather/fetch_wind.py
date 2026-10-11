@@ -207,7 +207,7 @@ def _parse_point_hourly(
             logger.debug("Skipping malformed hourly entry at index %d for point (%s, %s)", i, lat, lon)
             continue
 
-        if speed is None or direction is None:
+        if speed is None or direction is None or not math.isfinite(speed) or not math.isfinite(direction) or speed < 0 or not 0 <= direction <= 360:
             # Missing value — skip this hour (do not fabricate)
             continue
 
@@ -217,6 +217,8 @@ def _parse_point_hourly(
         try:
             pblh: float | None = float(pblh_raw) if pblh_raw is not None else None
         except (TypeError, ValueError):
+            pblh = None
+        if pblh is not None and (not math.isfinite(pblh) or pblh < 0):
             pblh = None
 
         # Normalise timestamp to ISO-8601 UTC
@@ -228,7 +230,7 @@ def _parse_point_hourly(
                 dt = dt.replace(tzinfo=timezone.utc)
             t_iso = dt.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
         except (ValueError, AttributeError):
-            t_iso = t_str
+            continue
 
         hours.append(
             {
@@ -289,6 +291,7 @@ def fetch_wind(
     all_points: list[dict[str, Any]] = []
     batches_succeeded = 0
     batches_failed = 0
+    points_incomplete = 0
 
     for batch_idx, batch in enumerate(batches, start=1):
         lats = [p[0] for p in batch]
@@ -307,12 +310,15 @@ def fetch_wind(
             lat, lon = batch[i]
             hourly = raw_point.get("hourly") or {}
             point_data = _parse_point_hourly(lat, lon, hourly)
+            if not point_data["hours"] or len(point_data["hours"]) != len(hourly.get("time", [])) or any(h["pblh_m"] is None for h in point_data["hours"]):
+                points_incomplete += 1
             all_points.append(point_data)
 
     if not all_points:
         raise UpstreamError("Open-Meteo", None, "No wind data retrieved for any grid point.")
 
     coverage_complete = batches_failed == 0
+    usable_hourly_coverage_complete = coverage_complete and len(all_points) == len(grid) and points_incomplete == 0
     if batches_failed:
         logger.warning(
             "[Wind] Partial coverage: %d/%d batch(es) failed. %d grid points retrieved.",
@@ -324,7 +330,10 @@ def fetch_wind(
         "generated_at": generated_at,
         "source": "Open-Meteo GFS",
         "coverage_complete": coverage_complete,
+        "usable_hourly_coverage_complete": usable_hourly_coverage_complete,
         "points": all_points,
+        "points_requested": len(grid),
+        "points_incomplete": points_incomplete,
     }
     if batches_failed:
         result["batches_total"] = len(batches)

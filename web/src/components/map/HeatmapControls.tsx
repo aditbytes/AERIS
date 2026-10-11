@@ -41,7 +41,7 @@ export default function HeatmapControls({ data, enabled, onToggle, opacity, onOp
         {enabled && (
           <div className="heatmap-actions-group">
             {/* Inline Compact 6-Band Color Ramp */}
-            <div className="heatmap-scale" aria-label="PM2.5 station mean legend, micrograms per cubic metre">
+            <div className="heatmap-scale" tabIndex={0} role="region" aria-label="PM2.5 station mean legend, micrograms per cubic metre">
               {PM25_SCALE.map(band => (
                 <span key={band.label} className="scale-item">
                   <i aria-hidden="true" style={{ background: band.color }} />
@@ -119,7 +119,7 @@ export default function HeatmapControls({ data, enabled, onToggle, opacity, onOp
           {visible.length > 0 && (
             <details className="heatmap-table-details">
               <summary className="heatmap-summary">Accessible cell values ({visible.length} in view)</summary>
-              <div className="heatmap-values">
+              <div className="heatmap-values" tabIndex={0} role="region" aria-label="Observed cell values; scroll with arrow keys">
                 <table>
                   <caption>Reported station means in occupied cells</caption>
                   <thead>

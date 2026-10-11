@@ -10,12 +10,21 @@ export function useObservationHeatmap(aqi: AqiFile | null, mapRef: RefObject<Map
   const [bounds, setBounds] = useState<[number, number, number, number] | null>(null)
   const [ready, setReady] = useState(false)
   useEffect(() => {
-    const map = mapRef.current
-    if (!map || !supported) return
+    let cancelled = false
+    let attachedMap: Map | null = null
     const loaded = () => setReady(true)
-    map.on('load', loaded)
-    if (map.loaded()) loaded()
-    return () => { map.off('load', loaded) }
+    const attach = () => {
+      const map = mapRef.current
+      if (cancelled || !map || !supported) return
+      attachedMap = map
+      map.on('load', loaded)
+      if (map.loaded()) loaded()
+    }
+    // The map's constructor effect may run after this hook's mount effect.
+    // Retry after the mount effects without removing the initial-load guard.
+    if (mapRef.current) attach()
+    else queueMicrotask(attach)
+    return () => { cancelled = true; attachedMap?.off('load', loaded) }
   }, [mapRef, supported])
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60_000)

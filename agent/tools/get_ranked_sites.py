@@ -25,7 +25,7 @@ def get_ranked_sites(top_n: int = 10, site_type: str | None = None) -> list[dict
     if not ranked_path.exists():
         return []
 
-    with ranked_path.open() as f:
+    with ranked_path.open(encoding="utf-8") as f:
         data = json.load(f)
 
     sites = data.get("sites", [])

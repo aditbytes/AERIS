@@ -9,10 +9,11 @@ const snapshot = (name: string) => JSON.parse(readFileSync(
 const tabs = ['dashboard', 'map', 'analytics', 'wind', 'sources', 'population', 'shield', 'settings']
 const dataFiles = ['sources.json', 'corridor.geojson', 'ranked_sites.json', 'actions.json', 'aqi.json', 'wind.json']
 
-// Only basemap assets are mocked for the successful real-snapshot journeys.
+// Basemap assets and optional web fonts are mocked for offline journeys.
 // Atmospheric data is always served by the application's normal snapshot path.
 const transparentTile = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRuoAAAAASUVORK5CYII=', 'base64')
 async function localBasemap(page: Page) {
+  await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ contentType: 'text/css', body: '/* Offline test uses the application system-font fallback. */' }))
   await page.route('https://server.arcgisonline.com/**', route => route.fulfill({ contentType: 'image/png', body: transparentTile }))
   // An empty, valid protobuf font response removes the external font dependency.
   // Map worker data, scientific layers, and all DOM legend labels stay real.
@@ -80,6 +81,27 @@ async function heatmapColoredPixels(page: Page) {
 
 test.beforeEach(async ({ page }) => { await localBasemap(page) })
 test.beforeAll(async ({ browser }) => { console.info(`Installed browser version: ${browser.version()}`) })
+
+test('archived provenance is visible and exposes exact hashes without relabelling observations', async ({ page }) => {
+  await page.goto('/')
+  const notice = page.getByRole('complementary', { name: 'Model provenance and scientific limitations' })
+  await expect(notice).toContainText('Archived ten-source detector output')
+  await expect(notice).toContainText('obsolete concentration and risk floors')
+  await notice.getByText('Inspect source and corridor provenance', { exact: true }).click()
+  await expect(notice).toContainText('900b5925955635660d90295b2324083fc52a23a3596aaab9450f518a7221135a')
+  await expect(notice).toContainText('32f81bc4e31b03fdc2ea9282bc447da410b80c2d1a6a245d7767b60b10fbd603')
+  await expect(notice).toContainText('NOT_RECORDED')
+})
+
+test('changed snapshot bytes are disclosed as unknown lineage', async ({ page }) => {
+  const data = snapshot('sources.json')
+  await page.route('**/data/sources.json', route => route.fulfill({ json: data }))
+  await page.goto('/')
+  const notice = page.getByRole('complementary', { name: 'Model provenance and scientific limitations' })
+  await expect(notice).not.toContainText('Archived ten-source detector output')
+  await notice.getByText('Inspect source and corridor provenance', { exact: true }).click()
+  await expect(notice).toContainText('UNVERSIONED_UNKNOWN')
+})
 
 test('all eight views load real snapshots, fit the viewport, and satisfy automated WCAG checks', async ({ page }, testInfo) => {
   const errors = runtimeErrors(page)
@@ -211,6 +233,10 @@ test('heatmap exposes observed units, historical timestamps, opacity, and keyboa
   await opacity.focus()
   await page.keyboard.press('ArrowLeft')
   await expect(opacity).toBeFocused()
+  const legend = page.getByRole('region', { name: 'PM2.5 station mean legend, micrograms per cubic metre' })
+  await legend.focus()
+  await page.keyboard.press('ArrowRight')
+  await expect(legend).toBeFocused()
   await page.getByRole('button', { name: 'Fit observed cells', exact: true }).click()
   await page.locator('.heatmap-controls').getByText(/Accessible cell values/).click()
   const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()

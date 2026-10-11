@@ -11,6 +11,7 @@ import Sidebar from '@/components/layout/Sidebar'
 import MapContainer from '@/components/map/MapContainer'
 import TopAffectedAreas from '@/components/sites/TopAffectedAreas'
 import StaleBanner from '@/components/status/StaleBanner'
+import ModelProvenanceNotice from '@/components/status/ModelProvenanceNotice'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import './App.css'
 
@@ -111,6 +112,7 @@ function Dashboard() {
       <div className="main-content">
         <Header />
         <StaleBanner />
+        <ModelProvenanceNotice />
         {error && <div className="feed-error-banner" role="alert"><span>{error} Available or retained feeds remain visible.</span><button type="button" onClick={refreshData} disabled={refreshing}>Retry failed feeds</button></div>}
 
         <ErrorBoundary key={activeTab} resetKey={activeTab}>

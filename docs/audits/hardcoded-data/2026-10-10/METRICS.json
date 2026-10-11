@@ -1,0 +1,105 @@
+{
+  "inspected_files": 349,
+  "primary_source_files": 193,
+  "primary_source_bytes": 1123909,
+  "primary_source_lines": 29279,
+  "files_with_findings": 188,
+  "source_files_with_findings": 165,
+  "findings": 352,
+  "manual_findings": 227,
+  "residual_groups": 125,
+  "literal_occurrences": 20829,
+  "categories": {
+    "A": {
+      "findings": 17,
+      "files": 17,
+      "associated_lines": 1323142,
+      "literal_occurrences": 29
+    },
+    "B": {
+      "findings": 61,
+      "files": 37,
+      "associated_lines": 6359,
+      "literal_occurrences": 6865
+    },
+    "C": {
+      "findings": 43,
+      "files": 28,
+      "associated_lines": 2796,
+      "literal_occurrences": 2333
+    },
+    "D": {
+      "findings": 146,
+      "files": 78,
+      "associated_lines": 5857,
+      "literal_occurrences": 3406
+    },
+    "E": {
+      "findings": 84,
+      "files": 71,
+      "associated_lines": 12342,
+      "literal_occurrences": 8184
+    },
+    "F": {
+      "findings": 1,
+      "files": 1,
+      "associated_lines": 38,
+      "literal_occurrences": 12
+    }
+  },
+  "severity": {
+    "Medium": 38,
+    "Low": 16,
+    "Informational": 283,
+    "High": 15
+  },
+  "status": {
+    "risk": 51,
+    "intentional": 290,
+    "defect": 11
+  },
+  "reachability": {
+    "artifact": 6,
+    "development": 54,
+    "runtime": 235,
+    "test": 57
+  },
+  "contributors": {
+    "Aditya": 41,
+    "MeenalSinha": 36,
+    "Pritam Singh": 52,
+    "Aditya; MeenalSinha; Pritam Singh": 1,
+    "Aditya; MeenalSinha": 1,
+    "Aditya; Pritam Singh": 1,
+    "Saba Saeed": 45,
+    "Unknown/unattributed": 175
+  },
+  "selected_measurable_counts": {
+    "constants_count": 585,
+    "records_count": 253659,
+    "coordinates_count": 230196,
+    "endpoints_count": 39,
+    "thresholds_count": 163,
+    "mock_responses_count": 11,
+    "synthetic_datasets_count": 21,
+    "static_outputs_count": 1452
+  },
+  "inaccessible_files": [],
+  "high_findings": [
+    "WEB-010",
+    "SCI-003",
+    "SCI-005",
+    "SCI-006",
+    "SCI-019",
+    "SCI-033",
+    "SCI-034",
+    "SCI-035",
+    "SCI-036",
+    "SCI-039",
+    "SCI-052",
+    "SCI-055",
+    "SCI-056",
+    "SCI-057",
+    "SCI-058"
+  ]
+}

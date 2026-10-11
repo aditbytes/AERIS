@@ -22,6 +22,20 @@ os.environ.setdefault("AERIS_STORAGE", "local")
 from api.handlers import app  # noqa: E402
 
 
+def local_origin(origin: str | None) -> str | None:
+    """Allow the documented loopback dev servers, not hostname-prefix lookalikes."""
+    if not origin:
+        return None
+    try:
+        parsed = urlsplit(origin)
+        parsed.port  # Reject malformed ports.
+    except ValueError:
+        return None
+    if parsed.scheme == "http" and parsed.hostname in ("localhost", "127.0.0.1", "::1") and not (parsed.username or parsed.password or parsed.path or parsed.query or parsed.fragment):
+        return origin
+    return None
+
+
 class Handler(BaseHTTPRequestHandler):
     def _route_key(self, method: str, path: str) -> tuple[str, dict[str, str]]:
         if method == "GET" and path.startswith("/run/"):
@@ -37,8 +51,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(resp["statusCode"])
         for k, v in resp["headers"].items():
             self.send_header(k, v)
-        origin = self.headers.get("Origin")
-        if origin and origin.startswith("http://localhost"):
+        origin = local_origin(self.headers.get("Origin"))
+        if origin:
             self.send_header("Access-Control-Allow-Origin", origin)
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()

@@ -1,0 +1,16 @@
+{
+  "node_version": "v24.16.0",
+  "executable": "C:\\Program Files\\nodejs\\node.exe",
+  "audit_time": "2026-10-10T00:00:00Z",
+  "input": "Existing captured AQI file; no fabricated stations or source writes.",
+  "samples": 59,
+  "occupied_cells": 28,
+  "rejected": 1,
+  "duplicates": 0,
+  "stale_samples": 59,
+  "oldest": "2026-09-30T18:58:57.000Z",
+  "newest": "2026-10-07T08:00:00.000Z",
+  "sources": [
+    "OpenAQ"
+  ]
+}

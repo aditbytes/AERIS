@@ -10,6 +10,7 @@ Used by scripts/smoke_test.py against the live API and by tests against data/liv
 from __future__ import annotations
 
 from datetime import datetime
+import math
 from typing import Any, Callable
 
 Problems = list[str]
@@ -26,7 +27,7 @@ def _is_time(v: Any) -> bool:
 
 
 def _num(v: Any) -> bool:
-    return isinstance(v, (int, float)) and not isinstance(v, bool)
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
 
 
 def _in01(v: Any) -> bool:
@@ -177,8 +178,34 @@ def check_actions(obj: Any, ranked_ids: set[str] | None = None) -> Problems:
 
 def check_aqi(obj: Any) -> Problems:
     p = _stamped(obj, "aqi")
+    if not isinstance(obj, dict):
+        return p
     if "source" in obj and not (isinstance(obj["source"], str) and obj["source"].strip()):
         p.append("aqi: bad source")
+    if "coverage_complete" in obj and obj["coverage_complete"] is not None and type(obj["coverage_complete"]) is not bool:
+        p.append("aqi: bad coverage_complete")
+    for key in ("sources_with_readings", "sources_failed"):
+        if key in obj and not (isinstance(obj[key], list) and all(isinstance(v, str) and v.strip() for v in obj[key])):
+            p.append(f"aqi: bad {key}")
+    fetch_status = obj.get("fetch_status")
+    if "fetch_status" in obj and fetch_status not in ("COMPLETE", "PARTIAL", "FAILED", "UNAVAILABLE", "UNKNOWN"):
+        p.append("aqi: bad fetch_status")
+    if fetch_status == "COMPLETE" and obj.get("sources_failed"):
+        p.append("aqi: complete fetch contradicts sources_failed")
+    source_status = obj.get("source_fetch_status")
+    if "source_fetch_status" in obj:
+        valid = isinstance(source_status, dict) and bool(source_status) and all(
+            isinstance(k, str) and k.strip() and v in ("SUCCESS", "PARTIAL_FAILURE", "FAILED", "NOT_CONFIGURED", "UNKNOWN")
+            for k, v in source_status.items()
+        )
+        if not valid:
+            p.append("aqi: bad source_fetch_status")
+        elif fetch_status == "COMPLETE" and any(v != "SUCCESS" for v in source_status.values()):
+            p.append("aqi: complete fetch contradicts source_fetch_status")
+        elif obj.get("coverage_complete") is True and any(v in ("PARTIAL_FAILURE", "FAILED", "NOT_CONFIGURED") for v in source_status.values()):
+            p.append("aqi: complete coverage contradicts known fetch gaps")
+    if obj.get("coverage_complete") is True and (obj.get("sources_failed") or fetch_status in ("PARTIAL", "FAILED", "UNAVAILABLE")):
+        p.append("aqi: complete coverage contradicts fetch failure")
     if not obj.get("stations"):
         p.append("aqi: no stations")
     for i, s in enumerate(obj.get("stations") or []):
@@ -190,6 +217,13 @@ def check_aqi(obj: Any) -> Problems:
         for k in ("pm25", "pm10", "aqi"):
             if s.get(k) is not None and not (_num(s[k]) and s[k] >= 0):
                 p.append(f"{w}: bad {k}")
+    has_readings = any(any(s.get(k) is not None for k in ("pm25", "pm10", "aqi")) for s in obj.get("stations") or [])
+    if "data_status" in obj:
+        expected = "READINGS_AVAILABLE" if has_readings else "UNAVAILABLE_OR_EMPTY"
+        if obj["data_status"] != expected:
+            p.append("aqi: data_status contradicts available readings")
+    if fetch_status in ("FAILED", "UNAVAILABLE") and has_readings:
+        p.append("aqi: failed/unavailable fetch contradicts available readings")
     return p
 
 

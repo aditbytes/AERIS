@@ -1,5 +1,29 @@
 # Optional plume point surrogate
 
+As of the 2026-10-10 risk hardening, pickle loading requires explicit supplier
+trust before any artifact is deserialized. For a model you trained or independently
+authenticated, call `model_fn(directory, trusted_artifact=True)` or pass
+`trusted_artifact=True` to `predict_point(..., model="surrogate", model_dir=...)`.
+An omitted acknowledgment raises `PermissionError`; `trusted_artifact=False`
+explicitly denies loading even if the deployer enabled trust.
+
+For the standard SageMaker `model_fn(model_dir, context=None)` signature or the
+evaluation CLI, a trusted deployment/operator can set
+`AERIS_TRUST_MODEL_ARTIFACT=1` in the server/process environment. Other strings,
+artifact metadata and request context cannot grant trust. Do not obtain this
+setting from client input. A checksum supplied beside a pickle does not
+authenticate its supplier; the trust flag is an acknowledgment, not a sandbox.
+All existing compatibility, physics, software and checksum checks still apply.
+The default physics path does not load a pickle.
+
+The preserved ignored model/dataset were not regenerated. The local archive was
+already incompatible with current physics/provenance before this remediation;
+CLI edits also change the strict teacher source hash. No hash check was relaxed.
+Rebuilding an artifact for a new code hash requires a separately reviewed
+training run; historical metrics below are not revalidated artifact results.
+See [the remediation report](../../docs/audits/hardcoded-data/2026-10-10/contributor-work-tally/PRITAM_RISK_REMEDIATION.md)
+for executed tests and remaining risks.
+
 This small local model approximates the existing plume engine's **PM2.5 increment**, in
 µg/m³. It is an optional numerical surrogate, trained and evaluated on
 `BASELINE_SIMULATED` scenarios. It has no observational calibration or demonstrated

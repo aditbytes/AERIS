@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "current_count_exclusion": true,
+  "history_scope": "Targeted first-introduction/remediation examination of significant scientific substitutions; not exhaustive every historical literal/fork.",
+  "findings": [
+    {
+      "id": "SCI-H001",
+      "file": "scripts/generate_population_snapshot.py",
+      "revision": "3d7ce9627701b501543c6af3dfbdf635856d29e6",
+      "line": 22,
+      "endline": 88,
+      "category": "B",
+      "severity": "High",
+      "status": "remediated",
+      "reachability": "historical-runtime",
+      "value_description": "Synthetic 5,840-cell population grid was described as real; city-distance density and sine/rural baseline invented values,0.05degree grid claimed cell_km1.0",
+      "evidence": [
+        "git show3d7ce96:script:31-49 uses fixed Delhi/Ludhiana/Chandigarh coordinates, city-distance linear counts and1200+400*sin(lat*10+lon*10); no census/raster/API input.",
+        "Publishedpopulation snapshot had5840cells; operational exposure/agent consumed it.",
+        "Deletedscript and replaced population with real WorldPop222792cells in049cfa83."
+      ],
+      "provenance": "Project-generated synthetic demographic approximation presented as real in source description; not a captured population dataset.",
+      "recommendation": "Preserve historical evidence; keep synthetic examples separated from operational reference datasets and require manifest provenance.",
+      "records_count": 5840,
+      "coordinates_count": 5840,
+      "introduction_commit": "3d7ce9627701b501543c6af3dfbdf635856d29e6",
+      "author": "Saba Saeed",
+      "remediation_commit": "049cfa83d158278f61ae8b482b035d85fb100e27",
+      "remediation_author": "MeenalSinha",
+      "attribution_evidence": "git log HEAD --reverse -- script shows introduction and deletion; full script inspected. Metadata identities only, no asserted real-person verification."
+    },
+    {
+      "id": "SCI-H002",
+      "file": "models/plume/corridor.py",
+      "revision": "3d7ce9627701b501543c6af3dfbdf635856d29e6",
+      "line": 159,
+      "endline": 160,
+      "category": "C",
+      "severity": "High",
+      "status": "code-remediated-artifact-persists",
+      "reachability": "historical-runtime",
+      "value_description": "Legacy concentration floor15ug/m3, emission coefficient160, decay20h, riskfloor0.20/cap0.98 manufactured positive predictions regardless of field physics",
+      "evidence": [
+        "Legacypredict_corridor explicitlymax15 andrisk>=0.20; excludesPBLH from concentration math.",
+        "Current40bands exactly reproduce these removed formulas; seeSCI-056 dataset row (use file match if IDs shift).",
+        "CurrentGaussianpuffimplementation replaced formula in19db97d; preservedlive/public files stilllegacy."
+      ],
+      "provenance": "Uncalibrated simplified legacy simulation, not observedPM2.5.",
+      "recommendation": "Version and disclose surviving legacy artifacts; regenerate only through separately authorized validated pipeline.",
+      "introduction_commit": "3d7ce9627701b501543c6af3dfbdf635856d29e6",
+      "author": "Saba Saeed",
+      "remediation_commit": "19db97d872cfd308a40163287625c1f64a694678",
+      "remediation_author": "Pritam Singh",
+      "attribution_evidence": "git log --all --reverse -S 'pm25_delta = round(max(15.0' and full old/currentdiff;author metadataonly.",
+      "records_count": 0
+    },
+    {
+      "id": "SCI-H003",
+      "file": "models/plume/corridor.py",
+      "revision": "3d7ce9627701b501543c6af3dfbdf635856d29e6",
+      "line": 29,
+      "endline": 57,
+      "category": "B",
+      "severity": "High",
+      "status": "remediated",
+      "reachability": "historical-runtime",
+      "value_description": "Missing weather silently became fixed u=2m/s,v=-1.5m/s,PBLH400m orper-hour1/-1/350defaults",
+      "evidence": [
+        "Oldfind_nearest_wind missingpoints returns typicalNW→SE breeze; hour dictionary .get suppliesassumedfields.",
+        "d4fb59c removed emptyweatherfake fallback; latercurrentengine19db97d rejectsnulls/extrapolation/distantweather."
+      ],
+      "provenance": "Invented weather substitution, not measured or forecast input.",
+      "recommendation": "Keep current fail-closed weather behavior and distinct mathematicalfixtures.",
+      "introduction_commit": "3d7ce9627701b501543c6af3dfbdf635856d29e6",
+      "author": "Saba Saeed",
+      "remediation_commit": "d4fb59c260bdd1689853b67dc40b612ea139c35a",
+      "remediation_author": "Aditya",
+      "attribution_evidence": "git log HEAD --reverse -S 'return 2.0, -1.5, 400.0'; completeinitialcode reviewed."
+    },
+    {
+      "id": "SCI-H004",
+      "file": "models/source_detection/cluster.py",
+      "revision": "3d7ce9627701b501543c6af3dfbdf635856d29e6",
+      "line": 109,
+      "endline": 122,
+      "category": "C",
+      "severity": "High",
+      "status": "code-remediated-artifact-persists",
+      "reachability": "historical-runtime",
+      "value_description": "Legacyconfidencefloor0.65,FRPscale150,radiusfloor4km,andindustrial_fire labeloutsideagriculturalbbox",
+      "evidence": [
+        "Oldconfidence minimum0.65; max0.98; source=industrial_fire outsidebbox without industrialverification; currentartifactcontains2suchlabels.",
+        "Currentdetector replaces withactual recency/count/highshare heuristic,FRPscale500 andgenericfire label;dataset stilllegacy."
+      ],
+      "provenance": "Documented current source engine no longer uses these obsolete old heuristic coefficients; surviving artifacts lackversion.",
+      "recommendation": "Preserve history; explicitly distinguish archivedlegacyderivedoutputs from currentbaseline.",
+      "introduction_commit": "3d7ce9627701b501543c6af3dfbdf635856d29e6",
+      "author": "Saba Saeed",
+      "remediation_commit": "63212253021ec1c77fd79fe66c2b54b19161d6cd",
+      "remediation_author": "Pritam Singh",
+      "attribution_evidence": "Original source modulefull read and source implementation replacement commit inspected."
+    },
+    {
+      "id": "SCI-H005",
+      "file": "models/exposure/rank_sites.py",
+      "revision": "3d7ce9627701b501543c6af3dfbdf635856d29e6",
+      "line": 236,
+      "endline": 238,
+      "category": "C",
+      "severity": "High",
+      "status": "remediated",
+      "reachability": "historical-runtime",
+      "value_description": "Fixed±25%populationrange was propagated as90%confidenceinterval without statisticalevidence",
+      "evidence": [
+        "Oldexposurelow=int(estimate*.75),high=int(estimate*1.25); introducedin55c869f.",
+        "Oldagentandreviewed_run calledthis90%CI; currentagent andliveactions use exposurerange andcurrentriskthresholdsensitivitytext.",
+        "Retainedagent/tests/reviewed_run.json stillcontainsobsolete90%CI phrase (currenttestartifactfinding)."
+      ],
+      "provenance": "Arbitraryuncertaintyallowance, not derivedstatistical confidence.",
+      "recommendation": "Keep threshold-sensitivity interpretation, remove obsoleteclaimfromfuturevalidationreports; do notconflate uncertaintytypes.",
+      "introduction_commit": "55c869f796c7857749bed32668d7da070a5d10b1",
+      "author": "MeenalSinha",
+      "remediation_commit": "3789d0815b3d5562979bde237c2383e5a527c2b1",
+      "remediation_author": "MeenalSinha",
+      "subsequent_agent_remediation_commit": "df7b0c6a99007ab0c062e6fcb735cba42d0d5e4e",
+      "attribution_evidence": "git log HEAD --reverse -S '0.75' onexposure; 90%CI agentlabelintroducedSaba3d7ce96, numericrangeauthor separatelyMeenal55c869f."
+    }
+  ]
+}

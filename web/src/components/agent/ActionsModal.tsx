@@ -4,6 +4,7 @@ import { useAeris } from '@/services/dataContext'
 import './ActionsModal.css'
 import { actionKey, useActionChecklist } from './actionChecklist'
 import { downloadText } from '@/components/views/csv'
+import { advisoryDeadline, ADVISORY_LIMITS } from './advisoryEvidence'
 
 export default function ActionsModal() {
   const { actions, showActionsModal, setShowActionsModal } = useAeris()
@@ -44,6 +45,8 @@ export default function ActionsModal() {
       '               AERIS MODEL-INFORMED ADVISORY — NOT AN OFFICIAL ORDER',
       '========================================================================',
       `Issued: ${actions.generated_at}`,
+      ADVISORY_LIMITS,
+      `Model context: ${JSON.stringify(actions.model_context ?? { lineage_status: 'UNVERSIONED_UNKNOWN' })}`,
       '',
       'EXECUTIVE SUMMARY:',
       actions.summary,
@@ -52,7 +55,7 @@ export default function ActionsModal() {
       'SITE-SPECIFIC RECOMMENDATIONS:',
       '------------------------------------------------------------------------',
       ...actions.actions.map(
-        a => `[Priority #${a.priority}] To: ${a.who}\nAction: ${a.action}\nDeadline: In ${a.deadline_hours}h | Reason: ${a.reason}\n`
+        a => `[Priority #${a.priority}] To: ${a.who}\nAction: ${a.action}\nScheduling: ${advisoryDeadline(actions, a.deadline_hours)} | Reason: ${a.reason}\n`
       ),
       '------------------------------------------------------------------------',
       'AUTHORITY RECOMMENDATIONS:',
@@ -80,7 +83,7 @@ export default function ActionsModal() {
                 <h2 id="actions-modal-title" className="modal-title">AERIS Action Recommendations</h2>
                 <span className="badge-active">Model-informed advisory</span>
               </div>
-              <p id="actions-modal-description" className="modal-subtitle">Local checklist only. Marking an action sends no alert or official order. Model risk is uncalibrated.</p>
+              <p id="actions-modal-description" className="modal-subtitle">Local checklist only. Marking an action sends no alert or official order. Model risk is uncalibrated. {ADVISORY_LIMITS}</p>
             </div>
           </div>
           <button
@@ -137,7 +140,7 @@ export default function ActionsModal() {
                       </div>
                       <div className="action-deadline">
                         <Clock size={13} />
-                        <span>Deploy within {item.deadline_hours}h</span>
+                        <span title={advisoryDeadline(actions, item.deadline_hours)}>Scheduling: {item.deadline_hours}h (review reference)</span>
                       </div>
                     </div>
 

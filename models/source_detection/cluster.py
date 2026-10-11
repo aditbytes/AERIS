@@ -7,7 +7,7 @@ import json
 import logging
 import math
 import os
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _CONFIDENCE_LEVELS = {"low": 0, "nominal": 1, "high": 2}
 _NOISE_POLICIES = ("drop", "individual_minor_sources")
+_CONFIDENCE_WEIGHTS = {"count": 0.4, "high_share": 0.3, "recency": 0.3}
 
 
 @dataclass(frozen=True)
@@ -206,7 +207,9 @@ def _source_metrics(cluster: list[dict[str, Any]], as_of: datetime,
     high_share = sum(fire["confidence"] == "high" for fire in cluster) / len(cluster)
     recency = math.fsum(max(0.0, 1 - (as_of - t).total_seconds() / (params.window_hours * 3600))
                        for t in times) / len(cluster)
-    confidence = 0.4 * count_component + 0.3 * high_share + 0.3 * recency
+    confidence = (_CONFIDENCE_WEIGHTS["count"] * count_component
+                  + _CONFIDENCE_WEIGHTS["high_share"] * high_share
+                  + _CONFIDENCE_WEIGHTS["recency"] * recency)
     west, south, east, north = params.agricultural_bbox
     is_agricultural_season = south <= lat <= north and west <= lon <= east and max(times).month in (10, 11)
     return {
@@ -268,6 +271,7 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Detect sources from a captured real FIRMS snapshot")
     parser.add_argument("--live", action="store_true", required=True, help="Read local data/live/fires.json")
     parser.add_argument("--output", type=Path, help="Output path (default: sources.json beside fires.json)")
+    parser.add_argument("--provenance-output", type=Path, help="Optional hash-bound companion metadata; keeps sources.json unchanged")
     parser.add_argument("--window-hours", type=float, default=_DEFAULT_PARAMS.window_hours)
     parser.add_argument("--eps-km", type=float, default=_DEFAULT_PARAMS.eps_km)
     parser.add_argument("--min-samples", type=int, default=_DEFAULT_PARAMS.min_samples)
@@ -293,7 +297,26 @@ def main(argv: list[str] | None = None) -> None:
         result = detect_sources(fires, params=params)
         # Serialise before touching the output; invalid input preserves prior results.
         body = json.dumps(result, indent=2, allow_nan=False) + "\n"
+        metadata = None
+        if args.provenance_output is not None:
+            from models.common.provenance import prepare_manifest
+
+            recorded_params = asdict(params)
+            recorded_params["as_of"] = _utc_string(params.as_of) if params.as_of is not None else None
+            metadata = prepare_manifest(
+                path=args.provenance_output, output=out_path, body=body.replace("\n", os.linesep), kind="sources",
+                inputs={"fires": fires_path}, model_version="fire-dbscan-v1", model_code=Path(__file__),
+                parameters=recorded_params, parameter_source="EXPLICIT_OR_BASELINE_UNCALIBRATED",
+                semantics={"confidence": "HEURISTIC_SCORE_NOT_PROBABILITY",
+                           "confidence_weights": _CONFIDENCE_WEIGHTS,
+                           "type": "REGION_SEASON_PROXY_NOT_VERIFIED_LAND_USE",
+                           "emission_strength": "NORMALIZED_FRP_PROXY_NOT_EMISSION_MASS",
+                           "total_frp_mw": "SUM_OF_SATELLITE_FRP_MW"})
         out_path.write_text(body, encoding="utf-8")
+        if metadata is not None:
+            from models.plume.parameters import atomic_json
+
+            atomic_json(args.provenance_output, metadata)
     except (OSError, ValueError) as exc:
         parser.exit(1, f"Source detection failed: {exc}\n")
     logger.info("Snapshot %s (%s); reference %s; wrote %s with %d sources",

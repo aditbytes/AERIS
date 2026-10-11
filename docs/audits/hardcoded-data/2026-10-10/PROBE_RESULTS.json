@@ -1,0 +1,95 @@
+{
+  "interpreter": "C:\\Users\\LENOVO\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+  "python_version": "3.14.3",
+  "inputs": "Controlled diagnostic boundary/empty/missing-field inputs, not real measurements.",
+  "aqi_boundary_probes": [
+    {
+      "pm25": 30.0,
+      "aqi_and_category": [
+        50,
+        "Good"
+      ]
+    },
+    {
+      "pm25": 30.05,
+      "aqi_and_category": [
+        500,
+        "Severe"
+      ]
+    },
+    {
+      "pm25": 30.1,
+      "aqi_and_category": [
+        51,
+        "Satisfactory"
+      ]
+    },
+    {
+      "pm25": 60.05,
+      "aqi_and_category": [
+        500,
+        "Severe"
+      ]
+    },
+    {
+      "pm25": 90.05,
+      "aqi_and_category": [
+        500,
+        "Severe"
+      ]
+    },
+    {
+      "pm25": 120.05,
+      "aqi_and_category": [
+        500,
+        "Severe"
+      ]
+    },
+    {
+      "pm25": 250.05,
+      "aqi_and_category": [
+        500,
+        "Severe"
+      ]
+    }
+  ],
+  "empty_agent": {
+    "summary": "Elevated environmental emission sources detected in upwind agricultural corridor. Smoke corridor approaches NCR receptor communities in ~2.0 hours; population exposure calculation pending (population data unavailable). Immediate protective interventions mandated for vulnerable facilities before threshold exceedance.",
+    "site_actions": 0,
+    "authority_actions": 3
+  },
+  "missing_fields_agent": {
+    "reason": "ETA 1.0h, forecast PM2.5 delta +25 \u00b5g/m\u00b3",
+    "deadline_hours": 0.5
+  },
+  "firms_all_failure": {
+    "fires": 0,
+    "source": "NASA FIRMS VIIRS_SNPP_NRT",
+    "fresh_generated_at_present": true
+  },
+  "firms_handler_write_attempt": [
+    {
+      "name": "fires",
+      "fire_count": 0
+    }
+  ],
+  "captured_aqi_derivation": {
+    "readings": 59,
+    "matching_project_subindex": 59
+  },
+  "source_territory_missing": 10,
+  "captured_facility_deltas": {
+    "sites": 444,
+    "unique_pm25_delta_ugm3": [
+      15.0
+    ]
+  },
+  "debug_path_redaction": {
+    "dummy_path_credential_retained": true
+  },
+  "legacy_corridor_formula": {
+    "bands": 40,
+    "concentration_matches": 40,
+    "risk_matches": 40
+  }
+}

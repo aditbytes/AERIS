@@ -1,5 +1,10 @@
 # Fire-cluster source detection
 
+The 2026-10-10 risk hardening adds an optional companion manifest; the default
+source JSON and numeric calculations remain unchanged. See
+[the remediation report](../../docs/audits/hardcoded-data/2026-10-10/contributor-work-tally/PRITAM_RISK_REMEDIATION.md)
+for the current assessment; earlier test results below are historical.
+
 This is a local fire-cluster-based source detection heuristic. It groups parsed
 NASA FIRMS observations into candidate pollution sources. It is not atmospheric
 source attribution, an emission inventory, or proof of agricultural burning.
@@ -56,6 +61,28 @@ identities across changing captures. Numeric metrics retain floating precision
 so rounding does not understate the radius or erase small emission strengths.
 
 ## Parameters
+
+To record exact input/output byte hashes, code hash, actual parameters, capture
+time and analysis reference, pass `--provenance-output <separate-file.json>` to
+the local CLI, together with `--output <isolated-sources.json>`. The companion
+explicitly describes confidence as a heuristic score, type as a region/season
+proxy without verified land use, and emission strength as normalized FRP.
+It never identifies a source as independently verified or calibrated. The
+capture date is distinct from `--as-of`; old detections remain filtered normally.
+
+`python -m models.common.provenance data/live/sources.json --kind sources`
+is read-only and labels the exact archived bytes `ARCHIVED_LEGACY`. The registry
+is [models/ARCHIVED_OUTPUTS.json](../ARCHIVED_OUTPUTS.json). Different or
+reserialized bytes are `UNVERSIONED_UNKNOWN`, not automatically current output.
+An inspection with `--provenance <companion.json>` verifies the output-byte
+binding. This does not authenticate the supplier or prove scientific validity.
+CLI export remains opt-in; existing pipeline/API/UI consumers do not yet read
+these companions automatically. Never run the live CLI over the captured directory
+to refresh archived outputs as part of a provenance review.
+
+The model file and companion are separate writes, not one atomic transaction.
+Check their hash binding before consuming them together; a stale/mismatched
+companion is rejected. Inputs, output and companion must have distinct paths.
 
 | Name | Default | Meaning |
 | --- | --- | --- |

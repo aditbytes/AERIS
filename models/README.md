@@ -1,5 +1,20 @@
 # AERIS modelling handoff and release audit
 
+**2026-10-10 risk-remediation addendum:** optional source/plume CLI companions now
+record exact byte hashes, parameters, timestamps and heuristic/peak semantics.
+[ARCHIVED_OUTPUTS.json](ARCHIVED_OUTPUTS.json) identifies the two preserved legacy
+outputs; `models.common.provenance` inspects them without modifying snapshots.
+Optional ML pickle loading now requires explicit caller/deployer trust and retains
+all previous compatibility checks. Detection/plume public results, scientific
+equations and default physics selection remain unchanged. Existing API/UI
+consumers do not automatically apply companion/archive labels.
+
+The [remediation report](../docs/audits/hardcoded-data/2026-10-10/contributor-work-tally/PRITAM_RISK_REMEDIATION.md)
+separately assesses all seven assigned risks. The release decision, test counts
+and artifact metrics below describe the earlier release audit; they are historical
+evidence, not a claim that these risk changes were deployed or observationally
+validated. Calibration and source-attribution evidence remain unavailable.
+
 **Release decision: READY_WITH_DOCUMENTED_LIMITATIONS.** Tasks 1–4 are implemented
 and their integration passed the local release audit. The production corridor
 pipeline remains the physics baseline. No runtime scientific equations or model

@@ -1,0 +1,296 @@
+[
+  {
+    "copy": "infra/lambda/agent/__init__.py",
+    "source": "agent/__init__.py",
+    "identical": true,
+    "bytes": 0
+  },
+  {
+    "copy": "infra/lambda/agent/agent.py",
+    "source": "agent/agent.py",
+    "identical": true,
+    "bytes": 8960
+  },
+  {
+    "copy": "infra/lambda/agent/bedrock_agent.py",
+    "source": "agent/bedrock_agent.py",
+    "identical": true,
+    "bytes": 8144
+  },
+  {
+    "copy": "infra/lambda/agent/prompts/system.md",
+    "source": "agent/prompts/system.md",
+    "identical": true,
+    "bytes": 2929
+  },
+  {
+    "copy": "infra/lambda/agent/tools/__init__.py",
+    "source": "agent/tools/__init__.py",
+    "identical": true,
+    "bytes": 444
+  },
+  {
+    "copy": "infra/lambda/agent/tools/get_exposed_population.py",
+    "source": "agent/tools/get_exposed_population.py",
+    "identical": true,
+    "bytes": 976
+  },
+  {
+    "copy": "infra/lambda/agent/tools/get_ranked_sites.py",
+    "source": "agent/tools/get_ranked_sites.py",
+    "identical": true,
+    "bytes": 964
+  },
+  {
+    "copy": "infra/lambda/agent/tools/get_site.py",
+    "source": "agent/tools/get_site.py",
+    "identical": true,
+    "bytes": 1174
+  },
+  {
+    "copy": "infra/lambda/agent/tools/get_sources.py",
+    "source": "agent/tools/get_sources.py",
+    "identical": true,
+    "bytes": 786
+  },
+  {
+    "copy": "infra/lambda/agent/tools/query_corridor.py",
+    "source": "agent/tools/query_corridor.py",
+    "identical": true,
+    "bytes": 1124
+  },
+  {
+    "copy": "infra/lambda/api/__init__.py",
+    "source": "api/__init__.py",
+    "identical": true,
+    "bytes": 0
+  },
+  {
+    "copy": "infra/lambda/api/handlers/__init__.py",
+    "source": "api/handlers/__init__.py",
+    "identical": true,
+    "bytes": 0
+  },
+  {
+    "copy": "infra/lambda/api/handlers/app.py",
+    "source": "api/handlers/app.py",
+    "identical": true,
+    "bytes": 7934
+  },
+  {
+    "copy": "infra/lambda/ingest/__init__.py",
+    "source": "ingest/__init__.py",
+    "identical": true,
+    "bytes": 18
+  },
+  {
+    "copy": "infra/lambda/ingest/aqi/__init__.py",
+    "source": "ingest/aqi/__init__.py",
+    "identical": true,
+    "bytes": 22
+  },
+  {
+    "copy": "infra/lambda/ingest/aqi/fetch_aqi.py",
+    "source": "ingest/aqi/fetch_aqi.py",
+    "identical": true,
+    "bytes": 17709
+  },
+  {
+    "copy": "infra/lambda/ingest/aqi/handler.py",
+    "source": "ingest/aqi/handler.py",
+    "identical": true,
+    "bytes": 1898
+  },
+  {
+    "copy": "infra/lambda/ingest/common/__init__.py",
+    "source": "ingest/common/__init__.py",
+    "identical": true,
+    "bytes": 25
+  },
+  {
+    "copy": "infra/lambda/ingest/common/http.py",
+    "source": "ingest/common/http.py",
+    "identical": true,
+    "bytes": 6966
+  },
+  {
+    "copy": "infra/lambda/ingest/common/secrets.py",
+    "source": "ingest/common/secrets.py",
+    "identical": true,
+    "bytes": 1505
+  },
+  {
+    "copy": "infra/lambda/ingest/common/storage.py",
+    "source": "ingest/common/storage.py",
+    "identical": true,
+    "bytes": 6300
+  },
+  {
+    "copy": "infra/lambda/ingest/firms/__init__.py",
+    "source": "ingest/firms/__init__.py",
+    "identical": true,
+    "bytes": 24
+  },
+  {
+    "copy": "infra/lambda/ingest/firms/fetch_fires.py",
+    "source": "ingest/firms/fetch_fires.py",
+    "identical": true,
+    "bytes": 10189
+  },
+  {
+    "copy": "infra/lambda/ingest/firms/handler.py",
+    "source": "ingest/firms/handler.py",
+    "identical": true,
+    "bytes": 2979
+  },
+  {
+    "copy": "infra/lambda/ingest/population/__init__.py",
+    "source": "ingest/population/__init__.py",
+    "identical": true,
+    "bytes": 29
+  },
+  {
+    "copy": "infra/lambda/ingest/population/build_population.py",
+    "source": "ingest/population/build_population.py",
+    "identical": true,
+    "bytes": 10049
+  },
+  {
+    "copy": "infra/lambda/ingest/population/handler.py",
+    "source": "ingest/population/handler.py",
+    "identical": true,
+    "bytes": 2192
+  },
+  {
+    "copy": "infra/lambda/ingest/sites/__init__.py",
+    "source": "ingest/sites/__init__.py",
+    "identical": true,
+    "bytes": 24
+  },
+  {
+    "copy": "infra/lambda/ingest/sites/fetch_sites.py",
+    "source": "ingest/sites/fetch_sites.py",
+    "identical": true,
+    "bytes": 9955
+  },
+  {
+    "copy": "infra/lambda/ingest/sites/handler.py",
+    "source": "ingest/sites/handler.py",
+    "identical": true,
+    "bytes": 1820
+  },
+  {
+    "copy": "infra/lambda/ingest/weather/__init__.py",
+    "source": "ingest/weather/__init__.py",
+    "identical": true,
+    "bytes": 26
+  },
+  {
+    "copy": "infra/lambda/ingest/weather/fetch_wind.py",
+    "source": "ingest/weather/fetch_wind.py",
+    "identical": true,
+    "bytes": 10592
+  },
+  {
+    "copy": "infra/lambda/ingest/weather/handler.py",
+    "source": "ingest/weather/handler.py",
+    "identical": true,
+    "bytes": 2116
+  },
+  {
+    "copy": "infra/lambda/models/__init__.py",
+    "source": "models/__init__.py",
+    "identical": true,
+    "bytes": 0
+  },
+  {
+    "copy": "infra/lambda/models/common/__init__.py",
+    "source": "models/common/__init__.py",
+    "identical": true,
+    "bytes": 0
+  },
+  {
+    "copy": "infra/lambda/models/common/geo.py",
+    "source": "models/common/geo.py",
+    "identical": true,
+    "bytes": 2362
+  },
+  {
+    "copy": "infra/lambda/models/exposure/__init__.py",
+    "source": "models/exposure/__init__.py",
+    "identical": true,
+    "bytes": 27
+  },
+  {
+    "copy": "infra/lambda/models/exposure/rank_sites.py",
+    "source": "models/exposure/rank_sites.py",
+    "identical": true,
+    "bytes": 13265
+  },
+  {
+    "copy": "infra/lambda/models/plume/__init__.py",
+    "source": "models/plume/__init__.py",
+    "identical": true,
+    "bytes": 0
+  },
+  {
+    "copy": "infra/lambda/models/plume/advect.py",
+    "source": "models/plume/advect.py",
+    "identical": true,
+    "bytes": 16809
+  },
+  {
+    "copy": "infra/lambda/models/plume/calibrate.py",
+    "source": "models/plume/calibrate.py",
+    "identical": true,
+    "bytes": 25450
+  },
+  {
+    "copy": "infra/lambda/models/plume/corridor.py",
+    "source": "models/plume/corridor.py",
+    "identical": true,
+    "bytes": 15859
+  },
+  {
+    "copy": "infra/lambda/models/plume/history.py",
+    "source": "models/plume/history.py",
+    "identical": true,
+    "bytes": 20059
+  },
+  {
+    "copy": "infra/lambda/models/plume/parameters.py",
+    "source": "models/plume/parameters.py",
+    "identical": true,
+    "bytes": 8832
+  },
+  {
+    "copy": "infra/lambda/models/source_detection/__init__.py",
+    "source": "models/source_detection/__init__.py",
+    "identical": true,
+    "bytes": 0
+  },
+  {
+    "copy": "infra/lambda/models/source_detection/cluster.py",
+    "source": "models/source_detection/cluster.py",
+    "identical": true,
+    "bytes": 15684
+  },
+  {
+    "copy": "infra/lambda/pipeline/__init__.py",
+    "source": "pipeline/__init__.py",
+    "identical": true,
+    "bytes": 0
+  },
+  {
+    "copy": "infra/lambda/pipeline/contracts.py",
+    "source": "pipeline/contracts.py",
+    "identical": true,
+    "bytes": 8195
+  },
+  {
+    "copy": "infra/lambda/pipeline/steps.py",
+    "source": "pipeline/steps.py",
+    "identical": true,
+    "bytes": 6375
+  }
+]

@@ -213,30 +213,37 @@ def _parse_csv(raw_csv: str, source_name: str) -> list[dict[str, Any]]:
             lon = float(row.get("longitude", "NaN"))
             frp = float(row.get("frp", "NaN"))
             acq_date = row.get("acq_date", "")
-            acq_time_raw = row.get("acq_time", "0000")
+            acq_time_raw = row.get("acq_time", "")
+            if not acq_time_raw:
+                raise ValueError("Missing acquisition time")
+            acquisition = _parse_acq_time(acq_date, acq_time_raw)
 
             if is_viirs:
                 brightness = float(row.get("bright_ti4", "NaN"))
-                conf_raw = row.get("confidence", "n")
+                conf_raw = row.get("confidence", "")
+                if conf_raw.strip().lower() not in _VIIRS_CONF_MAP:
+                    raise ValueError("Unknown VIIRS confidence")
                 confidence = _normalise_viirs_confidence(conf_raw)
             else:
                 brightness = float(row.get("brightness", "NaN"))
-                conf_raw = row.get("confidence", "50")
+                conf_raw = row.get("confidence", "")
+                if not 0 <= int(conf_raw) <= 100:
+                    raise ValueError("Invalid MODIS confidence")
                 confidence = _normalise_modis_confidence(conf_raw)
 
         except (ValueError, KeyError) as exc:
             logger.warning("[FIRMS] Skipping malformed row from %s: %s — %s", source_name, row, exc)
             continue
 
-        if any(math.isnan(x) for x in [lat, lon, frp, brightness]):
-            logger.warning("[FIRMS] Skipping row with NaN values from %s: %s", source_name, row)
+        if not all(math.isfinite(x) for x in [lat, lon, frp, brightness]) or not (-90 <= lat <= 90 and -180 <= lon <= 180) or frp < 0 or brightness < 0:
+            logger.warning("[FIRMS] Skipping row with invalid measurements from %s", source_name)
             continue
 
         fires.append(
             {
                 "lat": lat,
                 "lon": lon,
-                "acq_time": _parse_acq_time(acq_date, acq_time_raw),
+                "acq_time": acquisition,
                 "frp_mw": frp,
                 "brightness_k": brightness,
                 "confidence": confidence,

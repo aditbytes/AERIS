@@ -54,28 +54,31 @@ def _now() -> datetime:
 
 
 def _age_seconds(generated_at: str | None) -> int | None:
-    if not generated_at:
+    if not isinstance(generated_at, str) or not generated_at:
         return None
     try:
         t = datetime.fromisoformat(generated_at.replace("Z", "+00:00"))
     except ValueError:
         return None
-    if t.tzinfo is None:
-        t = t.replace(tzinfo=timezone.utc)
-    return int((_now() - t).total_seconds())
+    if t.utcoffset() is None:
+        return None
+    age = int((_now() - t).total_seconds())
+    return max(0, age) if age >= -300 else None
 
 
 def load(name: str) -> dict[str, Any]:
     """Read gold/<name> and add stale/age_seconds. 404 if no real result exists yet."""
     geojson = name in ("corridor", "sites")
     try:
-        obj = storage.read_json(name, geojson=geojson)
+        obj = storage.read_model_artifact(name, name) if name in ("sources", "corridor") else storage.read_json(name, geojson=geojson)
     except FileNotFoundError as exc:
         raise ApiError(404, "no_data", f"No {name} result has been produced yet") from exc
     age = _age_seconds(obj.get("generated_at"))
     limit = STALE_AFTER.get(name)
     obj["age_seconds"] = age
     obj["stale"] = bool(limit is not None and (age is None or age > limit))
+    if name == "actions":
+        obj["advisory_only"] = True  # This API never authorizes operational orders.
     return obj
 
 
@@ -111,6 +114,10 @@ def _summary(_: dict[str, str]) -> dict[str, Any]:
         "exposed_population": ranked["exposed_population"],
         "summary": actions["summary"],
         "generator": actions.get("generator"),
+        "model_provenance": sources["provenance"],
+        "ranking_model_context": ranked.get("model_context", {"lineage_status": "UNVERSIONED_UNKNOWN"}),
+        "advisory_only": True,
+        "advisory_model_context": actions.get("model_context", {"lineage_status": "UNVERSIONED_UNKNOWN"}),
         "inputs_generated_at": {
             "sources": sources["generated_at"],
             "ranked_sites": ranked["generated_at"],
@@ -190,7 +197,7 @@ ROUTES: dict[str, Callable[[dict[str, str]], dict[str, Any]]] = {
 
 
 def _response(status: int, body: dict[str, Any]) -> dict[str, Any]:
-    return {"statusCode": status, "headers": _HEADERS, "body": json.dumps(body, ensure_ascii=False)}
+    return {"statusCode": status, "headers": _HEADERS, "body": json.dumps(body, ensure_ascii=False, allow_nan=False)}
 
 
 def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:

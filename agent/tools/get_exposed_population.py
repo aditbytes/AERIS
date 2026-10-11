@@ -24,7 +24,7 @@ def get_exposed_population() -> dict[str, Any]:
     if not ranked_path.exists():
         return {"estimate": 0, "low": 0, "high": 0, "method": "", "data_available": False}
 
-    with ranked_path.open() as f:
+    with ranked_path.open(encoding="utf-8") as f:
         data = json.load(f)
 
     return data.get(

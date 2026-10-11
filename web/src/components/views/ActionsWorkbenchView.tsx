@@ -3,6 +3,7 @@ import { useAeris } from '@/services/dataContext'
 import { actionKey, useActionChecklist } from '@/components/agent/actionChecklist'
 import { buildCsv, downloadText } from './csv'
 import './ActionsWorkbenchView.css'
+import { advisoryDeadline } from '@/components/agent/advisoryEvidence'
 
 export default function ActionsWorkbenchView() {
   const { actions } = useAeris()
@@ -16,10 +17,10 @@ export default function ActionsWorkbenchView() {
   const exportCsv = () => {
     const rows = [...siteActions, ...authorityActions].map(action => [
       'site_id' in action ? String(action.site_id) : 'Authority', action.who, action.action, action.reason,
-      'deadline_hours' in action ? Number(action.deadline_hours) : null,
+      'deadline_hours' in action ? advisoryDeadline(actions, Number(action.deadline_hours)) : null,
       checked[actionKey(actions?.generated_at, action)] ? 'MARKED LOCALLY' : 'UNMARKED',
     ])
-    downloadText(`AERIS_Recommendations_${new Date().toISOString().slice(0, 10)}.csv`, buildCsv(['Site', 'Recipient', 'Recommendation', 'Rationale', 'Deadline Hours', 'Local Checklist'], rows))
+    downloadText(`AERIS_Recommendations_${new Date().toISOString().slice(0, 10)}.csv`, buildCsv(['Site', 'Recipient', 'Recommendation', 'Rationale', 'Scheduling value and declared reference (not a live countdown)', 'Local Checklist'], rows))
   }
 
   return (
@@ -67,7 +68,7 @@ export default function ActionsWorkbenchView() {
             const id = actionKey(actions?.generated_at, action), done = !!checked[id]
             return <div key={id} className={`fac-directive-row ${done ? 'done' : ''}`}>
               <label className="fac-check-col"><input type="checkbox" checked={done} onChange={() => toggle(id)} className="auth-checkbox" aria-label={`Mark recommendation for ${action.who} locally`} /><span className="fac-priority">Priority #{action.priority}</span></label>
-              <div className="fac-main-col"><div className="fac-who-row"><strong>{action.who}</strong><span className="fac-eta-badge"><Clock size={12} /> Recommended deadline: {action.deadline_hours}h from snapshot</span></div><div className="fac-action-stmt">{action.action}</div><div className="fac-reason-stmt">{action.reason}</div></div>
+              <div className="fac-main-col"><div className="fac-who-row"><strong>{action.who}</strong><span className="fac-eta-badge" title={advisoryDeadline(actions, action.deadline_hours)}><Clock size={12} /> Scheduling: {action.deadline_hours}h (review reference)</span></div><div className="fac-action-stmt">{action.action}</div><div className="fac-reason-stmt">{action.reason}</div></div>
               <div className="fac-status-col"><span className={`status-pill ${done ? 'dispatched' : 'pending'}`}>{done ? 'Marked locally' : 'Unmarked'}</span></div>
             </div>
           })}
